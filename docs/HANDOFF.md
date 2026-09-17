@@ -50,7 +50,20 @@ while time.time()<e:
 
 웹 플래셔 없이 위 명령으로 충분하다. 최초 1회 `erase_flash`도 했음(NVS 초기화).
 
-## 2026-09-17 세션 결과 — 집에 가서 할 일 (다음 세션 첫 작업)
+## 2026-09-17 저녁 세션 — 첫 실기기 단어장 검증 완료 (v0.1.1)
+
+집 PC에서 사용자 설정 완료 후 **전체 파이프라인 검증 성공**: Wi-Fi 연결 → jsDelivr manifest 동기화(8단어) → 카드 선택 → apple 그림 PNG 다운로드·캐시·RGB565 디코드까지 로그 확인(`[wb] card #3: apple (art)`).
+
+- 집 PC에서는 보드가 **COM6**으로 잡힌다(COM4는 이전 위치 기준).
+- 사용자가 포털에 단어장 URL을 `guesswhoisbakk`로 오타 입력해 동기화 실패했었음 → 포털에서 재저장으로 해결. STA 모드에서도 `http://<IP>/` 포턠로 설정 수정 가능(빈 Wi-Fi 비밀번호 제출 시 기존 값 유지).
+- v0.1.0의 버그 3개를 수정해 v0.1.1로 플래시:
+  1. **첫 동기화가 부팅 10분 후에야 시도됨** — `syncDue()`가 `lastAttemptMs_`(0 초기화) 기준으로 대기. `everAttempted_` 플래그 추가로 캐시 없는 첫 부팅에 즉시 시도.
+  2. **`/wb` 디렉터리를 만드는 코드가 없어 다운로드 저장 실패** — `begin()`에서 `LittleFS.mkdir(kWordbookDir)` 추가.
+  3. **PNGdec 드로잉 콜백이 `return 0`이라 첫 줄만 그리고 `PNG_QUIT_EARLY`로 중단** — PNGdec 규약상 계속 그리려면 0이 아닌 값 반환. `pngLineDraw`가 `return 1`로 수정. `decodeArt`에 단계별 실패 로그도 추가.
+- 단어 카드 index는 **0-based `tm_yday`** 기준(`yday % 단어수`). 오전 문서의 "apple index 4 (yday 260 % 8)" 계산은 1-based day를 써서 한 칸 어긋났었음 — wordbook 저장소에서 apple을 index 3으로 이동(커밋 0b4e2e4, jsDelivr purge 완료). 2026-09-17 yday=259 → 259%8=3 → apple. 다음 날(yday 260)은 index 4 = vivid부터 순환.
+- **터치(카드 뒤집기)만 아직 실물 미확인.**
+
+## 2026-09-17 세션 결과 — 집에 가서 할 일 (완료됨, 아래 저녁 세션 참조)
 
 현재 기기 상태: v0.1.0 ILI9341 펌웨어 구동 중, 화면 정상(사용자 확인), **설정 모드(AP) 대기 중**.
 

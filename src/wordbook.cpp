@@ -32,7 +32,8 @@ int32_t pngLineDraw(PNGDRAW* draw) {
         draw, s_pngDest + static_cast<size_t>(draw->y) * draw->iWidth,
         PNG_RGB565_LITTLE_ENDIAN, kWordbookArtBackground);
   }
-  return 0;
+  // PNGdec stops decoding when the draw callback returns 0.
+  return 1;
 }
 
 // PNGdec's bundled zlib defines a `local` macro; keep plain names here.
@@ -68,6 +69,10 @@ Wordbook::Wordbook(AppSettings& settings) : settings_(settings) {}
 void Wordbook::begin() {
   if (!LittleFS.begin(true)) {
     Serial.println(F("[wb] LittleFS mount failed; wordbook cache disabled"));
+  }
+  // A fresh format has no /wb; downloads write into it, so create it up front.
+  if (!LittleFS.exists(kWordbookDir) && !LittleFS.mkdir(kWordbookDir)) {
+    Serial.println(F("[wb] could not create cache directory"));
   }
 
   uint16_t lines = 0;
@@ -133,7 +138,9 @@ bool Wordbook::syncDue(uint32_t now, int32_t yday) {
     return false;
   }
   if (wordCount_ == 0) {
-    return now - lastAttemptMs_ >= kWordbookRetryMs;
+    // lastAttemptMs_ starts at 0; without the flag a fresh install would sit
+    // out the full retry interval before its very first download.
+    return !everAttempted_ || now - lastAttemptMs_ >= kWordbookRetryMs;
   }
   if (!everSynced_ || now - lastSyncOkMs_ >= kWordbookSyncIntervalMs) {
     return true;
@@ -149,6 +156,7 @@ void Wordbook::attemptSync(int32_t yday) {
   state_ = WordbookState::Syncing;
   ++revision_;
   lastAttemptMs_ = millis();
+  everAttempted_ = true;
 
   uint16_t lines = 0;
   const bool ok = fetchToFile(settings_.wordbookUrl + F("/words.jsonl"),
@@ -365,6 +373,8 @@ bool Wordbook::decodeArt(const String& path) {
   if (s_png == nullptr) {
     s_png = new (std::nothrow) PNG();
     if (s_png == nullptr) {
+      Serial.printf("[wb] art: PNG alloc failed (heap %u)\n",
+                    static_cast<unsigned>(ESP.getFreeHeap()));
       return false;
     }
   }
@@ -374,16 +384,20 @@ bool Wordbook::decodeArt(const String& path) {
         malloc(static_cast<size_t>(kWordbookMaxArtWidth) *
                kWordbookMaxArtHeight * 2));
     if (artPixels_ == nullptr) {
+      Serial.println(F("[wb] art: pixel buffer alloc failed"));
       return false;
     }
   }
 
   File file = LittleFS.open(path, "r");
   if (!file) {
+    Serial.println(F("[wb] art: cache open failed"));
     return false;
   }
   const size_t size = file.size();
   if (size == 0 || size > kWordbookMaxArtBytes) {
+    Serial.printf("[wb] art: bad file size %u\n",
+                  static_cast<unsigned>(size));
     file.close();
     return false;
   }
@@ -402,6 +416,8 @@ bool Wordbook::decodeArt(const String& path) {
   }
 
   if (s_png->openRAM(buffer, size, pngLineDraw) != PNG_SUCCESS) {
+    Serial.printf("[wb] art: openRAM failed (magic %02x%02x)\n",
+                  buffer[1], buffer[2]);
     free(buffer);
     return false;
   }
@@ -409,6 +425,9 @@ bool Wordbook::decodeArt(const String& path) {
   const int height = s_png->getHeight();
   if (width <= 0 || height <= 0 || width > kWordbookMaxArtWidth ||
       height > kWordbookMaxArtHeight) {
+    Serial.printf("[wb] art: %dx%d exceeds %ux%u\n", width, height,
+                  static_cast<unsigned>(kWordbookMaxArtWidth),
+                  static_cast<unsigned>(kWordbookMaxArtHeight));
     s_png->close();
     free(buffer);
     return false;
@@ -420,6 +439,8 @@ bool Wordbook::decodeArt(const String& path) {
   s_png->close();
   free(buffer);
   if (result != PNG_SUCCESS) {
+    Serial.printf("[wb] art: decode rc=%d (heap %u)\n", result,
+                  static_cast<unsigned>(ESP.getFreeHeap()));
     return false;
   }
 

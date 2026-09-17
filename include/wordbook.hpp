@@ -69,6 +69,7 @@ class Wordbook {
 
   uint32_t lastAttemptMs_ = 0;
   uint32_t lastSyncOkMs_ = 0;
+  bool everAttempted_ = false;
   bool everSynced_ = false;
 };
 
