@@ -4,6 +4,7 @@
 #include <cstring>
 #include <ctime>
 #include <new>
+#include <src/misc/cache/instance/lv_image_cache.h>
 
 #include "app_config.hpp"
 #include "assets/apple_art.hpp"
@@ -24,9 +25,7 @@ constexpr int kCardWidth = 224;
 constexpr int kArtY = 62;
 constexpr int kArtSlotHeight = 88;
 
-// Bring-up placeholder pack. The real word source (built-in list or the web
-// portal editor) replaces this table. Keep meanings and examples short: both
-// labels are single-line elements using LV_LABEL_LONG_DOT.
+// Offline sample pack; it uses the same review history as hosted words.
 struct SampleWord {
   const char* word;
   const char* meaning;
@@ -47,8 +46,6 @@ lv_image_dsc_t makeArtDsc(const uint8_t* data, uint16_t width, uint16_t height) 
 
 lv_image_dsc_t appleArt = makeArtDsc(art::kApple, art::kAppleW, art::kAppleH);
 
-// apple sits at index 4 so the 2026-09-17 bring-up flash (day-of-year 260,
-// 260 % 8 = 4) shows the illustrated card on first boot.
 const SampleWord kSampleWords[] = {
     {"resilient", "bounces back quickly", "The little shop survived it all.", nullptr},
     {"diligent", "steady, careful effort", "Five words a day, every day.", nullptr},
@@ -110,7 +107,8 @@ lv_obj_t* makeCard(lv_obj_t* parent, int x, int y, int width, int height) {
 
 }  // namespace
 
-WordUi::WordUi(AppSettings& settings) : settings_(settings) {}
+WordUi::WordUi(AppSettings& settings, StudyStore& study)
+    : settings_(settings), study_(study) {}
 
 void WordUi::begin() {
   display_.init();
@@ -174,17 +172,18 @@ void WordUi::createLayout() {
   lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
   makeLabel(screen, "WORDMON", 8, 8, 100, &lv_font_montserrat_14, kGreen);
-  statusLabel_ = makeLabel(screen, "STARTING", 112, 10, 120,
+  statusLabel_ = makeLabel(screen, "STARTING", 104, 10, 62,
                            &lv_font_montserrat_12, kMuted,
                            LV_TEXT_ALIGN_RIGHT);
   dateLabel_ = makeLabel(screen, "TIME WAITING FOR WI-FI", 8, 34, 224,
                          &lv_font_montserrat_12, kMuted);
 
   lv_obj_t* card = makeCard(screen, 8, 58, 224, 168);
-  makeLabel(card, "WORD OF THE DAY", 0, 10, 224, &lv_font_montserrat_12,
+  makeLabel(card, "RECALL THE MEANING", 0, 10, 224, &lv_font_montserrat_12,
             kMuted, LV_TEXT_ALIGN_CENTER);
   wordLabel_ = makeLabel(card, "--", 0, 34, 224, &lv_font_montserrat_24,
                          kText, LV_TEXT_ALIGN_CENTER);
+  lv_label_set_long_mode(wordLabel_, LV_LABEL_LONG_SCROLL_CIRCULAR);
   // Flashcard front face: illustration art, or a big first letter when the
   // word has no art yet. The meaning/example rows are back-face content.
   artImage_ = lv_image_create(card);
@@ -194,16 +193,46 @@ void WordUi::createLayout() {
   lv_obj_add_flag(letterLabel_, LV_OBJ_FLAG_HIDDEN);
   hintLabel_ = makeLabel(card, "TAP TO REVEAL", 0, 150, 224,
                          &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
-  meaningLabel_ = makeLabel(card, "", 0, 82, 224,
+  answerPanel_ = lv_obj_create(card);
+  lv_obj_set_pos(answerPanel_, 4, 64);
+  lv_obj_set_size(answerPanel_, 216, 100);
+  lv_obj_set_style_bg_opa(answerPanel_, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(answerPanel_, 0, 0);
+  lv_obj_set_style_pad_all(answerPanel_, 2, 0);
+  lv_obj_set_style_pad_row(answerPanel_, 8, 0);
+  lv_obj_set_flex_flow(answerPanel_, LV_FLEX_FLOW_COLUMN);
+  lv_obj_set_scroll_dir(answerPanel_, LV_DIR_VER);
+  meaningLabel_ = makeLabel(answerPanel_, "", 0, 0, 204,
                             &lv_font_montserrat_14, kCyan,
                             LV_TEXT_ALIGN_CENTER);
-  exampleLabel_ = makeLabel(card, "", 0, 112, 224, &lv_font_montserrat_12,
+  exampleLabel_ = makeLabel(answerPanel_, "", 0, 0, 204, &lv_font_montserrat_12,
                             kMuted, LV_TEXT_ALIGN_CENTER);
+  lv_label_set_long_mode(meaningLabel_, LV_LABEL_LONG_WRAP);
+  lv_obj_set_height(meaningLabel_, LV_SIZE_CONTENT);
+  lv_label_set_long_mode(exampleLabel_, LV_LABEL_LONG_WRAP);
+  lv_obj_set_height(exampleLabel_, LV_SIZE_CONTENT);
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
-  makeLabel(screen, "TAP CARD TO SEE THE MEANING", 8, 238, 224,
-            &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
+  studyLabel_ = makeLabel(screen, "THINK FIRST, THEN TAP", 8, 231, 224,
+                         &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
+  auto button = [&](const char* text, int x, int y, int width) {
+    lv_obj_t* obj = lv_button_create(screen);
+    lv_obj_set_pos(obj, x, y);
+    lv_obj_set_size(obj, width, 42);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(kBorder), 0);
+    lv_obj_t* label = lv_label_create(obj);
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_12, 0);
+    lv_obj_center(label);
+    lv_obj_add_event_cb(obj, studyEvent, LV_EVENT_CLICKED, this);
+    return obj;
+  };
+  againButton_ = button("AGAIN", 8, 252, 70);
+  goodButton_ = button("GOT IT", 85, 252, 70);
+  button("REVIEW", 162, 252, 70);
+  hintButton_ = button("HINT", 176, 3, 56);
+  lv_obj_set_height(hintButton_, 28);
 
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &lv_font_montserrat_12, kMuted,
@@ -213,6 +242,9 @@ void WordUi::createLayout() {
 void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
                              uint16_t wordCount) {
   externalCard_ = card;
+  // The wordbook reuses the same image descriptor and pixel buffer.
+  currentArt_ = nullptr;
+  if (card && card->art) lv_image_cache_drop(card->art);
   wordbookState_ = state;
   wordbookCount_ = wordCount;
   refresh();
@@ -239,7 +271,12 @@ void WordUi::refresh() {
   size_t index = 0;
   if (timeValid) {
     localtime_r(&now, &local);
-    index = static_cast<size_t>(local.tm_yday) % kSampleWordCount;
+    const int32_t day = studyDay(static_cast<uint32_t>(now));
+    index = static_cast<size_t>(day) % kSampleWordCount;
+    if (sampleDay_ != day) {
+      sampleDay_ = day;
+      sampleIndex_ = -1;
+    }
     char dateText[32];
     snprintf(dateText, sizeof(dateText), "%s %02d %d - DAY %d",
              kMonthNames[local.tm_mon], local.tm_mday, local.tm_year + 1900,
@@ -248,6 +285,7 @@ void WordUi::refresh() {
   } else {
     setLabelTextIfChanged(dateLabel_, "TIME WAITING FOR WI-FI");
   }
+  if (sampleIndex_ >= 0) index = static_cast<size_t>(sampleIndex_);
 
   // The network wordbook wins over the built-in sample pack whenever a card
   // was selected from it (fetched or cached); nullptr keeps the samples.
@@ -267,10 +305,19 @@ void WordUi::refresh() {
     example = entry.example;
     art = entry.art;
   }
+  if (shownWord_ != word) {
+    shownWord_ = word;
+    meaningVisible_ = false;
+    hintVisible_ = false;
+    graded_ = false;
+    studyMessage_ = "";
+    currentArt_ = nullptr;
+    lv_obj_scroll_to_y(answerPanel_, 0, LV_ANIM_OFF);
+  }
   setLabelTextIfChanged(wordLabel_, word);
 
   const bool front = !meaningVisible_;
-  const bool showArt = front && art != nullptr;
+  const bool showArt = front && hintVisible_ && art != nullptr;
   if (showArt && currentArt_ != art) {
     currentArt_ = art;
     lv_image_set_src(artImage_, art);
@@ -285,7 +332,7 @@ void WordUi::refresh() {
     lv_obj_add_flag(artImage_, LV_OBJ_FLAG_HIDDEN);
   }
 
-  if (front && art == nullptr) {
+  if (front && !showArt) {
     char letter[2] = {
         static_cast<char>(toupper(static_cast<unsigned char>(word[0]))),
         '\0'};
@@ -295,6 +342,24 @@ void WordUi::refresh() {
     lv_obj_add_flag(letterLabel_, LV_OBJ_FLAG_HIDDEN);
   }
 
+  const ReviewRecord* progress = study_.find(word);
+  const bool waiting = progress && !reviewDue(*progress, static_cast<uint32_t>(now));
+  if (art && front && !hintVisible_ && !waiting && !graded_) {
+    lv_obj_remove_state(hintButton_, LV_STATE_DISABLED);
+  } else {
+    lv_obj_add_state(hintButton_, LV_STATE_DISABLED);
+  }
+  const bool canGrade = meaningVisible_ && !graded_ && timeValid && !waiting;
+  for (lv_obj_t* button : {againButton_, goodButton_}) {
+    if (canGrade && !(button == goodButton_ && hintVisible_)) lv_obj_remove_state(button, LV_STATE_DISABLED);
+    else lv_obj_add_state(button, LV_STATE_DISABLED);
+  }
+  const char* message = !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
+      !studyMessage_.isEmpty() ? studyMessage_.c_str() :
+      waiting ? "SAVED - TAP REVIEW FOR MORE" :
+      meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "THINK FIRST, THEN TAP";
+  setLabelTextIfChanged(studyLabel_, message);
+
   if (front) {
     lv_obj_clear_flag(hintLabel_, LV_OBJ_FLAG_HIDDEN);
   } else {
@@ -302,9 +367,11 @@ void WordUi::refresh() {
   }
 
   if (meaningVisible_) {
+    lv_obj_remove_flag(answerPanel_, LV_OBJ_FLAG_HIDDEN);
     setLabelTextIfChanged(meaningLabel_, meaning);
     setLabelTextIfChanged(exampleLabel_, example);
   } else {
+    lv_obj_add_flag(answerPanel_, LV_OBJ_FLAG_HIDDEN);
     setLabelTextIfChanged(meaningLabel_, "");
     setLabelTextIfChanged(exampleLabel_, "");
   }
@@ -379,6 +446,61 @@ void WordUi::cardEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   self->meaningVisible_ = !self->meaningVisible_;
   self->refresh();
+}
+
+void WordUi::studyEvent(lv_event_t* event) {
+  auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
+  lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_target(event));
+  if (target == self->againButton_ || target == self->goodButton_) {
+    const uint32_t now = static_cast<uint32_t>(time(nullptr));
+    const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
+    if (!self->meaningVisible_ || self->graded_ ||
+        (record && !reviewDue(*record, now))) return;
+    const bool good = target == self->goodButton_;
+    if (good && self->hintVisible_) return;
+    if (!self->study_.grade(self->shownWord_.c_str(), now, good)) {
+      self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
+    } else {
+      self->graded_ = true;
+      self->studyMessage_ = good ? "SAVED - TAP REVIEW" : "AGAIN IN 10 MIN - TAP REVIEW";
+    }
+  } else if (target == self->hintButton_) {
+    self->hintVisible_ = true;
+    self->meaningVisible_ = false;
+    self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
+  } else {
+    self->reviewRequested_ = true;
+  }
+  self->refresh();
+}
+
+bool WordUi::takeReviewRequest() {
+  if (!reviewRequested_) return false;
+  reviewRequested_ = false;
+  if (externalCard_) return true;
+  const uint32_t now = static_cast<uint32_t>(time(nullptr));
+  ReviewChoice choice;
+  const int32_t today = sampleDay_ >= 0 ? sampleDay_ % kSampleWordCount : -1;
+  for (size_t i = 0; i < kSampleWordCount; ++i) {
+    const ReviewRecord* record = study_.find(kSampleWords[i].word);
+    choice.consider(static_cast<uint16_t>(i), today, record, now);
+  }
+  const int32_t best = choice.index();
+  if (best >= 0) sampleIndex_ = best;
+  reviewFinished(best >= 0);
+  return false;
+}
+
+void WordUi::reviewFinished(bool found) {
+  if (found) {
+    meaningVisible_ = false;
+    graded_ = false;
+    hintVisible_ = false;
+    studyMessage_ = "";
+  } else {
+    studyMessage_ = "ALL DONE - COME BACK LATER";
+  }
+  refresh();
 }
 
 }  // namespace wordmon

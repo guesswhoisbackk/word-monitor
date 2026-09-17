@@ -5,7 +5,7 @@
 namespace wordmon {
 
 constexpr char kAppName[] = "WordMon Studio";
-constexpr char kVersion[] = "0.1.1";
+constexpr char kVersion[] = "0.2.0";
 constexpr char kPreferencesNamespace[] = "wordmon";
 constexpr char kPreferencesKey[] = "config";
 constexpr uint16_t kScreenWidth = 240;
@@ -49,9 +49,7 @@ constexpr char kWordbookDir[] = "/wb";
 constexpr char kWordbookManifestPath[] = "/wb/words.jsonl";
 constexpr char kWordbookTmpPath[] = "/wb/words.tmp";
 constexpr char kWordbookArtPrefix[] = "/wb/a_";
-// Cards rotate by day-of-year; re-download the manifest at most this often.
-constexpr uint32_t kWordbookSyncIntervalMs = 12UL * 60 * 60 * 1000;
-constexpr uint32_t kWordbookRetryMs = 10UL * 60 * 1000;
+// Cards rotate by the KST calendar day; sync timing is in study_policy.hpp.
 constexpr uint32_t kWordbookHttpTimeoutMs = 10000;
 constexpr size_t kWordbookMaxManifestBytes = 256 * 1024;
 constexpr size_t kWordbookMaxArtBytes = 64 * 1024;

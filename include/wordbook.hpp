@@ -4,6 +4,7 @@
 #include <lvgl.h>
 
 #include "models.hpp"
+#include "study_store.hpp"
 
 namespace wordmon {
 
@@ -26,8 +27,8 @@ enum class WordbookState {
 
 // Route-B wordbook: downloads words.jsonl and art PNGs from the configured
 // base URL, caches both in LittleFS, and exposes today's card. The manifest
-// is JSON Lines (one {"w","m","e","a"} object per line) so a day's card is a
-// single-line read and hundreds of words need no RAM list.
+// is JSON Lines (one {"w","m","e","a"} object per line). Daily selection and
+// due-review scans read one bounded line at a time without a RAM word list.
 class Wordbook {
  public:
   explicit Wordbook(AppSettings& settings);
@@ -42,11 +43,12 @@ class Wordbook {
   uint16_t wordCount() const { return wordCount_; }
   // Bumped whenever state or card content changes; the app pushes it to the UI.
   uint32_t revision() const { return revision_; }
+  bool nextReview(const StudyStore& study);
 
  private:
   bool syncDue(uint32_t now, int32_t yday);
   void attemptSync(int32_t yday);
-  void selectCard(int32_t yday);
+  void selectCard(int32_t yday, int32_t requestedIndex = -1);
   bool fetchToFile(const String& url, const String& path, size_t maxBytes,
                    uint16_t* lineCount);
   bool readManifestLine(uint16_t index, String& out);

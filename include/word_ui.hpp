@@ -13,7 +13,7 @@ namespace wordmon {
 
 class WordUi {
  public:
-  explicit WordUi(AppSettings& settings);
+  WordUi(AppSettings& settings, StudyStore& study);
 
   void begin();
   void loop();
@@ -22,9 +22,12 @@ class WordUi {
   // built-in sample pack) and show its sync status in the footer.
   void setWordbookCard(const WordbookCard* card, WordbookState state,
                        uint16_t wordCount);
+  bool takeReviewRequest();
+  void reviewFinished(bool found);
 
  private:
   AppSettings& settings_;
+  StudyStore& study_;
   CydDisplay display_;
   SPIClass touchSpi_{VSPI};
   XPT2046_Touchscreen touch_{kTouchCs, kTouchIrq};
@@ -36,6 +39,18 @@ class WordUi {
   bool accessPointMode_ = false;
   String ipAddress_;
   bool meaningVisible_ = false;
+  bool graded_ = false;
+  bool reviewRequested_ = false;
+  bool hintVisible_ = false;
+  int32_t sampleIndex_ = -1;
+  int32_t sampleDay_ = -1;
+  String shownWord_;
+  String studyMessage_;
+  lv_obj_t* studyLabel_ = nullptr;
+  lv_obj_t* againButton_ = nullptr;
+  lv_obj_t* goodButton_ = nullptr;
+  lv_obj_t* hintButton_ = nullptr;
+  lv_obj_t* answerPanel_ = nullptr;
 
   lv_obj_t* statusLabel_ = nullptr;
   lv_obj_t* dateLabel_ = nullptr;
@@ -58,6 +73,7 @@ class WordUi {
                            uint8_t* pixels);
   static void readTouch(lv_indev_t* input, lv_indev_data_t* data);
   static void cardEvent(lv_event_t* event);
+  static void studyEvent(lv_event_t* event);
 };
 
 }  // namespace wordmon

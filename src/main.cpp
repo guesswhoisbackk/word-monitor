@@ -14,7 +14,8 @@ namespace {
 
 wordmon::AppSettings settings;
 wordmon::SettingsStore settingsStore;
-wordmon::WordUi wordUi(settings);
+wordmon::StudyStore study;
+wordmon::WordUi wordUi(settings, study);
 wordmon::WebPortal webPortal(settings, settingsStore);
 wordmon::Wordbook wordbook(settings);
 uint32_t pushedWordbookRevision = 0;
@@ -79,6 +80,7 @@ void setup() {
                 wordmon::kVersion, WORDMON_PANEL_NAME);
 
   settingsStore.load(settings);
+  study.begin();
   wordUi.begin();
   startNetwork();
   wordbook.begin();
@@ -89,6 +91,12 @@ void loop() {
   webPortal.loop();
   wordUi.loop();
   wordbook.loop();
+  if (wordUi.takeReviewRequest()) {
+    const bool found = wordbook.nextReview(study);
+    wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
+    pushedWordbookRevision = wordbook.revision();
+    wordUi.reviewFinished(found);
+  }
   if (wordbook.revision() != pushedWordbookRevision) {
     pushedWordbookRevision = wordbook.revision();
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(),

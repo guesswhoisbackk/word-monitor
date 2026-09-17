@@ -1,6 +1,48 @@
 # WordMon Studio 인수인계 문서
 
-작성일: 2026-09-17
+## 최신 인계 — 2026-09-18, v0.2.0
+
+학습 평가(AGAIN/GOT IT), 10분 재학습 및 1/3/7/14/30일 복습 예약, 128단어 NVS 이력, REVIEW 기한순 선택, HINT 그림, 답 영역 스크롤을 추가했다. 캐시 오프라인 선택, 자정 갱신, 동기화 재시도 간격, 다운로드 완전성/JSON 검증도 수정했다. 자세한 변경과 제한은 `docs/REVIEW-2026-09-18.md`와 README를 참조.
+
+현재 새 버전은 **구현·두 패널 빌드·호스트 테스트 완료, 실기기 업로드 전**이다. 보드의 마지막 확인 버전은 v0.1.1이다. 사용자는 스피커를 주문했고 곧 도착한다고 했다. 제품명/링크/앰프/연결 방식은 질문했으나 아직 답을 받지 못했으며, 발음 재생과 한글 폰트는 미구현이다. 사용자가 이 인계 문서와 구현 변경의 커밋·푸시를 요청했다. 소스·테스트·문서를 한 커밋으로 인계하며 실제 원격 상태는 `git fetch origin` 후 확인한다.
+
+호스트 회귀 테스트: `scripts\test_host.cmd` (Visual Studio C++ 도구 필요). 두 패널 빌드 및 BIN 생성은 기존 `scripts\build.ps1` 사용. 현재 PC에서는 `C:\antigravity\bambu-monitoring\.venv\Scripts`를 해당 PowerShell 프로세스의 PATH 앞에 넣으면 `pio`와 `python`을 찾는다.
+
+### 다음 세션 시작 순서
+
+1. 이 최신 인계 절 → `README.md` → `docs/REVIEW-2026-09-18.md`를 읽고 `git status --short`, `git log -3 --oneline`으로 작업 사본을 확인한다.
+2. 스피커 제품 정보가 도착했으면 모델과 연결을 확인한다. 현재 보드는 ESP32-2432S028R, **ILI9341 확정**이다. 오디오 핀이나 출력 방식을 추측하여 활성화하지 않는다.
+3. 보드 연결 후 v0.2.0을 적용하는 작업으로 이어가면 COM 포트를 다시 확인하고 ILI9341 앱만 `0x10000`에 기록한다. 현재 인계 세션에서는 업로드하지 않았다. `docs/HARDWARE_TEST.md`의 **v0.2.0 추가 검증** 절로 터치·스크롤·10분 복습·재부팅 이력·오프라인·동기화를 확인한다.
+4. 스피커에 맞는 발음 버튼/재생 및 오디오 공급·캐시를 구현한다. 다음 우선순위는 한글 폰트, 실제 학습 콘텐츠, 128단어 이력 한도 확대다. 퀴즈·손글씨·S3 이전은 후순위 후보이며 이번에 구현하지 않았다.
+
+### 검증과 산출물
+
+- 정책/복습 우선순위 테스트 및 NVS 저장 대역 테스트 통과. 실제 NVS 전원 차단·UI·오디오 검증을 대신하지 않는다.
+- `cyd-ili9341`, `cyd-st7789` 최종 빌드와 firmware/merged BIN 생성 모두 성공.
+- ILI9341 정적 RAM: 120,872바이트(36.9%), 앱 Flash: 1,652,165바이트(84.0%). 런타임 힙 여유는 미측정.
+- 별도 코드 검토 완료. 동기화 후 같은 날 뜻/그림이 갱신되지 않던 문제를 추가 수정하고 후속 검토 완료.
+- 실제 보드용 로컬 파일: `build/WordMonitor-v0.2.0-cyd-ili9341-firmware.bin` (앱, `0x10000`), `build/WordMonitor-v0.2.0-cyd-ili9341-merged.bin` (통합, `0x0`). 두 파일을 혼동하지 않는다.
+- `build/`, `.pio/`, 로그는 Git 제외 대상이다. 다른 PC에서 소스만 받으면 다시 빌드해야 한다. 최종 빌드 로그는 현재 PC의 `build/final-build.log`에 있다.
+
+```powershell
+Set-Location 'C:\antigravity\word monitor\word-monitor'
+cmd /c scripts\test_host.cmd
+$env:PATH = 'C:\antigravity\bambu-monitoring\.venv\Scripts;' + $env:PATH
+.\scripts\build.ps1 -Environment all
+```
+
+### 구현 위치와 유지할 동작
+
+- `include/study_policy.hpp`: 순수 C++ 날짜·복습 간격·복습 우선순위·동기화 간격. 일자는 KST 누적 일수이며 과거의 `tm_yday` 방식이 아니다.
+- `src/study_store.cpp`: NVS `wm-study` / `reviews-v1`, 128개 기록. 단어 철자의 64비트 해시 키로 순서 변경에 영향받지 않는다. 같은 철자는 단어장 간 이력을 공유한다. 저장 실패 시 메모리 변경을 되돌리고, 가득 차면 기존 이력을 삭제하지 않는다.
+- `src/word_ui.cpp`: 뜻 확인 전/기한 전 중복 평가 방지, 힌트 사용 시 GOT IT 금지, 답 영역 세로 스크롤, 단어 변경 시 답 숨김. 평가 뒤 REVIEW를 눌러 다음 카드를 선택한다.
+- `src/wordbook.cpp`: 기한 지난 단어 우선, 없으면 오늘 슬롯의 미학습 단어. 성공한 동기화에서는 현재 단어를 철자로 찾아 최신 내용/그림을 다시 읽고, 삭제되면 오늘 슬롯으로 전환한다.
+- 새 단어는 하루 한 슬롯이므로 접속하지 않은 날의 단어를 자동 보충하지 않는다. 전원 재인가 후 시간이 없으면 캐시 첫 단어는 보이지만 평가·기한 복습은 NTP 동기화가 필요하다.
+- 한글 폰트 부재, 다운로드 중 UI 블로킹, HTTPS 인증서 검증 생략은 남아 있다. 기능 완료로 오해하지 않는다.
+
+---
+
+아래는 **2026-09-17의 과거 기록**이다. 버전, 날짜별 카드 번호, 다음 작업 순서가 최신 절과 다르면 위 내용을 우선한다.
 
 ## 프로젝트
 
@@ -64,7 +106,7 @@ C:\antigravity\bambu-monitoring\.venv\Scripts\python.exe "C:\antigravity\word mo
   3. **PNGdec 드로잉 콜백이 `return 0`이라 첫 줄만 그리고 `PNG_QUIT_EARLY`로 중단** — PNGdec 규약상 계속 그리려면 0이 아닌 값 반환. `pngLineDraw`가 `return 1`로 수정. `decodeArt`에 단계별 실패 로그도 추가.
 - 단어 카드 index는 **0-based `tm_yday`** 기준(`yday % 단어수`). 오전 문서의 "apple index 4 (yday 260 % 8)" 계산은 1-based day를 써서 한 칸 어긋났었음 — wordbook 저장소에서 apple을 index 3으로 이동(커밋 0b4e2e4, jsDelivr purge 완료). 2026-09-17 yday=259 → 259%8=3 → apple. 다음 날(yday 260)은 index 4 = vivid부터 순환.
 - **터치(카드 뒤집기) 포함 사용자가 실물 확인 완료** — 화면 apple 카드+그림, 터치 동작 모두 확인(2026-09-17).
-- 기기 최종 상태: **v0.1.1 구동 중**, Wi-Fi `jonghyuk1` 연결(IP 192.168.50.15), 단어장 8단어 동기화 + apple 그림 캐시됨. 설정값은 NVS에 저장되어 재부팅해도 유지됨.
+- 당시 기기 최종 상태: **v0.1.1 구동 중**, 가정 Wi-Fi 연결, 단어장 8단어 동기화 + apple 그림 캐시됨. 설정값은 NVS에 저장되어 재부팅해도 유지됨.
 
 ### 다음 세션 작업
 

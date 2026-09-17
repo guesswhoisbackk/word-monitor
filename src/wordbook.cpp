@@ -37,14 +37,8 @@ int32_t pngLineDraw(PNGDRAW* draw) {
 }
 
 // PNGdec's bundled zlib defines a `local` macro; keep plain names here.
-int32_t todayYday() {
-  const time_t now = time(nullptr);
-  if (now < 1700000000) {
-    return -1;  // NTP not ready yet
-  }
-  struct tm nowTm {};
-  localtime_r(&now, &nowTm);
-  return nowTm.tm_yday;
+int32_t todayDay() {
+  return studyDay(static_cast<uint32_t>(time(nullptr)));
 }
 
 bool validArtName(const String& name) {
@@ -62,6 +56,41 @@ bool validArtName(const String& name) {
   return name.indexOf(F("..")) < 0;
 }
 
+// Bound RAM use and give blank lines identical semantics in all readers.
+int readEntry(File& file, String& line) {
+  line = "";
+  while (file.available()) {
+    const int c = file.read();
+    if (c == '\n') {
+      line.trim();
+      if (!line.isEmpty()) return 1;
+      continue;
+    }
+    if (c != '\r') {
+      if (line.length() >= 512) return -1;
+      line += static_cast<char>(c);
+    }
+  }
+  line.trim();
+  return line.isEmpty() ? 0 : 1;
+}
+
+bool validateManifest(const String& path, uint16_t& count) {
+  File file = LittleFS.open(path, "r");
+  if (!file) return false;
+  count = 0;
+  String line;
+  int result;
+  while ((result = readEntry(file, line)) == 1) {
+    JsonDocument doc;
+    if (deserializeJson(doc, line) || !doc["w"].is<const char*>() ||
+        !doc["m"].is<const char*>() || !strlen(doc["w"].as<const char*>()) ||
+        (!doc["e"].isNull() && !doc["e"].is<const char*>()) ||
+        ++count > 1000) return false;
+  }
+  return result == 0 && count > 0;
+}
+
 }  // namespace
 
 Wordbook::Wordbook(AppSettings& settings) : settings_(settings) {}
@@ -76,21 +105,7 @@ void Wordbook::begin() {
   }
 
   uint16_t lines = 0;
-  int last = -1;
-  File file = LittleFS.open(kWordbookManifestPath, "r");
-  if (file) {
-    while (file.available()) {
-      const int c = file.read();
-      if (c == '\n') {
-        ++lines;
-      }
-      last = c;
-    }
-    file.close();
-    if (lines == 0 && last >= 0) {
-      lines = 1;  // tolerate a manifest without a trailing newline
-    }
-  }
+  if (!validateManifest(kWordbookManifestPath, lines)) lines = 0;
   wordCount_ = lines;
 
   if (settings_.wordbookUrl.isEmpty()) {
@@ -115,41 +130,27 @@ void Wordbook::loop() {
     }
     return;
   }
-  if (WiFi.status() != WL_CONNECTED) {
-    return;  // keep showing whatever was selected before
-  }
-
   const uint32_t now = millis();
-  const int32_t yday = todayYday();
+  const int32_t yday = todayDay();
 
   // Pick the card for a new day (or the first card) from the cached manifest
   // even when a sync is not due yet.
-  if (wordCount_ > 0 && !cardValid_ && yday >= 0) {
-    selectCard(yday);
+  if (wordCount_ > 0 && (!cardValid_ || (yday >= 0 && cardDay_ != yday))) {
+    selectCard(yday);  // Cached text also works before Wi-Fi/NTP is ready.
   }
 
+  if (WiFi.status() != WL_CONNECTED) return;
   if (syncDue(now, yday)) {
     attemptSync(yday);
   }
 }
 
 bool Wordbook::syncDue(uint32_t now, int32_t yday) {
+  (void)yday;
   if (state_ == WordbookState::Syncing) {
     return false;
   }
-  if (wordCount_ == 0) {
-    // lastAttemptMs_ starts at 0; without the flag a fresh install would sit
-    // out the full retry interval before its very first download.
-    return !everAttempted_ || now - lastAttemptMs_ >= kWordbookRetryMs;
-  }
-  if (!everSynced_ || now - lastSyncOkMs_ >= kWordbookSyncIntervalMs) {
-    return true;
-  }
-  if (state_ == WordbookState::Failed &&
-      now - lastAttemptMs_ >= kWordbookRetryMs) {
-    return true;
-  }
-  return false;
+  return syncAllowed(now, everAttempted_, everSynced_, lastAttemptMs_, lastSyncOkMs_);
 }
 
 void Wordbook::attemptSync(int32_t yday) {
@@ -173,21 +174,34 @@ void Wordbook::attemptSync(int32_t yday) {
   lastSyncOkMs_ = millis();
   everSynced_ = true;
   state_ = WordbookState::Ok;
-  cardValid_ = false;  // force reselection against the fresh manifest
   Serial.printf("[wb] manifest synced: %u words\n",
                 static_cast<unsigned>(wordCount_));
-  if (yday >= 0) {
-    selectCard(yday);
+  // Refresh content/art even on the same day, preserving the active review
+  // word across manifest reordering. If it was removed, use today's slot.
+  int32_t activeIndex = -1;
+  if (cardValid_ && cardDay_ == yday) {
+    File file = LittleFS.open(kWordbookManifestPath, "r");
+    String line;
+    for (uint16_t index = 0; file && index < wordCount_; ++index) {
+      if (readEntry(file, line) != 1) break;
+      JsonDocument doc;
+      if (!deserializeJson(doc, line) && cardWord_ == (doc["w"] | "")) {
+        activeIndex = index;
+        break;
+      }
+    }
   }
+  selectCard(yday, activeIndex);
   ++revision_;
 }
 
-void Wordbook::selectCard(int32_t yday) {
+void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   if (wordCount_ == 0) {
     return;
   }
   const uint16_t index =
-      static_cast<uint16_t>(yday % wordCount_);  // yday >= 0 here
+      static_cast<uint16_t>(requestedIndex >= 0 ? requestedIndex :
+                            (yday >= 0 ? yday % wordCount_ : 0));
 
   String line;
   if (!readManifestLine(index, line)) {
@@ -216,7 +230,7 @@ void Wordbook::selectCard(int32_t yday) {
   String artName = doc["a"] | "";
   if (cardValid_ && validArtName(artName)) {
     const String cachePath = String(kWordbookArtPrefix) + artName;
-    if (!LittleFS.exists(cachePath)) {
+    if (!LittleFS.exists(cachePath) && WiFi.status() == WL_CONNECTED) {
       if (!fetchToFile(settings_.wordbookUrl + F("/") + artName, cachePath,
                        kWordbookMaxArtBytes, nullptr)) {
         Serial.printf("[wb] art download failed: %s\n", artName.c_str());
@@ -225,14 +239,42 @@ void Wordbook::selectCard(int32_t yday) {
     if (LittleFS.exists(cachePath)) {
       if (!decodeArt(cachePath)) {
         Serial.printf("[wb] art decode failed: %s\n", artName.c_str());
+      } else {
+        evictOtherArt(artName);
       }
     }
-    evictOtherArt(artName);
   }
 
   Serial.printf("[wb] card #%u: %s%s\n", static_cast<unsigned>(index),
                 cardWord_.c_str(), card_.art != nullptr ? " (art)" : "");
   ++revision_;
+}
+
+bool Wordbook::nextReview(const StudyStore& study) {
+  const uint32_t now = static_cast<uint32_t>(time(nullptr));
+  if (!cardValid_ || now < 1700000000 || settings_.wordbookUrl.isEmpty()) return false;
+  File file = LittleFS.open(kWordbookManifestPath, "r");
+  if (!file) return false;
+  ReviewChoice choice;
+  uint16_t index = 0;
+  const int32_t day = todayDay();
+  const int32_t today = day >= 0 ? day % wordCount_ : -1;
+  while (file.available() && index < wordCount_) {
+    String line;
+    if (readEntry(file, line) != 1) break;
+    JsonDocument doc;
+    if (!deserializeJson(doc, line)) {
+      const char* word = doc["w"] | "";
+      const ReviewRecord* record = study.find(word);
+      if (*word) choice.consider(index, today, record, now);
+    }
+    ++index;
+  }
+  file.close();
+  const int32_t best = choice.index();
+  if (best < 0) return false;
+  selectCard(day, best);
+  return cardValid_;
 }
 
 bool Wordbook::fetchToFile(const String& url, const String& path,
@@ -250,6 +292,7 @@ bool Wordbook::fetchToFile(const String& url, const String& path,
   WiFiClient& transport = secure ? static_cast<WiFiClient&>(secureClient)
                                  : static_cast<WiFiClient&>(plainClient);
   HTTPClient http;
+  http.useHTTP10(true);
   http.setReuse(false);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.setTimeout(kWordbookHttpTimeoutMs);
@@ -263,6 +306,9 @@ bool Wordbook::fetchToFile(const String& url, const String& path,
     http.end();
     return false;
   }
+  const int expected = http.getSize();
+  // HTTP/1.0 requests avoid chunk framing in the raw response stream.
+  if (expected > static_cast<int>(maxBytes)) { http.end(); return false; }
 
   WiFiClient& stream = http.getStream();
   File out = LittleFS.open(kWordbookTmpPath, "w");
@@ -273,9 +319,11 @@ bool Wordbook::fetchToFile(const String& url, const String& path,
 
   size_t total = 0;
   uint16_t lines = 0;
+  bool writeOk = true;
   uint8_t chunk[256];
   const uint32_t deadline = millis() + kWordbookHttpTimeoutMs;
-  while (http.connected() && (stream.available() > 0 || millis() < deadline)) {
+  while ((http.connected() || stream.available()) &&
+         static_cast<int32_t>(deadline - millis()) > 0) {
     const size_t available = stream.available();
     if (available == 0) {
       delay(2);
@@ -286,34 +334,34 @@ bool Wordbook::fetchToFile(const String& url, const String& path,
     if (got == 0) {
       break;
     }
-    out.write(chunk, got);
+    if (out.write(chunk, got) != got) { writeOk = false; break; }
     total += got;
-    if (lineCount != nullptr) {
-      for (size_t i = 0; i < got; ++i) {
-        if (chunk[i] == '\n') {
-          ++lines;
-        }
-      }
-    }
     if (total > maxBytes) {
       break;
     }
+    if (expected >= 0 && total >= static_cast<size_t>(expected)) break;
   }
+  const bool complete = expected >= 0 ? total == static_cast<size_t>(expected)
+                                     : !http.connected() && !stream.available();
   out.close();
   http.end();
 
-  if (total == 0 || total > maxBytes) {
+  if (!writeOk || !complete || total == 0 || total > maxBytes) {
+    LittleFS.remove(kWordbookTmpPath);
+    return false;
+  }
+  if (lineCount && !validateManifest(kWordbookTmpPath, lines)) {
     LittleFS.remove(kWordbookTmpPath);
     return false;
   }
 
-  LittleFS.remove(path);
+  // LittleFS rename replaces atomically; retain the old cache on failure.
   if (!LittleFS.rename(kWordbookTmpPath, path)) {
     LittleFS.remove(kWordbookTmpPath);
     return false;
   }
   if (lineCount != nullptr) {
-    *lineCount = lines > 0 ? lines : 1;  // tolerate a missing final newline
+    *lineCount = lines;
   }
   return true;
 }
@@ -341,32 +389,16 @@ void Wordbook::evictOtherArt(const String& keepName) {
   }
 }
 
-bool Wordbook::readManifestLine(uint16_t index, String& out) {  File file = LittleFS.open(kWordbookManifestPath, "r");
+bool Wordbook::readManifestLine(uint16_t index, String& out) {
+  File file = LittleFS.open(kWordbookManifestPath, "r");
   if (!file) {
     return false;
   }
 
-  uint16_t current = 0;
-  out = "";
-  bool collecting = false;
-  while (file.available()) {
-    const int c = file.read();
-    if (c == '\n') {
-      if (collecting) {
-        break;  // captured the requested line
-      }
-      ++current;
-      continue;
-    }
-    if (current == index) {
-      collecting = true;
-      if (c != '\r' && out.length() < 512) {
-        out += static_cast<char>(c);
-      }
-    }
+  for (uint16_t current = 0; current <= index; ++current) {
+    if (readEntry(file, out) != 1) return false;
   }
-  file.close();
-  return collecting && !out.isEmpty();
+  return true;
 }
 
 bool Wordbook::decodeArt(const String& path) {
@@ -417,7 +449,7 @@ bool Wordbook::decodeArt(const String& path) {
 
   if (s_png->openRAM(buffer, size, pngLineDraw) != PNG_SUCCESS) {
     Serial.printf("[wb] art: openRAM failed (magic %02x%02x)\n",
-                  buffer[1], buffer[2]);
+                  buffer[0], size > 1 ? buffer[1] : 0);
     free(buffer);
     return false;
   }
