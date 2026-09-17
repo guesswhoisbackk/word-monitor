@@ -4,8 +4,10 @@
 
 ## 프로젝트
 
-- 저장소: `C:\antigravity\word monitor` (아직 git 초기화 전 — 시작할 때 `git init` 후 첫 커밋 권장)
-- 앱: WordMon Studio v0.1.0 (하드웨어 검증용 + 인터넷 단어장)
+- 로컬 작업 사본: `C:\antigravity\word monitor\word-monitor` (git 관리 중)
+- 원격: https://github.com/guesswhoisbackk/word-monitor (공개, main)
+- 단어장 콘텐츠 저장소: https://github.com/guesswhoisbackk/wordbook (공개) — 기기가 jsDelivr CDN으로 읽음. 내용 수정 후에는 purge.jsdelivr.net으로 CDN 캐시 갱신 필요
+- 앱: WordMon Studio v0.1.1 (하드웨어 검증용 + 인터넷 단어장)
 - 목적: 사용자의 **두 번째 ESP32**에서 하루에 하나씩 자동으로 바뀌는 영어단어 연습장 만들기
 - `C:\antigravity\bambu-monitoring`(Bambu 프린터 모니터)과 완전히 별개 프로젝트. 프린터/MQTT 코드는 가져오지 않았고 하드웨어 계층만 복사했다. 서로 영향을 주지 않는다.
 - 인수인계 시 먼저 `git status`와 최근 커밋을 확인하고 기존 변경을 덮어쓰지 않는다.
@@ -31,24 +33,24 @@
 
 ## 하드웨어 — 2026-09-17 실물 확인 완료
 
-- 대상 보드: 사용자의 **ESP32-2432S028R(CYD)**, USB 시리얼 CH340 → **COM4** (Windows)
+- 대상 보드: 사용자의 **ESP32-2432S028R(CYD)**, USB 시리얼 CH340 → **집 PC에서는 COM6** (이전 작업장에서는 COM4였음 — PC마다 다르니 장치 관리자로 확인)
 - **패널 확정: ILI9341.** ST7789 프로필은 화면 전체가 하얗게 됨(사용자 확인). 이후 플래싱은 항상 `cyd-ili9341` 빌드 사용. ST7789 프로필은 다른 보드용으로만 유지.
-- 터치·Wi-Fi·단어장 동기화는 **아직 미검증** (사용자가 집이 아니라서 설정 연기).
+- 터치·Wi-Fi·단어장 동기화는 **2026-09-17 저녁 실물 검증 완료** (아래 세션 기록 참조).
 
-### 플래싱/로그 명령 (이번에 실제로 쓴 것)
+### 플래싱/로그 명령 (2026-09-17 저녁 실제로 쓴 것)
 
 ```powershell
-# 플래시 (통합 BIN을 0x0에)
-.\.venv\Scripts\python.exe "$env:USERPROFILE\.platformio\packages\tool-esptoolpy\esptool.py" --chip esp32 --port COM4 --baud 460800 write_flash 0x0 build\WordMonitor-vX.Y.Z-cyd-ili9341-merged.bin
+# 빌드 — 이 프로젝트 로컬 .venv는 없고 bambu-monitoring의 venv를 사용
+C:\antigravity\bambu-monitoring\.venv\Scripts\pio.exe run --project-dir "C:\antigravity\word monitor\word-monitor" -e cyd-ili9341
 
-# 부팅 로그 15초 보기 (리셋 후 읽기)
-.\.venv\Scripts\python.exe -c "import serial,time; s=serial.Serial('COM4',115200,timeout=1); s.dtr=False; s.rts=True; time.sleep(0.1); s.rts=False; e=time.time()+15
-while time.time()<e:
- l=s.readline()
- print(l.decode('utf-8','replace'),end='') if l else None"
+# 플래시 — 앱만 0x10000에 기록(부트로더·파티션·NVS·LittleFS 캐시 보존)
+C:\antigravity\bambu-monitoring\.venv\Scripts\python.exe "$env:USERPROFILE\.platformio\packages\tool-esptoolpy\esptool.py" --chip esp32 --port COM6 --baud 460800 write_flash 0x10000 "C:\antigravity\word monitor\word-monitor\.pio\build\cyd-ili9341\firmware.bin"
+
+# 부팅 로그 보기 (리셋 후 30초). noreset를 4번째 인자로 주면 리셋 없이 관찰
+C:\antigravity\bambu-monitoring\.venv\Scripts\python.exe "C:\antigravity\word monitor\word-monitor\scripts\read_log.py" COM6 30
 ```
 
-웹 플래셔 없이 위 명령으로 충분하다. 최초 1회 `erase_flash`도 했음(NVS 초기화).
+주의: 이 보드는 **시리얼 포트를 여는 것만으로 리셋**(RTS 글리치)된다. 조용히 관찰하려면 noreset 모드.
 
 ## 2026-09-17 저녁 세션 — 첫 실기기 단어장 검증 완료 (v0.1.1)
 
@@ -61,9 +63,15 @@ while time.time()<e:
   2. **`/wb` 디렉터리를 만드는 코드가 없어 다운로드 저장 실패** — `begin()`에서 `LittleFS.mkdir(kWordbookDir)` 추가.
   3. **PNGdec 드로잉 콜백이 `return 0`이라 첫 줄만 그리고 `PNG_QUIT_EARLY`로 중단** — PNGdec 규약상 계속 그리려면 0이 아닌 값 반환. `pngLineDraw`가 `return 1`로 수정. `decodeArt`에 단계별 실패 로그도 추가.
 - 단어 카드 index는 **0-based `tm_yday`** 기준(`yday % 단어수`). 오전 문서의 "apple index 4 (yday 260 % 8)" 계산은 1-based day를 써서 한 칸 어긋났었음 — wordbook 저장소에서 apple을 index 3으로 이동(커밋 0b4e2e4, jsDelivr purge 완료). 2026-09-17 yday=259 → 259%8=3 → apple. 다음 날(yday 260)은 index 4 = vivid부터 순환.
-- **터치(카드 뒤집기)만 아직 실물 미확인.**
+- **터치(카드 뒤집기) 포함 사용자가 실물 확인 완료** — 화면 apple 카드+그림, 터치 동작 모두 확인(2026-09-17).
+- 기기 최종 상태: **v0.1.1 구동 중**, Wi-Fi `jonghyuk1` 연결(IP 192.168.50.15), 단어장 8단어 동기화 + apple 그림 캐시됨. 설정값은 NVS에 저장되어 재부팅해도 유지됨.
 
-## 2026-09-17 세션 결과 — 집에 가서 할 일 (완료됨, 아래 저녁 세션 참조)
+### 다음 세션 작업
+
+1. **HARDWARE_TEST.md 7장(안정성)** — 남은 유일한 미검증 장. 12시간 주기 재동기화, 인터넷 끊김 시 `WB CACHED` 동작, 아트 캐시 evict(내일 vivid로 바뀔 때 apple 그림 삭제 확인)
+2. 이후 로드맵 순서: UI 확장(복습 카드·퀴즈·손글씨 캔버스, 아래 3번) → 한글 폰트(4번)
+
+## 2026-09-17 세션 결과 — 집에 가서 할 일 (완료됨, 위 저녁 세션 기록 참조)
 
 현재 기기 상태: v0.1.0 ILI9341 펌웨어 구동 중, 화면 정상(사용자 확인), **설정 모드(AP) 대기 중**.
 
@@ -78,7 +86,7 @@ while time.time()<e:
 
 문제가 생기면: 부팅 로그의 `[wb]`/`[wifi]` 줄이 판단 재료. `WB OFF` = 다운로드 실패(URL/인터넷 확인), `WB CACHED` = 캐시로만 운영 중.
 
-## 현재 구현 상태 (v0.1.0)
+## 현재 구현 상태 (v0.1.1)
 
 - [x] 두 프로필 컴파일 통과 (2026-09-17, RAM 36.2% / Flash 83.7%. v0.0.2 대비 Flash +11.8%: PNGdec+zlib, HTTPClient/TLS, wordbook 모듈)
 - [x] 플래싱용 통합 BIN 생성 완료 — `build\WordMonitor-v0.1.0-cyd-{st7789,ili9341}-{merged,firmware}.bin`
@@ -88,7 +96,7 @@ while time.time()<e:
 - [x] 플래시카드 카드: 앞면(단어 + 일러스트, 없으면 첫 글자 + TAP TO REVEAL) ↔ 터치로 뒷면(뜻/예문)
 - [x] **인터넷 단어장 (방식 B, 사용자 선택)**: `src/wordbook.cpp`가 `{URL}/words.jsonl`(JSON Lines, 한 줄 = {"w","m","e","a"})을 내려받아 LittleFS 캐시. 카드 선택은 `yday % 단어수`. 그림은 `{URL}/{a}`를 내려받아 PNGdec로 RGB565 디코드(카드색 배경 합성) 후 표시. 부팅 시 + 12시간 주기 동기화, 실패 시 10분 재시도, 오프라인이면 캐시로 운영(`WB CACHED`), 캐시도 없으면 내장 샘플 8개. 아트 캐시는 **현재 카드 그림 1개만 유지**(evictOtherArt) — 128KB LittleFS가 며칠 만에 찰 수 있어서.
 - [x] 내장 에셋 파이프라인: `scripts/svg_to_header.py` (SVG→ARGB8888 헤더, `include/assets/`), `scripts/wordbook_art.py` (SVG→PNG + `words.jsonl` 등록, `docs/wordbook-sample/`). SVG 래스터라이저는 Windows DLL 문제로 cairosvg/svglib 대신 Edge 헤드리스 사용.
-- [ ] **실물 보드 검증** — `docs/HARDWARE_TEST.md` 순서대로 (6장이 단어장 검증)
+- [x] **실물 보드 검증 1~4장 + 6장(단어장)** — 2026-09-17 완료. 7장(안정성)만 남음
 - [ ] 진짜 단어장 콘텐츠 (아래 로드맵)
 
 ### 메모리 예산 (CYD 4MB, 실측)
@@ -100,26 +108,19 @@ while time.time()<e:
 
 ## 개발 환경
 
-PowerShell:
+빌드는 `bambu-monitoring`의 PlatformIO venv로 한다(이 프로젝트에 로컬 venv 없음):
 
 ```powershell
-cd "C:\antigravity\word monitor"
-python -m venv .venv
-.\.venv\Scripts\pip install platformio
-.\scripts\build.ps1                          # 두 프로필 모두
-.\scripts\build.ps1 -Environment cyd-ili9341 # 한쪽만
+C:\antigravity\bambu-monitoring\.venv\Scripts\pio.exe run --project-dir "C:\antigravity\word monitor\word-monitor" -e cyd-ili9341
 ```
 
-- `.venv`가 없어도 PATH에 `pio`가 있으면 `build.ps1`가 그걸 쓴다.
-- 원본 프로젝트의 PlatformIO로도 바로 빌드 가능:
-  `C:\antigravity\bambu-monitoring\.venv\Scripts\pio.exe run --project-dir "C:\antigravity\word monitor" -e cyd-ili9341`
-- 산출물: `build\WordMonitor-v0.0.1-cyd-*-merged.bin` → Chrome/Edge 웹 플래셔(esptool-web)에서 주소 `0x0`으로 기록
-- 시리얼 모니터: 115200 baud. 부팅 로그에 패널 이름·AP 정보·IP가 나온다.
+- 산출물: `.pio\build\cyd-ili9341\firmware.bin` → esptool로 `0x10000`에 기록(위 플래시 명령). 두 프로필 통합 BIN이 필요하면 `scripts\build.ps1`(웹 플래셔용, 주소 `0x0`)
+- 시리얼: 115200 baud, `scripts\read_log.py`로 리셋+캡처. 부팅 로그에 패널 이름·AP 정보·IP가 나온다.
 
 ## 단어장 로드맵 (다음 세션 작업 순서)
 
-1. **실기기 패널·터치 확인** — HARDWARE_TEST.md 1~4장. 패널 확정이 모든 이후 작업의 전제다.
-2. **인터넷 단어장 실증** — v0.1.0에서 방식 B(외부 호스팅)를 구현했다. HARDWARE_TEST.md 6장 순서로 실물에서 검증. 사용자가 GitHub 저장소를 만들어 샘플(`docs/wordbook-sample/`)을 올리는 것이 첫 단계. 이후 개선 후보: 내려받기 중 UI 멈춤 방지(현재 부팅/자정 동기화는 수 초 블로킹), 인증서 검증 활성화(현재 `setInsecure`, 읽기 전용 공개 콘텐츠라 위험은 낮음), 그림 사전 내려받기(내일 그림 미리 받아 자정 즉시 전환).
+1. ~~**실기기 패널·터치 확인**~~ — **완료(2026-09-17)**
+2. ~~**인터넷 단어장 실증**~~ — **완료(2026-09-17)**. wordbook 저장소(8단어+apple.png) 구축됨. 이후 개선 후보: 내려받기 중 UI 멈춤 방지(현재 부팅/자정 동기화는 수 초 블로킹), 인증서 검증 활성화(현재 `setInsecure`, 읽기 전용 공개 콘텐츠라 위험은 낮음), 그림 사전 내려받기(내일 그림 미리 받아 자정 즉시 전환).
 3. **UI 확장**: 오늘 단어 + 지난 며칠 복습 카드, 퀴즈 모드(뜻 보고 단어 고르기), 손으로 쓰기 캔버스(`lv_canvas` + 터치, 스펠링 연습). 라벨이 한 줄인 것도 이 단계에서 여러 줄(`LV_LABEL_LONG_WRAP` + 높이 계산)로 개선. 단어 데이터는 이제 words.jsonl이 단일 소스.
 4. **한글 뜻 표시**: words.jsonl의 `m`/`e`에 한글을 넣으면 현재 화면에서 깨진다(Montserrat는 ASCII 전용). NotoSansKR 서브셋(실제 사용 음절만 추리면 수백 KB)을 lv_font_conv로 만들어 연결. 웹 포털의 한글은 브라우저가 그리므로 문제없음.
 5. **시간 관련 확인**: 타임존은 `include/app_config.hpp`의 `kTimezone`(`KST-9`). Wi-Fi 일시 실패로 부팅하면 캐시된 어제 카드 또는 내장 샘플이 뜨는 것이 설계된 동작.
@@ -138,7 +139,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Environment all
 
 - 설정 포털은 로컬 HTTP다. 공용 네트워크에서 설정하지 말고 신뢰하는 가정·작업실 LAN에서만 사용.
 - 공개 저장소 문서에는 Wi-Fi 이름, Wi-Fi 비밀번호, 내부 IP를 기록하지 않는다.
-- 이 폴더는 아직 git 관리가 아니다. 작업 시작 전 `git init` + 첫 커밋으로 현재 상태를 보존한다.
+- 커밋은 원격(main)에 즉시 푸시해 다음 세션이 로컬 상태와 무관하게 이어받을 수 있게 한다.
 
 ## 문제 발생 시 수집할 정보
 
