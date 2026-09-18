@@ -46,6 +46,8 @@ const char kWordbookStart[] PROGMEM = R"HTML("></section><section class="card"><
 <p class="muted">words.jsonl과 그림 PNG를 올려둔 공개 저장소 폴더의 주소를 입력하세요. 비워 두면 기기에 내장된 샘플 단어가 나옵니다. GitHub를 쓴다면 raw 주소보다 jsDelivr 주소를 권장합니다.</p>
 <label for="wordbookUrl">단어장 기본 URL</label><input id="wordbookUrl" name="wordbookUrl" placeholder="https://cdn.jsdelivr.net/gh/사용자명/저장소@main" value=")HTML";
 
+const char kAudioStart[] PROGMEM = R"HTML("><label>발음 음량 (0: 음소거, 1~60, 처음에는 20 권장)</label><input type="number" name="audioVolume" min="0" max="60" value=")HTML";
+
 const char kPageEnd[] PROGMEM = R"HTML("></section><button type="submit">저장하고 다시 시작</button></form>
 <script>
 const wifiStatus=document.getElementById('wifiStatus');
@@ -145,6 +147,8 @@ void WebPortal::handleRoot() {
   }
   server_.sendContent_P(kWifiMiddle);
   server_.sendContent(String(settings_.brightness));
+  server_.sendContent_P(kAudioStart);
+  server_.sendContent(String(settings_.audioVolume));
   server_.sendContent_P(kWordbookStart);
   const String escapedUrl = escapeHtml(settings_.wordbookUrl);
   if (!escapedUrl.isEmpty()) {
@@ -270,6 +274,7 @@ void WebPortal::handleSave() {
     settings_.wifiPassword = wifiPassword;
   }
   settings_.brightness = constrain(server_.arg("brightness").toInt(), 20, 255);
+  if (server_.hasArg("audioVolume")) settings_.audioVolume = constrain(server_.arg("audioVolume").toInt(), 0, 60);
   settings_.wordbookUrl = server_.arg("wordbookUrl");
   settings_.wordbookUrl.trim();
   if (!settings_.wordbookUrl.isEmpty() &&

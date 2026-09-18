@@ -8,12 +8,13 @@
 #include "display_driver.hpp"
 #include "models.hpp"
 #include "wordbook.hpp"
+#include "audio_player.hpp"
 
 namespace wordmon {
 
 class WordUi {
  public:
-  WordUi(AppSettings& settings, StudyStore& study);
+  WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio);
 
   void begin();
   void loop();
@@ -28,6 +29,10 @@ class WordUi {
  private:
   AppSettings& settings_;
   StudyStore& study_;
+  AudioPlayer& audio_;
+  lv_obj_t* speakButton_ = nullptr;
+  lv_obj_t* speakLabel_ = nullptr;
+  bool audioFeedback_ = false;
   CydDisplay display_;
   SPIClass touchSpi_{VSPI};
   XPT2046_Touchscreen touch_{kTouchCs, kTouchIrq};

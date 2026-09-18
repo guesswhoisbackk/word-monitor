@@ -107,8 +107,8 @@ lv_obj_t* makeCard(lv_obj_t* parent, int x, int y, int width, int height) {
 
 }  // namespace
 
-WordUi::WordUi(AppSettings& settings, StudyStore& study)
-    : settings_(settings), study_(study) {}
+WordUi::WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio)
+    : settings_(settings), study_(study), audio_(audio) {}
 
 void WordUi::begin() {
   display_.init();
@@ -171,7 +171,6 @@ void WordUi::createLayout() {
   lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
   lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
-  makeLabel(screen, "WORDMON", 8, 8, 100, &lv_font_montserrat_14, kGreen);
   statusLabel_ = makeLabel(screen, "STARTING", 104, 10, 62,
                            &lv_font_montserrat_12, kMuted,
                            LV_TEXT_ALIGN_RIGHT);
@@ -233,6 +232,9 @@ void WordUi::createLayout() {
   button("REVIEW", 162, 252, 70);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
+  speakButton_ = button("SPEAK", 8, 3, 88);
+  lv_obj_set_height(speakButton_, 28);
+  speakLabel_ = lv_obj_get_child(speakButton_, 0);
 
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &lv_font_montserrat_12, kMuted,
@@ -306,6 +308,8 @@ void WordUi::refresh() {
     art = entry.art;
   }
   if (shownWord_ != word) {
+    audio_.cancel();
+    audioFeedback_ = false;
     shownWord_ = word;
     meaningVisible_ = false;
     hintVisible_ = false;
@@ -315,6 +319,7 @@ void WordUi::refresh() {
     lv_obj_scroll_to_y(answerPanel_, 0, LV_ANIM_OFF);
   }
   setLabelTextIfChanged(wordLabel_, word);
+  setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
 
   const bool front = !meaningVisible_;
   const bool showArt = front && hintVisible_ && art != nullptr;
@@ -359,6 +364,7 @@ void WordUi::refresh() {
       waiting ? "SAVED - TAP REVIEW FOR MORE" :
       meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "THINK FIRST, THEN TAP";
   setLabelTextIfChanged(studyLabel_, message);
+  if (audioFeedback_) setLabelTextIfChanged(studyLabel_, audio_.message());
 
   if (front) {
     lv_obj_clear_flag(hintLabel_, LV_OBJ_FLAG_HIDDEN);
@@ -444,6 +450,7 @@ void WordUi::readTouch(lv_indev_t* input, lv_indev_data_t* data) {
 
 void WordUi::cardEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
+  self->audioFeedback_ = false;
   self->meaningVisible_ = !self->meaningVisible_;
   self->refresh();
 }
@@ -451,7 +458,13 @@ void WordUi::cardEvent(lv_event_t* event) {
 void WordUi::studyEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_target(event));
-  if (target == self->againButton_ || target == self->goodButton_) {
+  self->audioFeedback_ = false;
+  if (target == self->speakButton_) {
+    self->audioFeedback_ = true;
+    if (self->audio_.busy()) self->audio_.cancel();
+    else self->audio_.start(self->shownWord_, self->externalCard_ ? self->externalCard_->audio : "",
+                           self->settings_.wordbookUrl, self->settings_.audioVolume);
+  } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
     if (!self->meaningVisible_ || self->graded_ ||
@@ -469,6 +482,7 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->meaningVisible_ = false;
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
   } else {
+    self->audio_.cancel();
     self->reviewRequested_ = true;
   }
   self->refresh();

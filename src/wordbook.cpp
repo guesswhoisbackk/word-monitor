@@ -12,6 +12,7 @@
 #include <new>
 
 #include "app_config.hpp"
+#include "audio_policy.hpp"
 
 namespace wordmon {
 
@@ -21,8 +22,8 @@ namespace {
 // file-scope because the per-line callback has no user-data parameter. The
 // PNG object embeds a 32KB zlib window (~46KB total), which does not fit the
 // ESP32's static DRAM budget next to Wi-Fi + LVGL, so it lives on the heap,
-// allocated once on first decode. The pixel buffer is likewise allocated
-// once at the maximum art size and reused to avoid daily heap churn.
+// allocated only during decode, then freed to leave room for audio/TLS.
+// The displayed pixel buffer is allocated once and reused across cards.
 PNG* s_png = nullptr;
 uint16_t* s_pngDest = nullptr;
 
@@ -219,9 +220,11 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   cardWord_ = doc["w"] | "";
   cardMeaning_ = doc["m"] | "";
   cardExample_ = doc["e"] | "";
+  cardAudio_ = doc["s"] | "";
   card_.word = cardWord_.c_str();
   card_.meaning = cardMeaning_.c_str();
   card_.example = cardExample_.c_str();
+  card_.audio = cardAudio_.c_str();
   card_.art = nullptr;
 
   cardDay_ = yday;
@@ -410,6 +413,9 @@ bool Wordbook::decodeArt(const String& path) {
       return false;
     }
   }
+  struct ReleaseDecoder {
+    ~ReleaseDecoder() { delete s_png; s_png = nullptr; }
+  } releaseDecoder;
   // One buffer at the maximum art size, reused for every card.
   if (artPixels_ == nullptr) {
     artPixels_ = static_cast<uint16_t*>(

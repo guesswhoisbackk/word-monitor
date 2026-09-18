@@ -13,3 +13,7 @@ if errorlevel 1 exit /b 1
 cl /nologo /EHsc /W4 /Itests\stubs /Iinclude tests\study_store_test.cpp src\study_store.cpp /Fobuild\ /Febuild\study_store_test.exe
 if errorlevel 1 exit /b 1
 build\study_store_test.exe
+if errorlevel 1 exit /b 1
+cl /nologo /EHsc /W4 /Iinclude tests\audio_policy_test.cpp /Fobuild\audio_policy_test.obj /Febuild\audio_policy_test.exe
+if errorlevel 1 exit /b 1
+build\audio_policy_test.exe

@@ -15,6 +15,7 @@ struct WordbookCard {
   const char* meaning = "";
   const char* example = "";
   const lv_image_dsc_t* art = nullptr;
+  const char* audio = ""; // Optional same-origin WAV basename in manifest field "s".
 };
 
 enum class WordbookState {
@@ -65,6 +66,7 @@ class Wordbook {
   String cardWord_;
   String cardMeaning_;
   String cardExample_;
+  String cardAudio_;
   WordbookCard card_;
   lv_image_dsc_t artDsc_{};
   uint16_t* artPixels_ = nullptr;

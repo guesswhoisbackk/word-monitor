@@ -15,7 +15,8 @@ namespace {
 wordmon::AppSettings settings;
 wordmon::SettingsStore settingsStore;
 wordmon::StudyStore study;
-wordmon::WordUi wordUi(settings, study);
+wordmon::AudioPlayer audio;
+wordmon::WordUi wordUi(settings, study, audio);
 wordmon::WebPortal webPortal(settings, settingsStore);
 wordmon::Wordbook wordbook(settings);
 uint32_t pushedWordbookRevision = 0;
@@ -90,6 +91,9 @@ void setup() {
 void loop() {
   webPortal.loop();
   wordUi.loop();
+  // Audio worker owns network/FS while active; LVGL and portal keep running.
+  // Avoid concurrent downloads/decoding and changing the active card mid-word.
+  if (audio.busy()) { delay(5); return; }
   wordbook.loop();
   if (wordUi.takeReviewRequest()) {
     const bool found = wordbook.nextReview(study);

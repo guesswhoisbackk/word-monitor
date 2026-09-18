@@ -37,6 +37,7 @@ bool SettingsStore::load(AppSettings& settings) {
   settings.wifiSsid = doc["wifi"]["ssid"] | "";
   settings.wifiPassword = doc["wifi"]["password"] | "";
   settings.brightness = constrain(doc["display"]["brightness"] | 220, 20, 255);
+  settings.audioVolume = constrain(doc["audio"]["volume"] | 20, 0, 60);
   settings.wordbookUrl = doc["wordbook"]["url"] | "";
   return true;
 }
@@ -47,6 +48,7 @@ bool SettingsStore::save(const AppSettings& settings) {
   doc["wifi"]["ssid"] = settings.wifiSsid;
   doc["wifi"]["password"] = settings.wifiPassword;
   doc["display"]["brightness"] = settings.brightness;
+  doc["audio"]["volume"] = settings.audioVolume;
   doc["wordbook"]["url"] = settings.wordbookUrl;
 
   String json;
