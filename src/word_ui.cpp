@@ -229,7 +229,7 @@ void WordUi::createLayout() {
   };
   againButton_ = button("AGAIN", 8, 252, 70);
   goodButton_ = button("GOT IT", 85, 252, 70);
-  button("REVIEW", 162, 252, 70);
+  button("NEXT", 162, 252, 70);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
   speakButton_ = button("SPEAK", 8, 3, 88);
@@ -265,8 +265,8 @@ void WordUi::refresh() {
       ipAddress_.isEmpty() || accessPointMode_ ? (accessPointMode_ ? kCyan : kMuted)
                                                : kGreen);
 
-  // The daily word follows the local calendar date from NTP. Without valid
-  // time (fresh boot, no Wi-Fi yet) keep a stable word instead of flickering.
+  // KST dates reset the daily quota, not a word's position in the list.
+  // Until the clock is valid show a stable preview without grading.
   const time_t now = time(nullptr);
   const bool timeValid = now > 1700000000;
   struct tm local {};
@@ -274,15 +274,24 @@ void WordUi::refresh() {
   if (timeValid) {
     localtime_r(&now, &local);
     const int32_t day = studyDay(static_cast<uint32_t>(now));
-    index = static_cast<size_t>(day) % kSampleWordCount;
     if (sampleDay_ != day) {
       sampleDay_ = day;
       sampleIndex_ = -1;
+      meaningVisible_ = false;
+      hintVisible_ = false;
+      graded_ = false;
+      studyMessage_ = "";
+      ReviewChoice choice;
+      const bool allowNew = study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit);
+      for (size_t i = 0; i < kSampleWordCount; ++i)
+        choice.consider(static_cast<uint16_t>(i), allowNew,
+                        study_.find(kSampleWords[i].word), static_cast<uint32_t>(now));
+      sampleIndex_ = choice.index();
     }
     char dateText[32];
-    snprintf(dateText, sizeof(dateText), "%s %02d %d - DAY %d",
-             kMonthNames[local.tm_mon], local.tm_mday, local.tm_year + 1900,
-             local.tm_yday + 1);
+    snprintf(dateText, sizeof(dateText), "%s %02d - NEW %u/%u",
+             kMonthNames[local.tm_mon], local.tm_mday,
+             study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(dateLabel_, dateText);
   } else {
     setLabelTextIfChanged(dateLabel_, "TIME WAITING FOR WI-FI");
@@ -349,19 +358,23 @@ void WordUi::refresh() {
 
   const ReviewRecord* progress = study_.find(word);
   const bool waiting = progress && !reviewDue(*progress, static_cast<uint32_t>(now));
-  if (art && front && !hintVisible_ && !waiting && !graded_) {
+  const bool eligible = study_.ready() && (progress ? !waiting :
+      study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
+  if (art && front && !hintVisible_ && eligible && !graded_) {
     lv_obj_remove_state(hintButton_, LV_STATE_DISABLED);
   } else {
     lv_obj_add_state(hintButton_, LV_STATE_DISABLED);
   }
-  const bool canGrade = meaningVisible_ && !graded_ && timeValid && !waiting;
+  const bool canGrade = meaningVisible_ && !graded_ && timeValid && eligible;
   for (lv_obj_t* button : {againButton_, goodButton_}) {
     if (canGrade && !(button == goodButton_ && hintVisible_)) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
   }
   const char* message = !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
+      !study_.ready() ? "STORAGE ERROR - CANNOT SAVE" :
       !studyMessage_.isEmpty() ? studyMessage_.c_str() :
-      waiting ? "SAVED - TAP REVIEW FOR MORE" :
+      waiting ? "SAVED - TAP NEXT FOR MORE" :
+      !eligible ? "DAILY LIMIT - TAP NEXT" :
       meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "THINK FIRST, THEN TAP";
   setLabelTextIfChanged(studyLabel_, message);
   if (audioFeedback_) setLabelTextIfChanged(studyLabel_, audio_.message());
@@ -471,11 +484,11 @@ void WordUi::studyEvent(lv_event_t* event) {
         (record && !reviewDue(*record, now))) return;
     const bool good = target == self->goodButton_;
     if (good && self->hintVisible_) return;
-    if (!self->study_.grade(self->shownWord_.c_str(), now, good)) {
+    if (!self->study_.grade(self->shownWord_.c_str(), now, good, self->settings_.dailyNewLimit)) {
       self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
     } else {
       self->graded_ = true;
-      self->studyMessage_ = good ? "SAVED - TAP REVIEW" : "AGAIN IN 10 MIN - TAP REVIEW";
+      self->studyMessage_ = good ? "SAVED - TAP NEXT" : "AGAIN IN 10 MIN - TAP NEXT";
     }
   } else if (target == self->hintButton_) {
     self->hintVisible_ = true;
@@ -494,10 +507,10 @@ bool WordUi::takeReviewRequest() {
   if (externalCard_) return true;
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   ReviewChoice choice;
-  const int32_t today = sampleDay_ >= 0 ? sampleDay_ % kSampleWordCount : -1;
+  const bool allowNew = study_.allowsNew(now, settings_.dailyNewLimit);
   for (size_t i = 0; i < kSampleWordCount; ++i) {
     const ReviewRecord* record = study_.find(kSampleWords[i].word);
-    choice.consider(static_cast<uint16_t>(i), today, record, now);
+    choice.consider(static_cast<uint16_t>(i), allowNew, record, now);
   }
   const int32_t best = choice.index();
   if (best >= 0) sampleIndex_ = best;

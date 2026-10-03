@@ -38,6 +38,7 @@ bool SettingsStore::load(AppSettings& settings) {
   settings.wifiPassword = doc["wifi"]["password"] | "";
   settings.brightness = constrain(doc["display"]["brightness"] | 220, 20, 255);
   settings.audioVolume = constrain(doc["audio"]["volume"] | 20, 0, 60);
+  settings.dailyNewLimit = constrain(doc["study"]["dailyNew"] | 5, 0, 20);
   settings.wordbookUrl = doc["wordbook"]["url"] | "";
   return true;
 }
@@ -49,6 +50,7 @@ bool SettingsStore::save(const AppSettings& settings) {
   doc["wifi"]["password"] = settings.wifiPassword;
   doc["display"]["brightness"] = settings.brightness;
   doc["audio"]["volume"] = settings.audioVolume;
+  doc["study"]["dailyNew"] = settings.dailyNewLimit;
   doc["wordbook"]["url"] = settings.wordbookUrl;
 
   String json;

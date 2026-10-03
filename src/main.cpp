@@ -18,7 +18,7 @@ wordmon::StudyStore study;
 wordmon::AudioPlayer audio;
 wordmon::WordUi wordUi(settings, study, audio);
 wordmon::WebPortal webPortal(settings, settingsStore);
-wordmon::Wordbook wordbook(settings);
+wordmon::Wordbook wordbook(settings, study);
 uint32_t pushedWordbookRevision = 0;
 
 bool accessPointMode = false;
@@ -81,10 +81,10 @@ void setup() {
                 wordmon::kVersion, WORDMON_PANEL_NAME);
 
   settingsStore.load(settings);
+  wordbook.begin(); // Mount LittleFS before reading/migrating study records.
   study.begin();
   wordUi.begin();
   startNetwork();
-  wordbook.begin();
   webPortal.begin(accessPointMode);
 }
 

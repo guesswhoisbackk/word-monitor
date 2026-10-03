@@ -27,12 +27,12 @@ enum class WordbookState {
 };
 
 // Route-B wordbook: downloads words.jsonl and art PNGs from the configured
-// base URL, caches both in LittleFS, and exposes today's card. The manifest
+// base URL, caches both in LittleFS, and exposes the active study card. The manifest
 // is JSON Lines (one {"w","m","e","a"} object per line). Daily selection and
-// due-review scans read one bounded line at a time without a RAM word list.
+// due/first-unseen scans read one bounded line at a time without a RAM word list.
 class Wordbook {
  public:
-  explicit Wordbook(AppSettings& settings);
+  Wordbook(AppSettings& settings, StudyStore& study);
 
   void begin();
   void loop();
@@ -57,6 +57,7 @@ class Wordbook {
   bool decodeArt(const String& path);
 
   AppSettings& settings_;
+  StudyStore& study_;
   WordbookState state_ = WordbookState::Disabled;
   uint32_t revision_ = 0;
   uint16_t wordCount_ = 0;

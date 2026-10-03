@@ -48,7 +48,9 @@ const char kWordbookStart[] PROGMEM = R"HTML("></section><section class="card"><
 
 const char kAudioStart[] PROGMEM = R"HTML("><label>발음 음량 (0: 음소거, 1~60, 처음에는 20 권장)</label><input type="number" name="audioVolume" min="0" max="60" value=")HTML";
 
-const char kPageEnd[] PROGMEM = R"HTML("></section><button type="submit">저장하고 다시 시작</button></form>
+const char kStudyStart[] PROGMEM = R"HTML("><label>하루 새 단어 (0~20, 처음에는 5개 권장)</label><input type="number" name="dailyNewLimit" min="0" max="20" value=")HTML";
+
+const char kPageEnd[] PROGMEM = R"HTML("><p class="muted">밀린 복습부터 시작하고 처음 평가한 새 단어만 하루 학습량에 셉니다. 쉬었던 날은 건너뛰지 않습니다. 0은 새 단어를 쉬고 복습만 합니다.</p></section><button type="submit">저장하고 다시 시작</button></form>
 <script>
 const wifiStatus=document.getElementById('wifiStatus');
 const wifiSelect=document.getElementById('wifiNetworkSelect');
@@ -154,6 +156,8 @@ void WebPortal::handleRoot() {
   if (!escapedUrl.isEmpty()) {
     server_.sendContent(escapedUrl);
   }
+  server_.sendContent_P(kStudyStart);
+  server_.sendContent(String(settings_.dailyNewLimit));
   server_.sendContent_P(kPageEnd);
   server_.sendContent(String());
 }
@@ -275,6 +279,7 @@ void WebPortal::handleSave() {
   }
   settings_.brightness = constrain(server_.arg("brightness").toInt(), 20, 255);
   if (server_.hasArg("audioVolume")) settings_.audioVolume = constrain(server_.arg("audioVolume").toInt(), 0, 60);
+  if (server_.hasArg("dailyNewLimit")) settings_.dailyNewLimit = constrain(server_.arg("dailyNewLimit").toInt(), 0, 20);
   settings_.wordbookUrl = server_.arg("wordbookUrl");
   settings_.wordbookUrl.trim();
   if (!settings_.wordbookUrl.isEmpty() &&

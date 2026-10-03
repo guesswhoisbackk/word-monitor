@@ -32,20 +32,29 @@ int main() {
   older.due = now - 100;
   ReviewRecord future{};
   future.due = now + 10;
-  choice.consider(3, 3, nullptr, now);  // Today's unstudied word.
+  choice.consider(3, true, nullptr, now);  // First unseen word, regardless of date.
   assert(choice.index() == 3);
-  choice.consider(0, 3, &future, now);
+  choice.consider(0, true, &future, now);
   assert(choice.index() == 3);
-  choice.consider(1, 3, &late, now);
-  choice.consider(2, 3, &older, now);
+  choice.consider(1, true, &late, now);
+  choice.consider(2, true, &older, now);
   assert(choice.index() == 2);  // Overdue reviews precede new words.
   ReviewChoice done;
-  done.consider(0, 0, &future, now);
-  done.consider(1, 0, nullptr, now);
+  done.consider(0, false, &future, now);
+  done.consider(1, false, nullptr, now);
   assert(done.index() == -1);
   ReviewChoice noClock;
-  noClock.consider(0, 0, nullptr, 0);
+  noClock.consider(0, true, nullptr, 0);
   assert(noClock.index() == -1);
+  ReviewChoice sequential;
+  sequential.consider(0, true, &future, now);
+  sequential.consider(1, true, nullptr, now);
+  sequential.consider(2, true, nullptr, now);
+  assert(sequential.index() == 1); // No skipping unseen words or wrapping by date.
+  ReviewChoice quota;
+  quota.consider(0, false, nullptr, now);
+  quota.consider(1, false, &late, now);
+  assert(quota.index() == 1); // A full daily quota still permits due reviews.
   assert(syncAllowed(1000, false, false, 0, 0));
   assert(!syncAllowed(1001, true, false, 1000, 0));
   assert(syncAllowed(601000, true, false, 1000, 0));

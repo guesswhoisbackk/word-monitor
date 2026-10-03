@@ -6,6 +6,7 @@
 #include <PNGdec.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <esp_partition.h>
 
 #include <cctype>
 #include <ctime>
@@ -92,13 +93,33 @@ bool validateManifest(const String& path, uint16_t& count) {
   return result == 0 && count > 0;
 }
 
+bool mountWordbookFilesystem() {
+  if (LittleFS.begin(false)) return true;
+  // Format only a completely erased partition on first installation. A failed
+  // mount of an existing filesystem must never erase the review history.
+  const esp_partition_t* partition = esp_partition_find_first(
+      ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, nullptr);
+  if (!partition) return false;
+  uint8_t bytes[256];
+  for (size_t offset = 0; offset < partition->size; offset += sizeof(bytes)) {
+    const size_t length = partition->size - offset < sizeof(bytes)
+        ? partition->size - offset : sizeof(bytes);
+    if (esp_partition_read(partition, offset, bytes, length) != ESP_OK) return false;
+    for (size_t i = 0; i < length; ++i) if (bytes[i] != 0xFF) return false;
+  }
+  return LittleFS.format() && LittleFS.begin(false);
+}
+
 }  // namespace
 
-Wordbook::Wordbook(AppSettings& settings) : settings_(settings) {}
+Wordbook::Wordbook(AppSettings& settings, StudyStore& study) : settings_(settings), study_(study) {}
 
 void Wordbook::begin() {
-  if (!LittleFS.begin(true)) {
+  if (!mountWordbookFilesystem()) {
     Serial.println(F("[wb] LittleFS mount failed; wordbook cache disabled"));
+    state_ = WordbookState::Failed;
+    ++revision_;
+    return;
   }
   // A fresh format has no /wb; downloads write into it, so create it up front.
   if (!LittleFS.exists(kWordbookDir) && !LittleFS.mkdir(kWordbookDir)) {
@@ -178,7 +199,7 @@ void Wordbook::attemptSync(int32_t yday) {
   Serial.printf("[wb] manifest synced: %u words\n",
                 static_cast<unsigned>(wordCount_));
   // Refresh content/art even on the same day, preserving the active review
-  // word across manifest reordering. If it was removed, use today's slot.
+  // word across manifest reordering. If removed, choose due/first unseen.
   int32_t activeIndex = -1;
   if (cardValid_ && cardDay_ == yday) {
     File file = LittleFS.open(kWordbookManifestPath, "r");
@@ -200,9 +221,11 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   if (wordCount_ == 0) {
     return;
   }
+  if (requestedIndex < 0 && yday >= 0) {
+    if (nextReview(study_)) return;
+  }
   const uint16_t index =
-      static_cast<uint16_t>(requestedIndex >= 0 ? requestedIndex :
-                            (yday >= 0 ? yday % wordCount_ : 0));
+      static_cast<uint16_t>(requestedIndex >= 0 ? requestedIndex : 0);
 
   String line;
   if (!readManifestLine(index, line)) {
@@ -255,13 +278,13 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
 
 bool Wordbook::nextReview(const StudyStore& study) {
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
-  if (!cardValid_ || now < 1700000000 || settings_.wordbookUrl.isEmpty()) return false;
+  if (!wordCount_ || now < 1700000000 || settings_.wordbookUrl.isEmpty()) return false;
   File file = LittleFS.open(kWordbookManifestPath, "r");
   if (!file) return false;
   ReviewChoice choice;
   uint16_t index = 0;
   const int32_t day = todayDay();
-  const int32_t today = day >= 0 ? day % wordCount_ : -1;
+  const bool allowNew = study.allowsNew(now, settings_.dailyNewLimit);
   while (file.available() && index < wordCount_) {
     String line;
     if (readEntry(file, line) != 1) break;
@@ -269,7 +292,7 @@ bool Wordbook::nextReview(const StudyStore& study) {
     if (!deserializeJson(doc, line)) {
       const char* word = doc["w"] | "";
       const ReviewRecord* record = study.find(word);
-      if (*word) choice.consider(index, today, record, now);
+      if (*word) choice.consider(index, allowNew, record, now);
     }
     ++index;
   }
@@ -282,6 +305,11 @@ bool Wordbook::nextReview(const StudyStore& study) {
 
 bool Wordbook::fetchToFile(const String& url, const String& path,
                            size_t maxBytes, uint16_t* lineCount) {
+  if (lineCount) {
+    const size_t total = LittleFS.totalBytes();
+    const size_t budget = total > kStudyStorageReserveBytes ? total - kStudyStorageReserveBytes : 0;
+    if (maxBytes > budget) maxBytes = budget;
+  }
   // NAS/home-server hosts often serve plain http:// on the LAN; pick the
   // transport by URL scheme. https:// skips cert validation: the wordbook is
   // read-only content and this keeps the CA bundle off the 4MB flash (and

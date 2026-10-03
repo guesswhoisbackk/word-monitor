@@ -2,6 +2,9 @@
 #include <cstdint>
 
 namespace wordmon {
+constexpr uint16_t kMaxStudyWords = 1000;
+// Two full snapshots plus filesystem metadata, excluding disposable caches.
+constexpr uint32_t kStudyStorageReserveBytes = 2UL * (20UL + kMaxStudyWords * 16UL) + 8192UL;
 constexpr uint32_t kWordbookSyncIntervalMs = 12UL * 60 * 60 * 1000;
 constexpr uint32_t kWordbookRetryMs = 10UL * 60 * 1000;
 inline int32_t studyDay(uint32_t now) {
@@ -18,14 +21,14 @@ inline bool reviewDue(const ReviewRecord& record, uint32_t now) {
 }
 class ReviewChoice {
  public:
-  void consider(uint16_t index, int32_t today, const ReviewRecord* record,
+  void consider(uint16_t index, bool allowNew, const ReviewRecord* record,
                 uint32_t now) {
     if (now < 1700000000) return;
     if (record && reviewDue(*record, now) && record->due < earliest_) {
       dueIndex_ = index;
       earliest_ = record->due;
     }
-    if (!record && index == today) newIndex_ = index;
+    if (!record && allowNew && newIndex_ < 0) newIndex_ = index;
   }
   int32_t index() const { return dueIndex_ >= 0 ? dueIndex_ : newIndex_; }
  private:
