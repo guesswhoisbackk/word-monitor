@@ -47,7 +47,7 @@
 
 단어장 저장소: **https://github.com/guesswhoisbackk/wordbook** (2026-10-03 확인: 단어 8개·그림 참조 1개, 로컬 `C:\antigravity\wordbook` 클론 없음).
 
-**980개 단어·그림이 이 기기에 준비된 상태는 아닙니다.** 다른 프로젝트에서 921개 항목과 대응 그림을 찾았지만 아직 기기용으로 변환하거나 연결하지 않았습니다. 상세 경로와 제한은 [콘텐츠 확인 기록](docs/CONTENT-AUDIT-2026-10-03.md)을 참고하세요. 1,000개 학습 기록 지원과 980개 콘텐츠 준비는 별개입니다. 128KiB LittleFS에서 안전한 저장 여유 약 40KiB를 제외한 크기로 manifest를 제한하며, 기존 manifest와 다운로드 임시 파일이 함께 들어가야 하므로 실제 동기화 한도는 더 낮습니다.
+**980개 단어·그림이 이 기기에 준비된 상태는 아닙니다.** 사용자 요청으로 다른 프로젝트의 921개 항목·그림을 [이 프로젝트의 자료 폴더](content/illustrated-vocabulary/README.md)에 가져왔습니다. 영어 이름의 중복을 묶으면 893개입니다. 기기용 변환·연결은 아직입니다. 상세 경로와 제한은 [콘텐츠 확인 기록](docs/CONTENT-AUDIT-2026-10-03.md)을 참고하세요. 1,000개 학습 기록 지원과 콘텐츠 준비는 별개입니다. 128KiB LittleFS에서 안전한 저장 여유 약 40KiB를 제외한 크기로 manifest를 제한하며, 기존 manifest와 다운로드 임시 파일이 함께 들어가야 하므로 실제 동기화 한도는 더 낮습니다.
 기기 설정 페이지의 "단어장 기본 URL"에 넣을 주소: **`https://cdn.jsdelivr.net/gh/guesswhoisbackk/wordbook@main`**
 (NAS/홈서버로 바꾸고 싶을 때는 Web Station·nginx 등으로 폴더를 노출하고 `http://<NAS_IP>:<포트>/<경로>`를 쓰면 된다. 평문 http도 지원.)
 

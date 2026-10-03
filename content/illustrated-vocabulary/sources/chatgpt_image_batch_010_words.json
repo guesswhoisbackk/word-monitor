@@ -1,0 +1,13 @@
+[
+  {"id":"911_liver","ko":"간","en":"Liver","subject":"one simple kid-friendly liver organ shape"},
+  {"id":"912_moon","ko":"달","en":"Moon","subject":"one full moon"},
+  {"id":"913_water","ko":"물","en":"Water","subject":"one clear splash of water"},
+  {"id":"914_path","ko":"길","en":"Path","subject":"one winding path"},
+  {"id":"915_persimmon","ko":"감","en":"Persimmon","subject":"one ripe persimmon"},
+  {"id":"916_seaweed","ko":"김","en":"Seaweed","subject":"one sheet of dried seaweed"},
+  {"id":"917_chestnut","ko":"밤","en":"Chestnut","subject":"one chestnut"},
+  {"id":"918_river","ko":"강","en":"River","subject":"one simple river bend"},
+  {"id":"919_room","ko":"방","en":"Room","subject":"one simple room interior"},
+  {"id":"920_award","ko":"상","en":"Award","subject":"one trophy award"},
+  {"id":"921_soup","ko":"탕","en":"Soup","subject":"one bowl of soup"}
+]
