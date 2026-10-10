@@ -220,7 +220,7 @@ void WordUi::createLayout() {
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
-  studyLabel_ = makeLabel(screen, "THINK FIRST, THEN TAP", 8, 231, 224,
+  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 231, 224,
                          &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
   auto button = [&](const char* text, int x, int y, int width) {
     lv_obj_t* obj = lv_button_create(screen);
@@ -377,14 +377,11 @@ void WordUi::refresh() {
   const bool waiting = progress && !reviewDue(*progress, static_cast<uint32_t>(now));
   const bool eligible = study_.ready() && (progress ? !waiting :
       study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
-  if (art && front && !hintVisible_ && eligible && !graded_) {
-    lv_obj_remove_state(hintButton_, LV_STATE_DISABLED);
-  } else {
-    lv_obj_add_state(hintButton_, LV_STATE_DISABLED);
-  }
-  const bool canGrade = meaningVisible_ && !graded_ && timeValid && eligible;
+  // Grading works from either face (picture decks get rated on sight); the
+  // reveal is still one tap away for checking the meaning/example.
+  const bool canGrade = !graded_ && timeValid && eligible;
   for (lv_obj_t* button : {againButton_, goodButton_}) {
-    if (canGrade && !(button == goodButton_ && hintVisible_)) lv_obj_remove_state(button, LV_STATE_DISABLED);
+    if (canGrade) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
   }
   const char* message = !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
@@ -392,7 +389,7 @@ void WordUi::refresh() {
       !studyMessage_.isEmpty() ? studyMessage_.c_str() :
       waiting ? "SAVED - TAP NEXT FOR MORE" :
       !eligible ? "DAILY LIMIT - TAP NEXT" :
-      meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "THINK FIRST, THEN TAP";
+      meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "RECALL IT, THEN RATE";
   setLabelTextIfChanged(studyLabel_, message);
   if (audioFeedback_) setLabelTextIfChanged(studyLabel_, audio_.message());
 
@@ -498,15 +495,18 @@ void WordUi::studyEvent(lv_event_t* event) {
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
-    if (!self->meaningVisible_ || self->graded_ ||
-        (record && !reviewDue(*record, now))) return;
+    if (self->graded_ || (record && !reviewDue(*record, now))) return;
     const bool good = target == self->goodButton_;
-    if (good && self->hintVisible_) return;
     if (!self->study_.grade(self->shownWord_.c_str(), now, good, self->settings_.dailyNewLimit)) {
       self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
     } else {
       self->graded_ = true;
-      self->studyMessage_ = good ? "SAVED - TAP NEXT" : "AGAIN IN 10 MIN - TAP NEXT";
+      Serial.printf("[ui] grade %s -> %s\n", self->shownWord_.c_str(),
+                    good ? "GOT IT" : "AGAIN");
+      // Advance straight to the next card: an explicit NEXT after every
+      // grade only confused the picture-deck usage this device serves.
+      self->audio_.cancel();
+      self->reviewRequested_ = true;
     }
   } else if (target == self->hintButton_) {
     Serial.printf("[ui] hint press (art=%d)\n",
