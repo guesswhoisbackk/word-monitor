@@ -5,7 +5,7 @@
 namespace wordmon {
 
 constexpr char kAppName[] = "WordMon Studio";
-constexpr char kVersion[] = "0.4.0";
+constexpr char kVersion[] = "0.5.0";
 constexpr char kPreferencesNamespace[] = "wordmon";
 constexpr char kPreferencesKey[] = "config";
 constexpr uint16_t kScreenWidth = 240;
@@ -56,7 +56,8 @@ constexpr size_t kWordbookMaxArtBytes = 64 * 1024;
 constexpr uint16_t kWordbookMaxArtWidth = 120;
 // Art taller than the 88px card slot would collide with the hint label.
 constexpr uint16_t kWordbookMaxArtHeight = 88;
-// RGB565 blend background for transparent PNG art: 0x00BBGGRR of kCard.
-constexpr uint32_t kWordbookArtBackground = 0x002D1B0D;
+// Art files are WMR1: pre-rendered RGB565 already blended over the card
+// color (kCard in word_ui.cpp) by scripts/build_illustrated_content.py, so
+// the firmware needs no image decoder on the heap.
 
 }  // namespace wordmon

@@ -1,6 +1,56 @@
 # WordMon Studio 인수인계 문서
 
-## 다음 세션용 최신 요약 — 2026-10-10
+## 다음 세션용 최신 요약 — 2026-10-10 저녁, v0.5.0 893단어 적용
+
+**프로젝트:** `C:\antigravity\word monitor\word-monitor`  
+**원격:** https://github.com/guesswhoisbackk/word-monitor (`main`)  
+**소스 버전:** v0.5.0  
+**이번 세션 전 커밋:** `265a5e2`
+
+사용자가 "가져온 893개 자료를 기기에 활용해 변환·연결·검증"을 요청했고 기기를 연결해 뒀다. **변환·서버 배포·기기 플래시·시리얼 로그 검증을 완료했다. 화면 육안 확인(한글·그림·터치)과 스피커 검증은 사용자 몫으로 남아 있다.**
+
+### 이번 세션에서 한 일
+
+1. **파티션 재구성** — 쓰지 않던 두 번째 OTA 슬롯(1.875MiB)을 회수해 `partitions_wordmon.csv`로 앱 2.25MiB + LittleFS **1.625MiB**(기존 128KiB)를 만들었다. NVS·앱 오프셋은 그대로라 기존 플래시 워크플로(앱 `0x10000`)와 호환된다. 최초 적용 시 `esptool erase_region 0x250000 0x1A0000`로 새 FS 영역을 지운 뒤 포맷 유도했다(이동 전 기기에는 학습 이력이 없었고, NVS 이전 이력도 비어 있었다 — `reviews-v1 NOT_FOUND` 확인).
+2. **한글 폰트** — `scripts/make_kr_font.py`가 자료의 뜻에 쓰이는 **526개 음절 + ASCII**를 맑은 고딕 16px 4bpp로 추출해 `src/font_kr_16.c` 생성(npx lv_font_conv, Node 필요). `word_ui.cpp`의 뜻 라벨이 이 폰트로 한글을 표시한다. 새 한글 텍스트에 서브셋 밖 음절이 있으면 빈칸으로 보인다 — 스크립트 재실행·재빌드 필요.
+3. **그림 PNG→WMR1 전환** — 실기기 로그에서 TLS 세션 후 힙 단편화로 PNG 디코더(46KiB 연속) 할당이 반복 실패하는 것을 확인했다(AUDIO.md의 오디오 48KiB 예산과도 충돌). 그래서 **PNG 디코딩을 기기에서 아예 제거**하고, 변환 시점에 카드색(0x0D1B2D)으로 합성한 RGB565 원시 파일(WMR1: 매직+가로·세로 uint16le+픽셀)을 배포한다. `Wordbook::loadArt`가 픽셀 버퍼로 바로 읽는다. 아트 픽셀 버퍼(21KB)는 Wi-Fi 전에 미리 할당한다. PNGdec는 링크에서 빠져 Flash 약 28KB 절감.
+4. **콘텐츠 배포** — `scripts/build_illustrated_content.py` + `scripts/wmr.py`(공용 WMR 모듈, `wordbook_art.py`도 WMR 출력으로 갱신)로 893단어 변환: manifest 52,000바이트, 그림 총 약 14.3MB(평균 16KB). wordbook 저장소에 푸시(커밋 `678d9aa`), purge.jsdelivr.net 갱신 완료.
+5. **기기 적용·검증** — COM6(CH340)으로 파티션 테이블(`0x8000`) + v0.5.0 앱(`0x10000`) + FS 영역 erase 후 부팅 로그 확인: `WordMon Studio v0.5.0`, LittleFS 포맷·마운트, **`manifest synced: 893 words`**, `card #0: pencil`, WMR 헤더 검증 동작(구형 PNG 캐시를 정상 거부). 호스트 테스트 3종 통과, 두 패널 빌드(RAM 36.3%, ILI9341 Flash 78.5%)와 v0.5.0 BIN 4종 생성 완료.
+
+### 현재 알려진 이슈
+
+- **jsDelivr `@main` 분기 별칭 캐시가 최대 12시간** 걸릴 수 있다. 세션 중엔 커밋 고정 URL(`@678d9aa`)만 새 manifest를 뿌렸다. 기기는 캐시된 구 manifest(.png 참조)로 그림 없이 동작하다가 10분 주기 재시도로 alias 갱신 시 자동 복구된다. 다음 세션에서 `curl https://cdn.jsdelivr.net/gh/guesswhoisbackk/wordbook@main/words.jsonl | head -1`이 `w_pencil.wmr`를 가리키는지 먼저 확인한다.
+- 부팅 초반 `No core dump partition found` 에러는 coredump 파티션 제거로 인한 정상 로그다.
+- manifest 다운로드가 가끔 일시 실패한다(재시도로 회복). jsDelivr/TLS 일시 오류로 보이며 지속성은 다음 세션에서 관찰.
+
+### 남은 작업 (우선순위 순)
+
+1. **사용자 실물 확인** — 화면에서 한글 뜻 표시, HINT 그림(카드색 합성), 카드 터치·NEXT·평가, SPEAK/STOP(스피커 물리 연결 상태 재확인). `docs/HARDWARE_TEST.md` v0.5.0 절 참고.
+2. **예문(`e`)·외부 발음(`s`) 생성** — 현재 manifest는 뜻+그림만 있다. 예문은 893개 일괄 작성 필요, 발음은 `scripts/prepare_audio.ps1` 확장 후 wordbook에 WAV 배포(리포 용량 약 20MB 추가 예상, jsDelivr 50MB 한도 내).
+3. 오디오 48KiB 버퍼도 TLS 후 단편화 힙에서 실패할 수 있다(미검증). 외부 WAV 배포 전 부팅 시 선할당 또는 스트리밍 재생 검토.
+4. 단어 뜻·난이도·학습 순서 검수(현재는 원본 배치 순서).
+5. 동기화 중 UI 블로킹, HTTPS 인증서 검증 생략은 종전대로 남아 있다.
+
+### 다음 세션 시작 순서
+
+1. CDN @main 갱신 확인 → 기기 재부팅(포트 열기만으로 리셋) 후 `read_log.py COM6 45`로 `manifest synced: 893 words` + `card #0: pencil (art)` 확인.
+2. 사용자와 함께 화면·터치·스피커 육안 검증(HARDWARE_TEST v0.5.0 절).
+3. 그 다음은 예문·발음 생성 작업으로 이어간다.
+
+```powershell
+Set-Location 'C:\antigravity\word monitor\word-monitor'
+git status -sb
+cmd /c scripts\test_host.cmd
+$env:PATH = 'C:\antigravity\bambu-monitoring\.venv\Scripts;' + $env:PATH
+.\scripts\build.ps1 -Environment all
+# 기기 로그: .venv python scripts\read_log.py COM6 45
+```
+
+보드용 앱: `build/WordMonitor-v0.5.0-cyd-ili9341-firmware.bin`(앱 `0x10000`). merged는 `0x0`용. **파티션 테이블은 이미 기기에 적용됨** — 다른 보드에 처음 적용할 때만 `0x8000` 기록 + FS 영역 erase가 필요하다.
+
+---
+
+## 이전 인계 — 2026-10-10 아침 (v0.4.0 상태)
 
 **프로젝트:** `C:\antigravity\word monitor\word-monitor`  
 **원격:** https://github.com/guesswhoisbackk/word-monitor (`main`)  

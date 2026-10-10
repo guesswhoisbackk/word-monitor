@@ -1,7 +1,7 @@
 """Add or update a wordbook entry from an SVG illustration.
 
 Usage (from the project root):
-  # word with artwork: renders apple.svg -> docs/wordbook-sample/apple.png
+  # word with artwork: renders apple.svg -> docs/wordbook-sample/apple.wmr
   .venv/Scripts/python.exe scripts/wordbook_art.py docs/apple.svg \
       --word apple --meaning "a round red fruit" --example "She ate an apple."
 
@@ -10,8 +10,9 @@ Usage (from the project root):
       --word resilient --meaning "bounces back quickly" \
       --example "The little shop survived it all."
 
-The art PNG keeps its alpha channel; the device blends it onto the card
-background when decoding. The words.jsonl entry is upserted by word.
+The art file is WMR1 (pre-rendered RGB565 blended over the card color, see
+scripts/wmr.py); the device reads it without a decoder. The words.jsonl
+entry is upserted by word.
 """
 
 import argparse
@@ -23,6 +24,7 @@ from PIL import Image
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from svg_to_header import render_svg  # noqa: E402
+from wmr import render_wmr  # noqa: E402
 
 
 def upsert(wordbook_dir: pathlib.Path, entry: dict) -> None:
@@ -67,8 +69,8 @@ def main() -> None:
             Image.LANCZOS,
         )
         args.dir.mkdir(parents=True, exist_ok=True)
-        art_name = f"{args.word}.png"
-        image.save(args.dir / art_name, optimize=True)
+        art_name = f"{args.word}.wmr"
+        (args.dir / art_name).write_bytes(render_wmr(image))
         entry["a"] = art_name
         print(f"art: {args.dir / art_name} ({image.width}x{image.height})")
 

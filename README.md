@@ -2,7 +2,15 @@
 
 두 번째 ESP32에서 영어 단어를 떠올리고 간격을 두어 복습하는 학습기입니다. `C:\antigravity\bambu-monitoring`의 디스플레이·터치·Wi-Fi 설정 계층을 가져왔습니다.
 
-현재 소스 버전은 **v0.4.0 순차 학습·하루 학습량 추가판**입니다. 이번 버전의 보드 업로드와 실물 검증은 아직 하지 않았습니다.
+현재 소스 버전은 **v0.5.0 893단어 그림 단어장·한글 폰트 추가판**입니다. 2026-10-10에 실기기(COM6)에 적용해 부팅·동기화·그림 로드까지 시리얼 로그로 확인했고, 화면 표시와 터치는 사용자 확인이 남아 있습니다.
+
+## 893단어 그림 단어장과 한글 표시 (v0.5.0)
+
+- `content/illustrated-vocabulary/`의 893개 묶음 단어를 기기용으로 변환해 공개 단어장 서버에 배포했습니다. `scripts\build_illustrated_content.py`가 words.jsonl과 그림을 함께 생성합니다.
+- **그림은 PNG가 아니라 WMR1 형식**(헤더 8바이트 + 카드 배경색으로 미리 합성한 RGB565 픽셀)로 배포합니다. 기기는 파일을 픽셀 버퍼로 바로 읽으므로 PNG/zlib 디코더와 46KiB 힙 할당이 필요 없습니다. TLS 사용 후 힙이 단편화해 PNG 디코딩이 실패하는 문제를 제거합니다.
+- 한글 뜻을 표시합니다. `scripts\make_kr_font.py`가 맑은 고딕 16px에서 현재 단어장의 526개 음절 + ASCII 서브셋을 뽑아 `src/font_kr_16.c`를 생성합니다. 새 한글 텍스트에 서브셋 밖 음절이 있으면 빈칸으로 보이니 스크립트를 다시 실행한 뒤 재빌드해야 합니다.
+- 파티션 테이블을 `partitions_wordmon.csv`로 바꿔 쓰지 않던 두 번째 OTA 슬롯(1.875MiB)을 회수했습니다. 앱 파티션 2.25MiB(한글 폰트 여유), LittleFS **1.625MiB**(128KiB에서 확대). NVS 위치는 그대로라 설정·학습 이력이 유지됩니다.
+- **파티션 테이블을 처음 적용할 때는 새 LittleFS 영역(`0x250000`, `0x1A0000`)을 반드시 지우고** 앱(`0x10000`)과 파티션 테이블(`0x8000`)을 기록해야 합니다. 지우지 않으면 펌웨어가 기존 데이터가 있는 파일시스템을 보호하려고 마운트 실패로 남습니다.
 
 ## 발음 듣기 (v0.3.0)
 
@@ -30,7 +38,7 @@
 - 오프라인에서도 캐시를 읽습니다. 전원을 완전히 끈 뒤 현재 시간을 모르면 첫 캐시 단어는 볼 수 있지만, 정확한 복습 예약을 위해 시간 동기화 전 평가·기한 복습을 제한합니다.
 - 다운로드 실패 시 최소 10분 간격으로 재시도합니다. 잘린 응답, 저장 실패, 잘못된 JSON은 기존 단어장 캐시를 덮어쓰지 않습니다. 빈 줄은 무시하며, 항목당 최대 512바이트·최대 1,000항목을 검증합니다. 실제 캐시 용량은 LittleFS의 남은 공간에 제한됩니다.
 
-**남은 작업:** 실제 스피커 출력·음량·재생 중 터치 검증, 한글 폰트 추가. 현재 Montserrat 폰트는 한글 뜻·예문을 표시하지 못하므로 기기용 콘텐츠는 영어 풀이를 사용해야 합니다. 단어장/그림 다운로드 중 UI 멈춤과 기존 HTTPS 인증서 검증 생략도 남아 있습니다. 오디오 다운로드·재생은 별도 작업에서 실행합니다.
+**남은 작업:** 실물 화면에서 한글·그림·터치 육안 확인, 스피커 출력 검증, 893단어용 예문과 외부 발음 생성. 현재 manifest는 뜻(한글)과 그림만 있고 `e`(예문)·`s`(발음) 필드는 비어 있습니다. 단어장/그림 다운로드 중 UI 멈춤과 기존 HTTPS 인증서 검증 생략도 남아 있습니다.
 
 학습 설계 참고: [Spacing, Feedback, and Testing Boost Vocabulary Learning in a Web Application](https://pmc.ncbi.nlm.nih.gov/articles/PMC8638698/).
 
@@ -45,19 +53,18 @@
 
 ## 인터넷 단어장 꾸리기
 
-단어장 저장소: **https://github.com/guesswhoisbackk/wordbook** (2026-10-03 확인: 단어 8개·그림 참조 1개, 로컬 `C:\antigravity\wordbook` 클론 없음).
+단어장 저장소: **https://github.com/guesswhoisbackk/wordbook** — 2026-10-10 확인: **단어 893개 + WMR1 그림 893개 배포 완료**(커밋 `678d9aa`). 로컬 클론은 `C:\antigravity\wordbook`, 배포는 `scripts\push_wordbook.ps1`.
 
-**980개 단어·그림이 이 기기에 준비된 상태는 아닙니다.** 사용자 요청으로 다른 프로젝트의 921개 항목·그림을 [이 프로젝트의 자료 폴더](content/illustrated-vocabulary/README.md)에 가져왔습니다. 영어 이름의 중복을 묶으면 893개입니다. 기기용 변환·연결은 아직입니다. 상세 경로와 제한은 [콘텐츠 확인 기록](docs/CONTENT-AUDIT-2026-10-03.md)을 참고하세요. 1,000개 학습 기록 지원과 콘텐츠 준비는 별개입니다. 128KiB LittleFS에서 안전한 저장 여유 약 40KiB를 제외한 크기로 manifest를 제한하며, 기존 manifest와 다운로드 임시 파일이 함께 들어가야 하므로 실제 동기화 한도는 더 낮습니다.
+그림 단어 자료의 원본과 변환 산출물은 [이 프로젝트의 자료 폴더](content/illustrated-vocabulary/README.md)에 있다. 원본 921개 중 영어 이름 중복을 묶은 893개를 기기용으로 변환했으며, 상세 기록은 [콘텐츠 확인 기록](docs/CONTENT-AUDIT-2026-10-03.md)을 참고. 학습 순서는 아직 원본 배치 순서이지 검수된 난이도 순서가 아니다.
 기기 설정 페이지의 "단어장 기본 URL"에 넣을 주소: **`https://cdn.jsdelivr.net/gh/guesswhoisbackk/wordbook@main`**
 (NAS/홈서버로 바꾸고 싶을 때는 Web Station·nginx 등으로 폴더를 노출하고 `http://<NAS_IP>:<포트>/<경로>`를 쓰면 된다. 평문 http도 지원.)
 
-단어를 추가할 때는 프로젝트 루트에서:
+자료 일괄 재변환(그림·manifest 재생성)은 프로젝트 루트에서:
 ```powershell
-.\.venv\Scripts\python.exe scripts\wordbook_art.py docs\새단어.svg --word 새단어 --meaning "뜻" --example "예문" --dir C:\antigravity\wordbook
+C:\antigravity\bambu-monitoring\.venv\Scripts\python.exe scripts\build_illustrated_content.py
 .\scripts\push_wordbook.ps1
 ```
-SVG가 없는 단어는 `--word/--meaning/--example`만 넣으면 텍스트만 추가됩니다. 푸시하면 다음 동기화(부팅 시 또는 12시간 주기, jsDelivr 캐시로 최대 몇 시간 추가)에 반영됩니다.
-그림 규격: 세로 최대 88px(권장 80×88). 그보다 크거나 64KB를 넘는 PNG는 무시됩니다.
+그림 규격: **WMR1 형식**(매직 4바이트 + 가로·세로 uint16 리틀엔디언 + 카드색 합성 RGB565 픽셀). 최대 120×88, 64KiB. 변환 스크립트가 원본 PNG에서 자동 생성하며, 배경 합성 색은 `src/word_ui.cpp`의 카드색과 맞춰야 한다.
 
 자세한 계획과 다음 작업은 `docs/HANDOFF.md`을, 실제 보드 시험 순서는 `docs/HARDWARE_TEST.md`을 보세요.
 

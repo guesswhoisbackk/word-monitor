@@ -3,14 +3,13 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
-#include <PNGdec.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <esp_partition.h>
 
 #include <cctype>
+#include <cstring>
 #include <ctime>
-#include <new>
 
 #include "app_config.hpp"
 #include "audio_policy.hpp"
@@ -19,24 +18,13 @@ namespace wordmon {
 
 namespace {
 
-// PNGdec is callback-driven; the library instance and the decode target are
-// file-scope because the per-line callback has no user-data parameter. The
-// PNG object embeds a 32KB zlib window (~46KB total), which does not fit the
-// ESP32's static DRAM budget next to Wi-Fi + LVGL, so it lives on the heap,
-// allocated only during decode, then freed to leave room for audio/TLS.
-// The displayed pixel buffer is allocated once and reused across cards.
-PNG* s_png = nullptr;
-uint16_t* s_pngDest = nullptr;
-
-int32_t pngLineDraw(PNGDRAW* draw) {
-  if (s_png != nullptr && s_pngDest != nullptr) {
-    s_png->getLineAsRGB565(
-        draw, s_pngDest + static_cast<size_t>(draw->y) * draw->iWidth,
-        PNG_RGB565_LITTLE_ENDIAN, kWordbookArtBackground);
-  }
-  // PNGdec stops decoding when the draw callback returns 0.
-  return 1;
-}
+// Art travels as WMR1: an 8-byte header (magic, uint16le width/height) plus
+// RGB565 pixels pre-blended over the card color by scripts/build_illustrated_
+// content.py. Loading is a bounded file read into the shared pixel buffer, so
+// no decoder allocation is needed at runtime; the previous PNG path required
+// a 46KiB contiguous heap block that fragmentation after TLS could starve.
+constexpr char kArtMagic[] = {'W', 'M', 'R', '1'};
+constexpr size_t kArtHeaderBytes = 8;
 
 // PNGdec's bundled zlib defines a `local` macro; keep plain names here.
 int32_t todayDay() {
@@ -124,6 +112,16 @@ void Wordbook::begin() {
   // A fresh format has no /wb; downloads write into it, so create it up front.
   if (!LittleFS.exists(kWordbookDir) && !LittleFS.mkdir(kWordbookDir)) {
     Serial.println(F("[wb] could not create cache directory"));
+  }
+  // Reserve the art pixel buffer up front, before Wi-Fi/TLS fragment the
+  // heap; loading art later must never depend on a large runtime allocation.
+  if (artPixels_ == nullptr) {
+    artPixels_ = static_cast<uint16_t*>(
+        malloc(static_cast<size_t>(kWordbookMaxArtWidth) *
+               kWordbookMaxArtHeight * 2));
+    if (artPixels_ == nullptr) {
+      Serial.println(F("[wb] art: pixel buffer alloc failed"));
+    }
   }
 
   uint16_t lines = 0;
@@ -263,8 +261,8 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
       }
     }
     if (LittleFS.exists(cachePath)) {
-      if (!decodeArt(cachePath)) {
-        Serial.printf("[wb] art decode failed: %s\n", artName.c_str());
+      if (!loadArt(cachePath)) {
+        Serial.printf("[wb] art load failed: %s\n", artName.c_str());
       } else {
         evictOtherArt(artName);
       }
@@ -432,90 +430,55 @@ bool Wordbook::readManifestLine(uint16_t index, String& out) {
   return true;
 }
 
-bool Wordbook::decodeArt(const String& path) {
-  if (s_png == nullptr) {
-    s_png = new (std::nothrow) PNG();
-    if (s_png == nullptr) {
-      Serial.printf("[wb] art: PNG alloc failed (heap %u)\n",
-                    static_cast<unsigned>(ESP.getFreeHeap()));
-      return false;
-    }
-  }
-  struct ReleaseDecoder {
-    ~ReleaseDecoder() { delete s_png; s_png = nullptr; }
-  } releaseDecoder;
-  // One buffer at the maximum art size, reused for every card.
+bool Wordbook::loadArt(const String& path) {
   if (artPixels_ == nullptr) {
-    artPixels_ = static_cast<uint16_t*>(
-        malloc(static_cast<size_t>(kWordbookMaxArtWidth) *
-               kWordbookMaxArtHeight * 2));
-    if (artPixels_ == nullptr) {
-      Serial.println(F("[wb] art: pixel buffer alloc failed"));
-      return false;
-    }
+    Serial.println(F("[wb] art: no pixel buffer"));
+    return false;
   }
-
   File file = LittleFS.open(path, "r");
   if (!file) {
     Serial.println(F("[wb] art: cache open failed"));
     return false;
   }
   const size_t size = file.size();
-  if (size == 0 || size > kWordbookMaxArtBytes) {
+  if (size <= kArtHeaderBytes || size > kWordbookMaxArtBytes) {
     Serial.printf("[wb] art: bad file size %u\n",
                   static_cast<unsigned>(size));
     file.close();
     return false;
   }
-
-  // PNGdec needs the whole file in RAM; art files are a few KB.
-  uint8_t* buffer = static_cast<uint8_t*>(malloc(size));
-  if (buffer == nullptr) {
+  uint8_t header[kArtHeaderBytes];
+  if (file.read(header, sizeof(header)) != sizeof(header)) {
     file.close();
     return false;
   }
-  const size_t read = file.read(buffer, size);
+  const uint16_t width = static_cast<uint16_t>(header[4]) |
+                         (static_cast<uint16_t>(header[5]) << 8);
+  const uint16_t height = static_cast<uint16_t>(header[6]) |
+                          (static_cast<uint16_t>(header[7]) << 8);
+  if (memcmp(header, kArtMagic, sizeof(kArtMagic)) != 0 ||
+      width == 0 || height == 0 || width > kWordbookMaxArtWidth ||
+      height > kWordbookMaxArtHeight ||
+      size != kArtHeaderBytes + static_cast<size_t>(width) * height * 2) {
+    Serial.printf("[wb] art: bad WMR1 header %ux%u for %u bytes\n", width,
+                  height, static_cast<unsigned>(size));
+    file.close();
+    return false;
+  }
+  const size_t pixels = static_cast<size_t>(width) * height * 2;
+  if (file.read(reinterpret_cast<uint8_t*>(artPixels_), pixels) != pixels) {
+    Serial.println(F("[wb] art: short pixel read"));
+    file.close();
+    return false;
+  }
   file.close();
-  if (read != size) {
-    free(buffer);
-    return false;
-  }
-
-  if (s_png->openRAM(buffer, size, pngLineDraw) != PNG_SUCCESS) {
-    Serial.printf("[wb] art: openRAM failed (magic %02x%02x)\n",
-                  buffer[0], size > 1 ? buffer[1] : 0);
-    free(buffer);
-    return false;
-  }
-  const int width = s_png->getWidth();
-  const int height = s_png->getHeight();
-  if (width <= 0 || height <= 0 || width > kWordbookMaxArtWidth ||
-      height > kWordbookMaxArtHeight) {
-    Serial.printf("[wb] art: %dx%d exceeds %ux%u\n", width, height,
-                  static_cast<unsigned>(kWordbookMaxArtWidth),
-                  static_cast<unsigned>(kWordbookMaxArtHeight));
-    s_png->close();
-    free(buffer);
-    return false;
-  }
-
-  s_pngDest = artPixels_;
-  const int result = s_png->decode(nullptr, 0);
-  s_pngDest = nullptr;
-  s_png->close();
-  free(buffer);
-  if (result != PNG_SUCCESS) {
-    Serial.printf("[wb] art: decode rc=%d (heap %u)\n", result,
-                  static_cast<unsigned>(ESP.getFreeHeap()));
-    return false;
-  }
 
   artDsc_ = lv_image_dsc_t{};
   artDsc_.header.magic = LV_IMAGE_HEADER_MAGIC;
   artDsc_.header.cf = LV_COLOR_FORMAT_RGB565;
   artDsc_.header.w = width;
   artDsc_.header.h = height;
-  artDsc_.data_size = static_cast<size_t>(width) * height * 2;
+  artDsc_.data_size = pixels;
   artDsc_.data = reinterpret_cast<const uint8_t*>(artPixels_);
   card_.art = &artDsc_;
   return true;

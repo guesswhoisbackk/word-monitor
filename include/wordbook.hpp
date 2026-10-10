@@ -26,10 +26,11 @@ enum class WordbookState {
   Failed,    // no manifest at all (device falls back to the built-in pack)
 };
 
-// Route-B wordbook: downloads words.jsonl and art PNGs from the configured
-// base URL, caches both in LittleFS, and exposes the active study card. The manifest
-// is JSON Lines (one {"w","m","e","a"} object per line). Daily selection and
-// due/first-unseen scans read one bounded line at a time without a RAM word list.
+// Route-B wordbook: downloads words.jsonl and pre-rendered WMR1 art files
+// from the configured base URL, caches both in LittleFS, and exposes the
+// active study card. The manifest is JSON Lines (one {"w","m","e","a"}
+// object per line). Daily selection and due/first-unseen scans read one
+// bounded line at a time without a RAM word list.
 class Wordbook {
  public:
   Wordbook(AppSettings& settings, StudyStore& study);
@@ -54,7 +55,7 @@ class Wordbook {
                    uint16_t* lineCount);
   bool readManifestLine(uint16_t index, String& out);
   void evictOtherArt(const String& keepName);
-  bool decodeArt(const String& path);
+  bool loadArt(const String& path);
 
   AppSettings& settings_;
   StudyStore& study_;
