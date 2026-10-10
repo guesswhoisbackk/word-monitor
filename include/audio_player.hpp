@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <atomic>
-#include <memory>
+#include <LittleFS.h>
 #include "audio_policy.hpp"
 
 namespace wordmon {
@@ -23,9 +23,13 @@ class AudioPlayer {
   uint8_t volume_ = 20;
   static void task(void* context);
   void run();
-  bool download(std::unique_ptr<uint8_t[]>& buffer, size_t& size);
-  bool readCache(std::unique_ptr<uint8_t[]>& buffer, size_t& size);
-  void saveCache(const uint8_t* buffer, size_t size);
-  bool playPcm(const uint8_t* buffer, const WavInfo& info);
+  // External clips stream from LittleFS in small blocks: no whole-file RAM
+  // buffer exists, so heap fragmentation after TLS/Wi-Fi cannot break audio.
+  bool openVoice(const char* path, File& file, WavInfo& info);
+  bool openCached(File& file, WavInfo& info);
+  bool download();
+  void finalizeDownload();
+  bool playPcmFile(File& file, const WavInfo& info);
+  bool playPcm(const uint8_t* buffer, const WavInfo& info);  // built-in flash clips
 };
 }

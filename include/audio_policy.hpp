@@ -36,6 +36,40 @@ inline bool parseWav(const uint8_t* data, size_t size, WavInfo& info) {
   }
   return false;
 }
+// Streaming variant: parses only the leading header bytes of a file whose
+// total size is `fileSize`, so callers can validate a WAV on LittleFS without
+// reading the data chunk into RAM. `head` must cover at least through the
+// start of the data chunk.
+inline bool parseWavHead(const uint8_t* head, size_t headSize, size_t fileSize, WavInfo& info) {
+  info = {};
+  if (!head || headSize < 44 || fileSize < 44 || fileSize > kMaxAudioBytes ||
+      memcmp(head, "RIFF", 4) || memcmp(head + 8, "WAVE", 4) ||
+      le32(head + 4) != fileSize - 8) return false;
+  bool format = false;
+  for (size_t pos = 12; pos + 8 <= headSize;) {
+    const uint32_t bytes = le32(head + pos + 4);
+    const uint8_t* id = head + pos;
+    pos += 8;
+    if (bytes > fileSize - pos) return false;  // chunk body must fit the file
+    if (!memcmp(id, "fmt ", 4)) {
+      if (bytes < 16 || pos + 16 > headSize || le16(head + pos) != 1 ||
+          le16(head + pos + 2) != 1) return false;
+      info.rate = le32(head + pos + 4);
+      info.bits = le16(head + pos + 14);
+      if ((info.bits != 8 && info.bits != 16) || info.rate < 8000 || info.rate > 24000 ||
+          le16(head + pos + 12) != info.bits / 8 ||
+          le32(head + pos + 8) != info.rate * (info.bits / 8)) return false;
+      format = true;
+    } else if (!memcmp(id, "data", 4)) {
+      if (!format || !bytes || bytes % (info.bits / 8) || bytes / (info.bits / 8) > info.rate * 4) return false;
+      info.offset = pos;
+      info.bytes = bytes;
+      return true;  // the data body itself may extend past the head slice
+    }
+    pos += bytes + (bytes & 1U);
+  }
+  return false;
+}
 inline uint16_t dacSample(uint16_t raw, uint16_t bits, unsigned volume) {
   int32_t sample = bits == 8 ? (int32_t(raw & 255) - 128) * 256
                            : (raw >= 32768 ? int32_t(raw) - 65536 : int32_t(raw));

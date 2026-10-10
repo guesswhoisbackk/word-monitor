@@ -45,5 +45,23 @@ int main() {
     assert(highest - lowest > 32); // Detect empty/silent generated assets.
   }
   assert(speech::find("apple") && !speech::find("not-in-pack"));
+
+  // Streaming header parser: same verdicts from a head slice of a larger file.
+  auto big = wav();
+  big.resize(44 + 11025);  // exactly one second of 11025 Hz 8-bit samples
+  {
+    const uint32_t r2 = static_cast<uint32_t>(big.size() - 8);
+    big[4] = r2 & 0xff; big[5] = (r2 >> 8) & 0xff; big[6] = (r2 >> 16) & 0xff; big[7] = (r2 >> 24) & 0xff;
+    const uint32_t p2 = static_cast<uint32_t>(big.size() - 44);
+    big[40] = p2 & 0xff; big[41] = (p2 >> 8) & 0xff; big[42] = (p2 >> 16) & 0xff; big[43] = (p2 >> 24) & 0xff;
+    for (size_t i = 44; i < big.size(); ++i) big[i] = 128;
+  }
+  assert(parseWavHead(big.data(), 64, big.size(), info));
+  assert(info.offset == 44 && info.bytes == big.size() - 44 && info.rate == 11025 && info.bits == 8);
+  assert(parseWavHead(big.data(), big.size(), big.size(), info));
+  assert(!parseWavHead(big.data(), 40, big.size(), info));      // head too short
+  assert(!parseWavHead(big.data(), 64, big.size() - 1, info));  // RIFF size mismatch
+  big[22] = 2;  // stereo
+  assert(!parseWavHead(big.data(), 64, big.size(), info));
   puts("audio parser and DAC conversion: all tests passed");
 }

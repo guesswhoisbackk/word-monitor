@@ -1,6 +1,42 @@
 # WordMon Studio 인수인계 문서
 
-## 다음 세션용 최신 요약 — 2026-10-10 저녁, v0.5.0 893단어 적용
+## 다음 세션용 최신 요약 — 2026-10-10 저녁 2차, v0.5.1 예문·발음 완성
+
+**프로젝트:** `C:\antigravity\word monitor\word-monitor`  
+**원격:** https://github.com/guesswhoisbackk/word-monitor (`main`)  
+**소스 버전:** v0.5.1  
+**콘텐츠 저장소:** https://github.com/guesswhoisbackk/wordbook — 커밋 `ced945b`(단어 893 + 그림 893 + 발음 WAV 893, 약 30MB)
+
+같은 날 아침 v0.5.0(893단어 그림·한글 폰트·WMR 그림)에 이어 사용자가 "남은 작업"을 요청해 **예문·발음 생성·배포와 오디오 메모리 재설계를 완료했다.** 실물 화면 육안 확인(한글·그림·예문)과 스피커 발음 검증은 사용자 몫으로 남아 있다.
+
+### 이번에 추가로 한 일
+
+1. **예문 893개 작성** — `content/illustrated-vocabulary/examples.json`(단어→영어 문장, ASCII 전용, 각 4~9단어). 원시 배치는 `examples-src/batch-0{1,2,3}.json`에서 병합했다. `build_illustrated_content.py`가 manifest에 `e`로 넣고, 예문 없는 단어가 있으면 빌드가 실패한다.
+2. **발음 WAV 893개 생성** — 기존 `scripts/prepare_audio.ps1`에 `-Manifest/-OutDir`을 넣어 일괄 생성(Microsoft Zira, 11,025Hz 8비트 모노, 평균 19KB·최대 28.6KB, 총 16.3MiB). 파일명은 `speech-<sha256(단어)[:16]>.wav`로 빌드 스크립트가 동일 규칙으로 `s` 필드를 계산한다. 전 파일 RIFF·크기·48KiB 한도 검증 통과.
+3. **manifest 117KB**(`e`·`s` 포함, 최대 줄 181바이트)를 wordbook에 배포하고 purge 완료. 커밋 고정 URL(`@ced945b`)은 즉시 서빙 확인. **`@main` 별칭은 여전히 한 시간 가량 이전 manifest를 줄 수 있다** — 기기는 10분 재시도로 자동 따라잡는다.
+4. **오디오 메모리 재설계(v0.5.1)** — 48KiB 전체 파일 버퍼를 부팅에 선할당하는 첫 시도는 **부팅 TLS를 실패시켰다**(pre-TLS heap 67KB·largest 41KB에서 `SSL - Memory allocation failed`). 대신 **재생·다운로드를 모두 스트리밍으로 재작성**했다: 다운로드는 512바이트씩 `/voice.tmp`로 스트리밍→`parseWavHead`(스트리밍용 헤더 파서, `audio_policy.hpp`, 호스트 테스트 추가)로 검증→원자 교체, 재생은 LittleFS에서 512바이트 블록으로 `playPcmFile`. 대형 힙 할당이 사라져 pre-TLS heap 116KB·largest 70KB로 회복, **`manifest synced: 893 words` 재확인**. 기본 8단어 내장 음성의 RAM 재생 경로는 그대로다.
+5. 호스트 테스트 3종 통과(parseWavHead 케이스 추가), 두 패널 빌드 성공(RAM 36.3%, Flash 78.5%), v0.5.1 BIN 4종 생성, 기기 플래시·부팅 로그 검증 완료.
+
+### 다음 세션 시작 순서
+
+1. `curl https://cdn.jsdelivr.net/gh/guesswhoisbackk/wordbook@main/words.jsonl | head -1`이 `e`·`s`를 포함하는지 확인(아직이면 대기 or 재부팅 유도). 기기 재부팅(포트 열기) 후 `manifest synced: 893 words` + pre-TLS heap 로그 확인.
+2. **사용자 실물 검증** — 화면: 한글 뜻 + 예문(회색 영어) + HINT 그림. 터치: 카드 뒤집기·NEXT·AGAIN/GOT IT. 스피커: SPEAK 발음(Zira)·STOP·캐시 재생. `HARDWARE_TEST.md` v0.5.1 절 참고.
+3. 남은 개선: 단어 뜻·난이도·학습 순서 검수(원본 배치 순서), 다운로드 중 UI 블로킹, HTTPS 인증서 검증.
+
+```powershell
+Set-Location 'C:\antigravity\word monitor\word-monitor'
+git status -sb
+cmd /c scripts\test_host.cmd
+$env:PATH = 'C:\antigravity\bambu-monitoring\.venv\Scripts;' + $env:PATH
+.\scripts\build.ps1 -Environment all
+# 기기 로그: .venv python scripts\read_log.py COM6 45
+```
+
+보드용 앱: `build/WordMonitor-v0.5.1-cyd-ili9341-firmware.bin`(앱 `0x10000`). merged는 `0x0`용. 파티션 테이블은 이미 기기에 적용됨.
+
+---
+
+## 이전 인계 — 2026-10-10 저녁 1차, v0.5.0 893단어 적용
 
 **프로젝트:** `C:\antigravity\word monitor\word-monitor`  
 **원격:** https://github.com/guesswhoisbackk/word-monitor (`main`)  

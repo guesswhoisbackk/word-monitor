@@ -178,6 +178,9 @@ void Wordbook::attemptSync(int32_t yday) {
   ++revision_;
   lastAttemptMs_ = millis();
   everAttempted_ = true;
+  Serial.printf("[wb] pre-TLS heap=%u largest=%u\n",
+                static_cast<unsigned>(ESP.getFreeHeap()),
+                static_cast<unsigned>(ESP.getMaxAllocHeap()));
 
   uint16_t lines = 0;
   const bool ok = fetchToFile(settings_.wordbookUrl + F("/words.jsonl"),

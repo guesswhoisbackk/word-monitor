@@ -5,8 +5,6 @@
 #include <WiFiClientSecure.h>
 #include <driver/dac.h>
 #include <driver/i2s.h>
-#include <memory>
-#include <new>
 #include "assets/speech_audio.hpp"
 
 namespace wordmon {
@@ -14,6 +12,9 @@ namespace {
 constexpr const char* kCache = "/voice.wav";
 constexpr const char* kKey = "/voice.key";
 constexpr const char* kTemp = "/voice.tmp";
+// Leading bytes parsed for the streaming WAV header; canonical PCM files
+// (and any reasonable metadata) fit well inside this.
+constexpr size_t kHeadBytes = 512;
 }
 bool AudioPlayer::available(const char* word, const char* filename) {
   return (filename && *filename) ? validAudioName(filename) : speech::find(word) != nullptr;
@@ -69,62 +70,47 @@ void AudioPlayer::task(void* context) {
   vTaskDelete(nullptr);
 }
 void AudioPlayer::run() {
-  const uint8_t* data = nullptr;
-  size_t size = 0;
-  std::unique_ptr<uint8_t[]> buffer;
-  bool downloaded = false;
   if (url_.isEmpty()) {
     const auto* clip = speech::find(word_.c_str());
     if (!clip) { state_ = AudioState::Missing; return; }
-    data = clip->data;
-    size = clip->size;
-  } else {
-    if (!readCache(buffer, size)) {
-      buffer.reset();
-      if (WiFi.status() != WL_CONNECTED) { state_ = AudioState::Offline; return; }
-      if (!download(buffer, size)) { state_ = AudioState::Failed; return; }
-      downloaded = true;
-    }
-    data = buffer.get();
+    if (cancelled_) return;
+    WavInfo info;
+    if (!parseWav(clip->data, clip->size, info)) { state_ = AudioState::Invalid; return; }
+    state_ = AudioState::Playing;
+    state_ = playPcm(clip->data, info) ? AudioState::Done : AudioState::Failed;
+    return;
+  }
+  File file;
+  WavInfo info;
+  if (!openCached(file, info)) {
+    if (WiFi.status() != WL_CONNECTED) { state_ = AudioState::Offline; return; }
+    const bool fresh = download();
+    if (cancelled_) { if (fresh) LittleFS.remove(kTemp); return; }
+    if (!fresh) { state_ = AudioState::Failed; return; }
+    if (!openVoice(kTemp, file, info)) { LittleFS.remove(kTemp); state_ = AudioState::Invalid; return; }
+    finalizeDownload();
   }
   if (cancelled_) return;
-  WavInfo info;
-  if (!parseWav(data, size, info)) { state_ = AudioState::Invalid; return; }
-  if (downloaded) saveCache(data, size);
-  if (cancelled_) return;
   state_ = AudioState::Playing;
-  state_ = playPcm(data, info) ? AudioState::Done : AudioState::Failed;
+  state_ = playPcmFile(file, info) ? AudioState::Done : AudioState::Failed;
 }
-bool AudioPlayer::readCache(std::unique_ptr<uint8_t[]>& buffer, size_t& size) {
+bool AudioPlayer::openCached(File& file, WavInfo& info) {
   File key = LittleFS.open(kKey, "r");
   if (!key || key.size() != url_.length() || key.readString() != url_) return false;
   key.close();
-  File file = LittleFS.open(kCache, "r");
-  if (!file || file.size() > kMaxAudioBytes) return false;
-  size = file.size();
-  if (!size) return false;
-  buffer.reset(new (std::nothrow) uint8_t[size]);
-  if (!buffer || file.read(buffer.get(), size) != size) return false;
-  WavInfo info;
-  return parseWav(buffer.get(), size, info);
+  return openVoice(kCache, file, info);
 }
-void AudioPlayer::saveCache(const uint8_t* buffer, size_t size) {
-  File file = LittleFS.open(kTemp, "w");
-  if (!file) return;
-  const bool ok = file.write(buffer, size) == size;
-  file.close();
-  if (!ok || cancelled_) { LittleFS.remove(kTemp); return; }
-  // Clear identity first: power loss must never associate old identity with new audio.
-  if (LittleFS.exists(kKey) && !LittleFS.remove(kKey)) { LittleFS.remove(kTemp); return; }
-  if (!LittleFS.rename(kTemp, kCache)) { LittleFS.remove(kTemp); return; }
-  File key = LittleFS.open(kKey, "w");
-  if (key) {
-    const bool saved = key.print(url_) == url_.length();
-    key.close();
-    if (!saved) LittleFS.remove(kKey);
-  }
+bool AudioPlayer::openVoice(const char* path, File& file, WavInfo& info) {
+  file = LittleFS.open(path, "r");
+  if (!file) return false;
+  const size_t size = file.size();
+  if (size < 44 || size > kMaxAudioBytes) { file.close(); return false; }
+  uint8_t head[kHeadBytes];
+  const size_t got = file.read(head, kHeadBytes);
+  if (!parseWavHead(head, got, size, info)) { file.close(); return false; }
+  return true;
 }
-bool AudioPlayer::download(std::unique_ptr<uint8_t[]>& buffer, size_t& size) {
+bool AudioPlayer::download() {
   WiFiClient plain;
   WiFiClientSecure secure;
   secure.setInsecure();  // Same public-content TLS policy as the wordbook.
@@ -141,27 +127,108 @@ bool AudioPlayer::download(std::unique_ptr<uint8_t[]>& buffer, size_t& size) {
   if (http.GET() != HTTP_CODE_OK) { http.end(); return false; }
   const int expected = http.getSize();
   if (expected == 0 || expected > static_cast<int>(kMaxAudioBytes)) { http.end(); return false; }
-  const size_t capacity = expected > 0 ? static_cast<size_t>(expected) : kMaxAudioBytes;
-  buffer.reset(new (std::nothrow) uint8_t[capacity]);
-  if (!buffer) { http.end(); return false; }
+  File out = LittleFS.open(kTemp, "w");
+  if (!out) { http.end(); return false; }
   auto& stream = http.getStream();
-  size = 0;
+  size_t size = 0;
   const uint32_t started = millis();
+  uint8_t chunk[512];
+  bool writeOk = true;
   while (!cancelled_ && millis() - started < 10000 && (http.connected() || stream.available())) {
     const size_t available = stream.available();
     if (!available) { vTaskDelay(pdMS_TO_TICKS(2)); continue; }
-    if (size == capacity) break;
-    size_t count = available < 512 ? available : 512;
-    if (count > capacity - size) count = capacity - size;
-    const int got = stream.read(buffer.get() + size, count);
+    if (size == static_cast<size_t>(expected)) break;
+    size_t count = available < sizeof(chunk) ? available : sizeof(chunk);
+    if (count > static_cast<size_t>(expected) - size) count = static_cast<size_t>(expected) - size;
+    const int got = stream.read(chunk, count);
     if (got <= 0) break;
+    if (out.write(chunk, got) != static_cast<size_t>(got)) { writeOk = false; break; }
     size += static_cast<size_t>(got);
-    if (expected >= 0 && size >= static_cast<size_t>(expected)) break;
     vTaskDelay(1);
   }
-  const bool complete = expected >= 0 ? size == static_cast<size_t>(expected) : !http.connected() && !stream.available();
+  out.close();
   http.end();
-  return !cancelled_ && size > 0 && complete;
+  const bool complete = size == static_cast<size_t>(expected);
+  if (!writeOk || cancelled_ || size == 0 || !complete) { LittleFS.remove(kTemp); return false; }
+  return true;
+}
+void AudioPlayer::finalizeDownload() {
+  // Clear identity first: power loss must never associate old identity with new audio.
+  if (LittleFS.exists(kKey) && !LittleFS.remove(kKey)) { LittleFS.remove(kTemp); return; }
+  if (!LittleFS.rename(kTemp, kCache)) { LittleFS.remove(kTemp); return; }
+  File key = LittleFS.open(kKey, "w");
+  if (key) {
+    const bool saved = key.print(url_) == url_.length();
+    key.close();
+    if (!saved) LittleFS.remove(kKey);
+  }
+}
+bool AudioPlayer::playPcmFile(File& file, const WavInfo& info) {
+  if (!file.seek(info.offset, SeekSet)) return false;
+  i2s_config_t config{};
+  config.mode = static_cast<i2s_mode_t>(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN);
+  config.sample_rate = info.rate;
+  config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT;
+  config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
+  config.communication_format = I2S_COMM_FORMAT_STAND_MSB;
+  config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
+  config.dma_buf_count = 4;
+  config.dma_buf_len = 128;
+  config.use_apll = false;
+  config.tx_desc_auto_clear = true;
+  if (i2s_driver_install(I2S_NUM_0, &config, 0, nullptr) != ESP_OK) return false;
+  // Never i2s_set_pin(..., nullptr): that enables BOTH DACs, stealing touch GPIO25.
+  bool ok = i2s_set_dac_mode(I2S_DAC_CHANNEL_LEFT_EN) == ESP_OK;
+  uint8_t chunk[512];
+  uint16_t samples[256];  // Stereo frames duplicate mono, only GPIO26 is enabled.
+  const size_t step = info.bits / 8;
+  size_t position = 0;
+  while (ok && !cancelled_ && position < info.bytes) {
+    size_t want = sizeof(chunk);
+    if (want > info.bytes - position) want = info.bytes - position;
+    size_t got = 0;
+    while (got < want) {
+      const int read = file.read(chunk + got, want - got);
+      if (read <= 0) break;
+      got += static_cast<size_t>(read);
+    }
+    const size_t usable = got - (got % step);  // never split a sample frame
+    if (usable == 0) break;
+    for (size_t base = 0; ok && base < usable; base += 128 * step) {
+      size_t frames = 0;
+      while (frames < 128 && base + frames * step < usable) {
+        const uint8_t* p = chunk + base + frames * step;
+        const uint16_t raw = step == 1 ? *p : le16(p);
+        const size_t sampleIndex = (position + base + frames * step) / step;
+        const size_t remaining = (info.bytes - position - base - frames * step) / step - 1;
+        const size_t fade = info.rate / 100;  // 10 ms envelope at word boundaries.
+        const size_t edge = sampleIndex < remaining ? sampleIndex : remaining;
+        const unsigned volume = edge < fade ? volume_ * edge / fade : volume_;
+        samples[frames * 2] = samples[frames * 2 + 1] = dacSample(raw, info.bits, volume);
+        ++frames;
+      }
+      size_t written = 0;
+      const size_t bytes = frames * 4;
+      ok = i2s_write(I2S_NUM_0, samples, bytes, &written, pdMS_TO_TICKS(100)) == ESP_OK &&
+           written == bytes;
+    }
+    position += usable;
+    if (got < want) break;  // EOF inside the data chunk
+  }
+  // Queue midpoint silence through the entire DMA ring to drain the last word.
+  for (auto& sample : samples) sample = 0x8000;
+  for (int i = 0; ok && !cancelled_ && i < 5; ++i) {
+    size_t written = 0;
+    ok = i2s_write(I2S_NUM_0, samples, sizeof(samples), &written, pdMS_TO_TICKS(100)) == ESP_OK &&
+         written == sizeof(samples);
+  }
+  i2s_stop(I2S_NUM_0);
+  i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE);
+  i2s_driver_uninstall(I2S_NUM_0);
+  // Keep amplifier input at the PCM midpoint between words, not at full negative level.
+  dac_output_enable(DAC_CHANNEL_2);
+  dac_output_voltage(DAC_CHANNEL_2, 128);
+  return ok;
 }
 bool AudioPlayer::playPcm(const uint8_t* buffer, const WavInfo& info) {
   i2s_config_t config{};
