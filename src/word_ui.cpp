@@ -239,6 +239,9 @@ void WordUi::createLayout() {
   button("NEXT", 162, 252, 70);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
+  // Art is always on the front face now; the hint reveal button stays hidden
+  // (kept wired so a future hide-art study mode can re-enable it).
+  lv_obj_add_flag(hintButton_, LV_OBJ_FLAG_HIDDEN);
   speakButton_ = button("SPEAK", 8, 3, 88);
   lv_obj_set_height(speakButton_, 28);
   speakLabel_ = lv_obj_get_child(speakButton_, 0);
@@ -337,8 +340,11 @@ void WordUi::refresh() {
   setLabelTextIfChanged(wordLabel_, word);
   setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
 
+  // The illustrated wordbook is used as picture cards: art shows on the
+  // front face whenever available (v0.5.1; the earlier hint-only reveal
+  // confused more than it helped). The back face stays text-only.
   const bool front = !meaningVisible_;
-  const bool showArt = front && hintVisible_ && art != nullptr;
+  const bool showArt = front && art != nullptr;
   if (showArt && currentArt_ != art) {
     currentArt_ = art;
     lv_image_set_src(artImage_, art);
@@ -346,6 +352,10 @@ void WordUi::refresh() {
                          ? kArtY
                          : kArtY + (kArtSlotHeight - art->header.h) / 2;
     lv_obj_set_pos(artImage_, (kCardWidth - art->header.w) / 2, artY);
+    Serial.printf("[ui] show art %ux%u px0=%04x\n",
+                  static_cast<unsigned>(art->header.w),
+                  static_cast<unsigned>(art->header.h),
+                  *reinterpret_cast<const uint16_t*>(art->data));
   }
   if (showArt) {
     lv_obj_clear_flag(artImage_, LV_OBJ_FLAG_HIDDEN);
@@ -470,6 +480,7 @@ void WordUi::readTouch(lv_indev_t* input, lv_indev_data_t* data) {
 
 void WordUi::cardEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
+  Serial.println(F("[ui] card tap"));
   self->audioFeedback_ = false;
   self->meaningVisible_ = !self->meaningVisible_;
   self->refresh();
@@ -498,6 +509,8 @@ void WordUi::studyEvent(lv_event_t* event) {
       self->studyMessage_ = good ? "SAVED - TAP NEXT" : "AGAIN IN 10 MIN - TAP NEXT";
     }
   } else if (target == self->hintButton_) {
+    Serial.printf("[ui] hint press (art=%d)\n",
+                  self->externalCard_ && self->externalCard_->art ? 1 : 0);
     self->hintVisible_ = true;
     self->meaningVisible_ = false;
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
