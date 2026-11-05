@@ -202,6 +202,10 @@ void WordUi::createLayout() {
   lv_obj_add_event_cb(setup, [](lv_event_t* e) { static_cast<WordUi*>(lv_event_get_user_data(e))->showSettings(); }, LV_EVENT_CLICKED, this);
   progressLabel_ = makeLabel(screen, "0/5", 86, 13, 38, &font_ui_12, kGreen, LV_TEXT_ALIGN_RIGHT);
   lv_obj_t* weatherCard = makeCard(screen, 8, 38, 224, 112);
+  lv_obj_add_flag(weatherCard, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_add_event_cb(weatherCard, [](lv_event_t* event) {
+    static_cast<WordUi*>(lv_event_get_user_data(event))->weatherRefreshRequested_ = true;
+  }, LV_EVENT_CLICKED, this);
   weatherTemperature_ = makeLabel(weatherCard, "--°", 10, 7, 72, &font_ui_24, kGreen);
   weatherDetail_ = makeLabel(weatherCard, "날씨 연결 중", 86, 5, 130, &font_kr_16, kText);
   weatherRain_ = makeLabel(weatherCard, "잠시 기다려요", 86, 27, 130, &font_kr_13, kMuted);
@@ -352,8 +356,10 @@ void WordUi::refresh() {
     else snprintf(weatherText, sizeof(weatherText), "현재 강수 --");
     setLabelTextIfChanged(weatherRain_, weatherText);
     if (stale) {
-      setLabelTextIfChanged(clothingLabel_, "옷차림 정보 갱신 대기");
-      setLabelTextIfChanged(accessoryLabel_, "마지막 날씨를 표시해요");
+      setLabelTextIfChanged(clothingLabel_, WiFi.status() == WL_CONNECTED ? "날씨 갱신 재시도 중" : "Wi-Fi 다시 연결 중");
+      snprintf(weatherText, sizeof(weatherText), "%u분 전 갱신 · 재시도 중",
+               unsigned(uint32_t(millis() - weather_.receivedAt) / 60000));
+      setLabelTextIfChanged(accessoryLabel_, weatherText);
     } else {
       const float comfort = weather_.hasApparentTemperature ? weather_.apparentTemperature : weather_.temperature;
       snprintf(weatherText, sizeof(weatherText), "%s", clothingSuggestion(comfort));
@@ -368,7 +374,10 @@ void WordUi::refresh() {
     setLabelTextIfChanged(clothingLabel_, accessPointMode_ ? "먼저 Wi-Fi를 연결해 주세요" : "날씨를 기다리고 있어요");
     setLabelTextIfChanged(accessoryLabel_, "");
   }
-  if (weatherBusy_) lv_obj_add_state(speakButton_, LV_STATE_DISABLED);
+  if (weatherBusy_) {
+    setLabelTextIfChanged(accessoryLabel_, "날씨 새로 받는 중");
+    lv_obj_add_state(speakButton_, LV_STATE_DISABLED);
+  }
   else lv_obj_remove_state(speakButton_, LV_STATE_DISABLED);
   if (ipAddress_.isEmpty()) {
     setLabelTextIfChanged(statusLabel_, "STARTING");

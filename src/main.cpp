@@ -10,6 +10,7 @@
 #include "word_ui.hpp"
 #include "wordbook.hpp"
 #include "weather.hpp"
+#include "network_policy.hpp"
 
 namespace {
 
@@ -18,9 +19,10 @@ wordmon::SettingsStore settingsStore;
 wordmon::StudyStore study;
 wordmon::AudioPlayer audio;
 wordmon::WordUi wordUi(settings, study, audio);
-wordmon::WebPortal webPortal(settings, settingsStore);
 wordmon::Wordbook wordbook(settings, study);
 wordmon::WeatherService weather(settings);
+wordmon::WebPortal webPortal(settings, settingsStore, weather);
+wordmon::NetworkRecovery networkRecovery;
 uint32_t pushedWordbookRevision = 0;
 
 bool accessPointMode = false;
@@ -39,6 +41,7 @@ void startNetwork() {
 
   if (!settings.wifiSsid.isEmpty()) {
     WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
     WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
     Serial.printf("[wifi] connecting to %s", settings.wifiSsid.c_str());
     const uint32_t deadline = millis() + 15000;
@@ -79,6 +82,32 @@ void startNetwork() {
                 ssid.c_str(), WiFi.softAPIP().toString().c_str());
 }
 
+void maintainNetwork() {
+  // USB test command: disconnect only this ESP32, exercising app recovery even
+  // when the SDK will not retry (e.g. an authentication failure).
+  if (!accessPointMode && Serial.available() && Serial.peek() == 'x') {
+    Serial.read();
+    WiFi.setAutoReconnect(false);
+    WiFi.disconnect(false, false);
+    Serial.println("[wifi] USB recovery test: disconnected");
+  }
+  const auto action = networkRecovery.poll(millis(), WiFi.status() == WL_CONNECTED,
+                                           accessPointMode || settings.wifiSsid.isEmpty());
+  if (action == wordmon::NetworkAction::Retry) {
+    Serial.println("[wifi] recovery attempt");
+    WiFi.setAutoReconnect(true);
+    WiFi.disconnect(false, false);
+    WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
+  } else if (action == wordmon::NetworkAction::Restored) {
+    MDNS.end();
+    MDNS.begin("wordmon");
+    configTzTime(wordmon::kTimezone, wordmon::kNtpServer1, wordmon::kNtpServer2);
+    wordUi.setNetworkInfo(false, WiFi.localIP().toString());
+    weather.requestRefresh();
+    Serial.printf("[wifi] connection restored rssi=%d; refreshing weather\n", WiFi.RSSI());
+  }
+}
+
 }  // namespace
 
 void setup() {
@@ -110,11 +139,14 @@ void setup() {
   startNetwork();
   webPortal.begin(accessPointMode);
   if (accessPointMode) wordUi.showSettings();
+  networkRecovery.poll(millis(), WiFi.status() == WL_CONNECTED, accessPointMode);
 }
 
 void loop() {
+  maintainNetwork();
   webPortal.loop();
   wordUi.loop();
+  if (wordUi.takeWeatherRefreshRequest()) weather.requestRefresh();
   // Audio worker owns network/FS while active; LVGL and portal keep running.
   // Avoid concurrent downloads/decoding and changing the active card mid-word.
   if (audio.busy()) { delay(5); return; }

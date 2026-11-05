@@ -5,12 +5,13 @@
 
 #include "models.hpp"
 #include "settings_store.hpp"
+#include "weather.hpp"
 
 namespace wordmon {
 
 class WebPortal {
  public:
-  WebPortal(AppSettings& settings, SettingsStore& store);
+  WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather);
 
   void begin(bool accessPointMode);
   void loop();
@@ -19,6 +20,7 @@ class WebPortal {
  private:
   AppSettings& settings_;
   SettingsStore& store_;
+  WeatherService& weather_;
   WebServer server_{80};
   DNSServer dns_;
   bool accessPointMode_ = false;

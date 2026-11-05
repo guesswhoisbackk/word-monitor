@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 #include <cmath>
 #include <cstdlib>
 
@@ -114,8 +115,8 @@ document.getElementById('citySearch').addEventListener('click',async function(){
 
 }  // namespace
 
-WebPortal::WebPortal(AppSettings& settings, SettingsStore& store)
-    : settings_(settings), store_(store) {}
+WebPortal::WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather)
+    : settings_(settings), store_(store), weather_(weather) {}
 
 void WebPortal::begin(bool accessPointMode) {
   accessPointMode_ = accessPointMode;
@@ -125,6 +126,28 @@ void WebPortal::begin(bool accessPointMode) {
 
   server_.on("/", HTTP_GET, [this]() { handleRoot(); });
   server_.on("/api/wifi", HTTP_GET, [this]() { handleWifiApi(); });
+  server_.on("/api/weather", HTTP_GET, [this]() {
+    JsonDocument doc;
+    doc["connected"] = WiFi.status() == WL_CONNECTED;
+    doc["enabled"] = settings_.weatherEnabled;
+    doc["busy"] = weather_.busy();
+    doc["valid"] = weather_.reading().valid;
+    doc["attempts"] = weather_.attempts();
+    doc["updates"] = weather_.updates();
+    doc["lastHttpStatus"] = weather_.lastHttpStatus();
+    doc["lastAttemptOk"] = weather_.lastAttemptOk();
+    doc["freeHeap"] = ESP.getFreeHeap();
+    if (weather_.reading().valid) doc["ageSeconds"] = uint32_t(millis() - weather_.reading().receivedAt) / 1000;
+    else doc["ageSeconds"] = nullptr;
+    doc["nextAttemptSeconds"] = weather_.nextAttemptInMs() / 1000;
+    String body; serializeJson(doc, body);
+    server_.sendHeader("Cache-Control", "no-store");
+    server_.send(200, "application/json", body);
+  });
+  server_.on("/api/weather/refresh", HTTP_POST, [this]() {
+    weather_.requestRefresh();
+    server_.send(202, "application/json", "{\"queued\":true}");
+  });
   server_.on("/save", HTTP_POST, [this]() { handleSave(); });
   server_.onNotFound([this]() { handleNotFound(); });
   server_.begin();

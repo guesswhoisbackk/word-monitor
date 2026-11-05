@@ -7,16 +7,20 @@
 
 namespace wordmon {
 void WeatherService::loop(bool networkAvailable) {
-  if (!queue_) queue_ = xQueueCreate(1, sizeof(WeatherReading));
-  WeatherReading result;
+  if (!queue_) queue_ = xQueueCreate(1, sizeof(FetchResult));
+  FetchResult result;
   if (queue_ && xQueueReceive(queue_, &result, 0) == pdTRUE) {
     busy_ = false;
-    if (result.valid) reading_ = result;
-    nextAttempt_ = millis() + (result.valid ? 900000 : 60000);
+    lastHttpStatus_ = result.httpStatus;
+    lastAttemptOk_ = result.reading.valid;
+    if (result.reading.valid) { reading_ = result.reading; ++updates_; }
+    nextAttempt_ = millis() + (result.reading.valid ? 900000 : 60000);
   }
+  if (refreshRequested_ && !busy_) { nextAttempt_ = millis(); refreshRequested_ = false; }
   if (!queue_ || busy_ || !settings_.weatherEnabled || !networkAvailable ||
       WiFi.status() != WL_CONNECTED || int32_t(millis() - nextAttempt_) < 0) return;
   busy_ = true;
+  ++attempts_;
   latitude_ = settings_.weatherLatitude;
   longitude_ = settings_.weatherLongitude;
   if (xTaskCreate(fetch, "weather", 6144, this, 1, nullptr) != pdPASS) {
@@ -26,20 +30,24 @@ void WeatherService::loop(bool networkAvailable) {
 }
 void WeatherService::fetch(void* context) {
   auto* self = static_cast<WeatherService*>(context);
-  WeatherReading result;
+  FetchResult envelope;
+  WeatherReading& result = envelope.reading;
+  {
   // Public weather only; HTTP avoids a concurrent TLS heap allocation on CYD.
   // Never send Wi-Fi credentials or device identifiers to this service.
+  // Keep URL ownership inside this scope: vTaskDelete does not unwind C++
+  // automatic objects, so its buffer must be destroyed before deleting self.
   String url = "http://api.open-meteo.com/v1/forecast?latitude=";
   url += String(self->latitude_, 5);
   url += "&longitude=" + String(self->longitude_, 5);
   url += "&current=temperature_2m,apparent_temperature,precipitation,weather_code&hourly=precipitation_probability&precipitation_unit=mm&timezone=Asia%2FSeoul&forecast_days=1";
-  {
     WiFiClient client;
     HTTPClient http;
     http.setConnectTimeout(5000);
     http.setTimeout(5000);
     http.useHTTP10(true);
-    if (http.begin(client, url) && http.GET() == 200 && http.getSize() <= 8192) {
+    if (http.begin(client, url)) envelope.httpStatus = http.GET();
+    if (envelope.httpStatus == 200 && http.getSize() <= 8192) {
       JsonDocument doc;
       if (!deserializeJson(doc, http.getStream())) {
         JsonVariantConst temp = doc["current"]["temperature_2m"];
@@ -81,7 +89,7 @@ void WeatherService::fetch(void* context) {
       result.valid ? "updated" : "retry", result.temperature, result.code, result.rain.morning, result.rain.noon,
       result.rain.evening, result.rain.remaining, result.precipitationMm, ESP.getFreeHeap());
   // All network allocations are released before publishing completion.
-  xQueueOverwrite(self->queue_, &result);
+  xQueueOverwrite(self->queue_, &envelope);
   vTaskDelete(nullptr);
 }
 }

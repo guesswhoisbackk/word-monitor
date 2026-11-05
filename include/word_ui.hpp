@@ -21,6 +21,10 @@ class WordUi {
   void loop();
   void setWeather(const WeatherReading& reading, bool busy) { weather_ = reading; weatherBusy_ = busy; }
   void showSettings();
+  bool takeWeatherRefreshRequest() {
+    const bool requested = weatherRefreshRequested_;
+    weatherRefreshRequested_ = false; return requested;
+  }
   void setNetworkInfo(bool accessPointMode, const String& ipAddress);
   // Swap the visible card source to the network wordbook (nullptr = use the
   // built-in sample pack) and show its sync status in the footer.
@@ -62,6 +66,7 @@ class WordUi {
 
   WeatherReading weather_;
   bool weatherBusy_ = false;
+  bool weatherRefreshRequested_ = false;
   bool capture_ = false;
   lv_obj_t* progressLabel_ = nullptr;
   lv_obj_t* weatherTemperature_ = nullptr;
