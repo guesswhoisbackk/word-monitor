@@ -41,6 +41,13 @@ def collect_ranges() -> list[tuple[int, int]]:
                     f"meaning of {item['word']!r} uses non-covered character "
                     f"{ch!r} (U+{ord(ch):04X}); extend the font generator"
                 )
+    # Weather/clothing and reveal prompts are product UI, so include their
+    # literal syllables along with hosted vocabulary. Symbols are explicit.
+    for source in (ROOT / "include" / "weather_policy.hpp", ROOT / "src" / "word_ui.cpp"):
+        for ch in source.read_text(encoding="utf-8"):
+            if 0xAC00 <= ord(ch) <= 0xD7A3:
+                needed.add(ord(ch))
+    needed.update((0xB0, 0xB7))  # degree sign, middle dot
     points = sorted(needed)
     ranges: list[tuple[int, int]] = []
     for point in points:

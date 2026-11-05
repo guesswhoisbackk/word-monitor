@@ -3,16 +3,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include "models.hpp"
+#include "weather_policy.hpp"
 
 namespace wordmon {
 struct WeatherReading {
   bool valid = false;
   float temperature = 0;
+  float apparentTemperature = 0;
+  bool hasApparentTemperature = false;
   int code = 0;
   int rain = 0;
   uint32_t receivedAt = 0;
 };
-const char* weatherDescription(int code);
 class WeatherService {
  public:
   explicit WeatherService(const AppSettings& settings) : settings_(settings) {}

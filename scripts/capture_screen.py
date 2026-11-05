@@ -1,6 +1,6 @@
 """Capture the actual LVGL display over USB; no framebuffer allocation on ESP32.
 
-Usage: python scripts/capture_screen.py COM4 build/screen.png [words|settings]
+Usage: python scripts/capture_screen.py COM4 build/screen.png [words|settings|answer]
 """
 import struct
 import sys
@@ -19,7 +19,7 @@ s.open()
 time.sleep(2)
 s.reset_input_buffer()
 if len(sys.argv) > 3:
-    s.write(b's' if sys.argv[3] == 'settings' else b'b')
+    s.write(b's' if sys.argv[3] == 'settings' else b'bfr' if sys.argv[3] == 'answer' else b'bf')
     time.sleep(1)
 s.write(b'!')
 data = bytearray()

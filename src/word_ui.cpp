@@ -1,6 +1,7 @@
 #include "word_ui.hpp"
 
 #include <cctype>
+#include <algorithm>
 #include <cstring>
 #include <ctime>
 #include <new>
@@ -29,9 +30,9 @@ constexpr uint32_t kMuted = 0x8BA3BA;
 constexpr uint32_t kGreen = 0xBCE8C8;
 constexpr uint32_t kCyan = 0xA9D9D0;
 
-constexpr int kCardWidth = 224;
-constexpr int kArtY = 62;
-constexpr int kArtSlotHeight = 88;
+constexpr int kArtY = 36;
+constexpr int kArtSlotHeight = 64;
+constexpr int kArtSlotWidth = 96;
 
 // Offline sample pack; it uses the same review history as hosted words.
 struct SampleWord {
@@ -163,6 +164,8 @@ void WordUi::loop() {
   if (Serial.available()) {
     const char command = Serial.read();
     if (command == 's') showSettings();
+    if (command == 'r') { meaningVisible_ = !meaningVisible_; refresh(); }
+    if (command == 'f') { meaningVisible_ = false; refresh(); }
     if (command == 'b' && settingsOverlay_) { lv_obj_delete(settingsOverlay_); settingsOverlay_ = nullptr; }
     if (command == '!') {
       capture_ = true;
@@ -191,17 +194,25 @@ void WordUi::createLayout() {
   lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
   lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
-  clockLabel_ = makeLabel(screen, "--:--", 10, 5, 126, &lv_font_montserrat_24, kText);
+  clockLabel_ = makeLabel(screen, "--:--", 10, 5, 76, &lv_font_montserrat_24, kText);
   lv_obj_t* setup = lv_button_create(screen);
   lv_obj_set_pos(setup, 198, 3); lv_obj_set_size(setup, 34, 32);
   lv_obj_set_style_bg_color(setup, lv_color_hex(kBorder), 0);
   lv_obj_t* gear = lv_label_create(setup); lv_label_set_text(gear, LV_SYMBOL_SETTINGS); lv_obj_center(gear);
   lv_obj_add_event_cb(setup, [](lv_event_t* e) { static_cast<WordUi*>(lv_event_get_user_data(e))->showSettings(); }, LV_EVENT_CLICKED, this);
-  lv_obj_t* weatherCard = makeCard(screen, 8, 38, 224, 36);
-  weatherTemperature_ = makeLabel(weatherCard, "-- C", 9, 7, 66, &lv_font_montserrat_18, kGreen);
-  weatherDetail_ = makeLabel(weatherCard, "Connecting weather", 80, 2, 136, &lv_font_montserrat_12, kText);
-  lv_label_set_long_mode(weatherDetail_, LV_LABEL_LONG_WRAP);
-  lv_obj_set_height(weatherDetail_, 32);
+  progressLabel_ = makeLabel(screen, "0/5", 86, 13, 38, &lv_font_montserrat_12, kGreen, LV_TEXT_ALIGN_RIGHT);
+  lv_obj_t* weatherCard = makeCard(screen, 8, 38, 224, 102);
+  weatherTemperature_ = makeLabel(weatherCard, "--°", 10, 10, 72, &lv_font_montserrat_24, kGreen);
+  weatherDetail_ = makeLabel(weatherCard, "날씨 연결 중", 86, 5, 130, &font_kr_16, kText);
+  weatherRain_ = makeLabel(weatherCard, "잠시 기다려요", 86, 27, 130, &font_kr_16, kMuted);
+  auto* divider = lv_obj_create(weatherCard);
+  lv_obj_set_pos(divider, 10, 50); lv_obj_set_size(divider, 204, 1);
+  lv_obj_set_style_bg_color(divider, lv_color_hex(kBorder), 0);
+  lv_obj_set_style_border_width(divider, 0, 0);
+  lv_obj_remove_flag(divider, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_remove_flag(divider, LV_OBJ_FLAG_CLICKABLE);
+  clothingLabel_ = makeLabel(weatherCard, "옷차림을 준비하고 있어요", 10, 55, 204, &font_kr_16, kGreen);
+  accessoryLabel_ = makeLabel(weatherCard, "", 10, 77, 204, &font_kr_16, kMuted);
   statusLabel_ = makeLabel(screen, "STARTING", 104, 10, 62,
                            &lv_font_montserrat_12, kMuted,
                            LV_TEXT_ALIGN_RIGHT);
@@ -210,34 +221,35 @@ void WordUi::createLayout() {
 
   lv_obj_add_flag(statusLabel_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_add_flag(dateLabel_, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_t* card = makeCard(screen, 8, 80, 224, 168);
-  progressLabel_ = makeLabel(card, "A LITTLE EVERY DAY", 0, 10, 224, &lv_font_montserrat_12,
-            kMuted, LV_TEXT_ALIGN_CENTER);
-  wordLabel_ = makeLabel(card, "--", 0, 34, 224, &lv_font_montserrat_24,
+  lv_obj_t* card = makeCard(screen, 8, 148, 224, 108);
+  wordLabel_ = makeLabel(card, "--", 8, 6, 208, &lv_font_montserrat_18,
                          kText, LV_TEXT_ALIGN_CENTER);
   lv_label_set_long_mode(wordLabel_, LV_LABEL_LONG_SCROLL_CIRCULAR);
   // Flashcard front face: illustration art, or a big first letter when the
   // word has no art yet. The meaning/example rows are back-face content.
   artImage_ = lv_image_create(card);
   lv_obj_add_flag(artImage_, LV_OBJ_FLAG_HIDDEN);
-  letterLabel_ = makeLabel(card, "A", 0, 75, 224, &lv_font_montserrat_48,
+  letterLabel_ = makeLabel(card, "A", 8, 42, 96, &lv_font_montserrat_48,
                            kBorder, LV_TEXT_ALIGN_CENTER);
   lv_obj_add_flag(letterLabel_, LV_OBJ_FLAG_HIDDEN);
-  hintLabel_ = makeLabel(card, "TAP TO REVEAL", 0, 150, 224,
-                         &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
+  hintLabel_ = makeLabel(card, "터치해서\n뜻 확인", 112, 48, 104,
+                         &font_kr_16, kMuted, LV_TEXT_ALIGN_CENTER);
+  lv_label_set_long_mode(hintLabel_, LV_LABEL_LONG_WRAP);
+  lv_obj_set_height(hintLabel_, 44);
   answerPanel_ = lv_obj_create(card);
-  lv_obj_set_pos(answerPanel_, 4, 64);
-  lv_obj_set_size(answerPanel_, 216, 100);
+  lv_obj_set_pos(answerPanel_, 112, 36);
+  lv_obj_set_size(answerPanel_, 104, 64);
   lv_obj_set_style_bg_opa(answerPanel_, LV_OPA_TRANSP, 0);
   lv_obj_set_style_border_width(answerPanel_, 0, 0);
   lv_obj_set_style_pad_all(answerPanel_, 2, 0);
-  lv_obj_set_style_pad_row(answerPanel_, 8, 0);
+  lv_obj_set_style_pad_row(answerPanel_, 5, 0);
+  lv_obj_add_flag(answerPanel_, LV_OBJ_FLAG_EVENT_BUBBLE);
   lv_obj_set_flex_flow(answerPanel_, LV_FLEX_FLOW_COLUMN);
   lv_obj_set_scroll_dir(answerPanel_, LV_DIR_VER);
-  meaningLabel_ = makeLabel(answerPanel_, "", 0, 0, 204,
+  meaningLabel_ = makeLabel(answerPanel_, "", 0, 0, 96,
                             &font_kr_16, kCyan,
                             LV_TEXT_ALIGN_CENTER);
-  exampleLabel_ = makeLabel(answerPanel_, "", 0, 0, 204, &lv_font_montserrat_12,
+  exampleLabel_ = makeLabel(answerPanel_, "", 0, 0, 96, &lv_font_montserrat_12,
                             kMuted, LV_TEXT_ALIGN_CENTER);
   lv_label_set_long_mode(meaningLabel_, LV_LABEL_LONG_WRAP);
   lv_obj_set_height(meaningLabel_, LV_SIZE_CONTENT);
@@ -246,7 +258,7 @@ void WordUi::createLayout() {
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
-  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 252, 224,
+  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 257, 224,
                          &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
   auto button = [&](const char* text, int x, int y, int width) {
     lv_obj_t* obj = lv_button_create(screen);
@@ -316,18 +328,36 @@ void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
 }
 
 void WordUi::refresh() {
-  char weatherText[96];
+  char weatherText[160];
   if (!settings_.weatherEnabled) {
     setLabelTextIfChanged(weatherTemperature_, "--");
-    setLabelTextIfChanged(weatherDetail_, "Weather is off");
+    setLabelTextIfChanged(weatherDetail_, "날씨 꺼짐");
+    setLabelTextIfChanged(weatherRain_, "");
+    setLabelTextIfChanged(clothingLabel_, "설정에서 날씨 켜기");
+    setLabelTextIfChanged(accessoryLabel_, "");
   } else if (weather_.valid) {
-    snprintf(weatherText, sizeof(weatherText), "%.0f C", weather_.temperature);
+    snprintf(weatherText, sizeof(weatherText), "%.0f°", weather_.temperature);
     setLabelTextIfChanged(weatherTemperature_, weatherText);
-    const bool stale = millis() - weather_.receivedAt > 1800000;
-    snprintf(weatherText, sizeof(weatherText), "%s\nRain %d%%%s", weatherDescription(weather_.code), weather_.rain, stale ? " *" : "");
-    setLabelTextIfChanged(weatherDetail_, weatherText);
+    const bool stale = weatherStale(millis(), weather_.receivedAt);
+    setLabelTextIfChanged(weatherDetail_, weatherDescription(weather_.code));
+    snprintf(weatherText, sizeof(weatherText), "오늘 강수 %d%%%s", weather_.rain, stale ? " *" : "");
+    setLabelTextIfChanged(weatherRain_, weatherText);
+    if (stale) {
+      setLabelTextIfChanged(clothingLabel_, "옷차림 정보 갱신 대기");
+      setLabelTextIfChanged(accessoryLabel_, "마지막 날씨를 표시해요");
+    } else {
+      const float comfort = weather_.hasApparentTemperature ? weather_.apparentTemperature : weather_.temperature;
+      snprintf(weatherText, sizeof(weatherText), "옷차림: %s", clothingSuggestion(comfort));
+      setLabelTextIfChanged(clothingLabel_, weatherText);
+      snprintf(weatherText, sizeof(weatherText), "%s %.0f° · %s", weather_.hasApparentTemperature ? "체감" : "기온",
+               comfort, weatherAccessory(weather_.code, weather_.rain, comfort));
+      setLabelTextIfChanged(accessoryLabel_, weatherText);
+    }
   } else {
-    setLabelTextIfChanged(weatherDetail_, accessPointMode_ ? "Set Wi-Fi in Settings" : "Connecting weather...");
+    setLabelTextIfChanged(weatherDetail_, "날씨 연결 중");
+    setLabelTextIfChanged(weatherRain_, "잠시 기다려요");
+    setLabelTextIfChanged(clothingLabel_, accessPointMode_ ? "먼저 Wi-Fi를 연결해 주세요" : "옷차림을 준비하고 있어요");
+    setLabelTextIfChanged(accessoryLabel_, "");
   }
   if (weatherBusy_) lv_obj_add_state(speakButton_, LV_STATE_DISABLED);
   else lv_obj_remove_state(speakButton_, LV_STATE_DISABLED);
@@ -375,7 +405,7 @@ void WordUi::refresh() {
              study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(dateLabel_, dateText);
     char progress[32];
-    snprintf(progress, sizeof(progress), "TODAY  %u / %u NEW", study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
+    snprintf(progress, sizeof(progress), "%u/%u", study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(progressLabel_, progress);
   } else {
     setLabelTextIfChanged(dateLabel_, "TIME WAITING FOR WI-FI");
@@ -415,17 +445,21 @@ void WordUi::refresh() {
   setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
 
   // The illustrated wordbook is used as picture cards: art shows on the
-  // front face whenever available (v0.5.1; the earlier hint-only reveal
-  // confused more than it helped). The back face stays text-only.
+  // left side at all times. Tapping reveals meaning/example on the right.
   const bool front = !meaningVisible_;
-  const bool showArt = front && art != nullptr;
+  const bool showArt = art != nullptr;
   if (showArt && currentArt_ != art) {
     currentArt_ = art;
     lv_image_set_src(artImage_, art);
-    const int artY = art->header.h >= kArtSlotHeight
-                         ? kArtY
-                         : kArtY + (kArtSlotHeight - art->header.h) / 2;
-    lv_obj_set_pos(artImage_, (kCardWidth - art->header.w) / 2, artY);
+    const uint32_t scale = std::min(uint32_t(256), std::min(
+        uint32_t(kArtSlotWidth * 256) / art->header.w,
+        uint32_t(kArtSlotHeight * 256) / art->header.h));
+    lv_image_set_pivot(artImage_, 0, 0);
+    lv_image_set_scale(artImage_, scale);
+    const int renderedWidth = art->header.w * scale / 256;
+    const int renderedHeight = art->header.h * scale / 256;
+    lv_obj_set_pos(artImage_, 8 + (kArtSlotWidth - renderedWidth) / 2,
+                   kArtY + (kArtSlotHeight - renderedHeight) / 2);
     Serial.printf("[ui] show art %ux%u px0=%04x\n",
                   static_cast<unsigned>(art->header.w),
                   static_cast<unsigned>(art->header.h),
@@ -437,7 +471,7 @@ void WordUi::refresh() {
     lv_obj_add_flag(artImage_, LV_OBJ_FLAG_HIDDEN);
   }
 
-  if (front && !showArt) {
+  if (!showArt) {
     char letter[2] = {
         static_cast<char>(toupper(static_cast<unsigned char>(word[0]))),
         '\0'};

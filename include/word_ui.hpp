@@ -66,6 +66,9 @@ class WordUi {
   lv_obj_t* progressLabel_ = nullptr;
   lv_obj_t* weatherTemperature_ = nullptr;
   lv_obj_t* weatherDetail_ = nullptr;
+  lv_obj_t* weatherRain_ = nullptr;
+  lv_obj_t* clothingLabel_ = nullptr;
+  lv_obj_t* accessoryLabel_ = nullptr;
   lv_obj_t* clockLabel_ = nullptr;
   lv_obj_t* settingsOverlay_ = nullptr;
   lv_obj_t* statusLabel_ = nullptr;

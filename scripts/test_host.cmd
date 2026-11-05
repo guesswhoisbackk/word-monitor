@@ -17,3 +17,7 @@ if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /EHsc /W4 /Iinclude tests\audio_policy_test.cpp /Fobuild\audio_policy_test.obj /Febuild\audio_policy_test.exe
 if not "%errorlevel%"=="0" exit /b 1
 build\audio_policy_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /EHsc /W4 /utf-8 /Iinclude tests\weather_policy_test.cpp /Fobuild\weather_policy_test.obj /Febuild\weather_policy_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+build\weather_policy_test.exe
