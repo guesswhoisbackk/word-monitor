@@ -3,6 +3,18 @@
 #include <cstdint>
 
 namespace wordmon {
+// Today's local hours: morning [06,11), noon [11,17), evening [17,24).
+// -1 means unavailable; a missing forecast must never appear as 0%.
+struct RainPeriods {
+  int morning = -1, noon = -1, evening = -1, remaining = -1;
+  void consider(int hour, int probability, int currentHour) {
+    if (hour < 0 || hour > 23 || probability < 0 || probability > 100) return;
+    int* period = hour >= 17 ? &evening : hour >= 11 ? &noon : hour >= 6 ? &morning : nullptr;
+    if (period && probability > *period) *period = probability;
+    if (currentHour >= 0 && currentHour <= 23 && hour >= currentHour && probability > remaining)
+      remaining = probability;
+  }
+};
 // WMO interpretation codes returned by Open-Meteo.
 inline bool snowyWeather(int code) {
   return code == 71 || code == 73 || code == 75 || code == 77 || code == 85 || code == 86;

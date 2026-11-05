@@ -12,7 +12,9 @@ struct WeatherReading {
   float apparentTemperature = 0;
   bool hasApparentTemperature = false;
   int code = 0;
-  int rain = 0;
+  RainPeriods rain;
+  float precipitationMm = 0;
+  bool hasPrecipitation = false;
   uint32_t receivedAt = 0;
 };
 class WeatherService {

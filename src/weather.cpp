@@ -3,6 +3,7 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 #include <cmath>
+#include <cstring>
 
 namespace wordmon {
 void WeatherService::loop(bool networkAvailable) {
@@ -31,7 +32,7 @@ void WeatherService::fetch(void* context) {
   String url = "http://api.open-meteo.com/v1/forecast?latitude=";
   url += String(self->latitude_, 5);
   url += "&longitude=" + String(self->longitude_, 5);
-  url += "&current=temperature_2m,apparent_temperature,weather_code&daily=precipitation_probability_max&timezone=Asia%2FSeoul&forecast_days=1";
+  url += "&current=temperature_2m,apparent_temperature,precipitation,weather_code&hourly=precipitation_probability&precipitation_unit=mm&timezone=Asia%2FSeoul&forecast_days=1";
   {
     WiFiClient client;
     HTTPClient http;
@@ -43,9 +44,25 @@ void WeatherService::fetch(void* context) {
       if (!deserializeJson(doc, http.getStream())) {
         JsonVariantConst temp = doc["current"]["temperature_2m"];
         JsonVariantConst code = doc["current"]["weather_code"];
-        JsonVariantConst rain = doc["daily"]["precipitation_probability_max"][0];
-        if (temp.is<float>() && code.is<int>() && rain.is<int>()) {
-          result.temperature = temp.as<float>(); result.code = code.as<int>(); result.rain = rain.as<int>();
+        if (temp.is<float>() && code.is<int>()) {
+          result.temperature = temp.as<float>(); result.code = code.as<int>();
+          JsonVariantConst precipitation = doc["current"]["precipitation"];
+          if (precipitation.is<float>()) {
+            result.precipitationMm = precipitation.as<float>();
+            result.hasPrecipitation = std::isfinite(result.precipitationMm) && result.precipitationMm >= 0 && result.precipitationMm <= 500;
+          }
+          const char* at = doc["current"]["time"] | "";
+          if (strlen(at) >= 16) {
+            const int currentHour = (at[11] - '0') * 10 + at[12] - '0';
+            JsonArrayConst times = doc["hourly"]["time"];
+            JsonArrayConst probabilities = doc["hourly"]["precipitation_probability"];
+            for (size_t i = 0; i < times.size() && i < probabilities.size(); ++i) {
+              const char* stamp = times[i] | "";
+              if (strlen(stamp) < 16 || strncmp(at, stamp, 10) || !probabilities[i].is<int>()) continue;
+              const int hour = (stamp[11] - '0') * 10 + stamp[12] - '0';
+              result.rain.consider(hour, probabilities[i].as<int>(), currentHour);
+            }
+          }
           JsonVariantConst apparent = doc["current"]["apparent_temperature"];
           if (apparent.is<float>()) {
             result.apparentTemperature = apparent.as<float>();
@@ -53,14 +70,16 @@ void WeatherService::fetch(void* context) {
                 result.apparentTemperature >= -120 && result.apparentTemperature <= 80;
           }
           result.valid = std::isfinite(result.temperature) && result.temperature >= -100 && result.temperature <= 70 &&
-                         result.code >= 0 && result.code <= 99 && result.rain >= 0 && result.rain <= 100;
+                         result.code >= 0 && result.code <= 99;
           result.receivedAt = millis();
         }
       }
     }
     http.end();
   }
-  Serial.printf("[weather] %s temp=%.1f code=%d rain=%d heap=%u\n", result.valid ? "updated" : "retry", result.temperature, result.code, result.rain, ESP.getFreeHeap());
+  Serial.printf("[weather] %s temp=%.1f code=%d rain=%d/%d/%d remaining=%d mm=%.1f heap=%u\n",
+      result.valid ? "updated" : "retry", result.temperature, result.code, result.rain.morning, result.rain.noon,
+      result.rain.evening, result.rain.remaining, result.precipitationMm, ESP.getFreeHeap());
   // All network allocations are released before publishing completion.
   xQueueOverwrite(self->queue_, &result);
   vTaskDelete(nullptr);

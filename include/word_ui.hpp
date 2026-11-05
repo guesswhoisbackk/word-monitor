@@ -67,6 +67,9 @@ class WordUi {
   lv_obj_t* weatherTemperature_ = nullptr;
   lv_obj_t* weatherDetail_ = nullptr;
   lv_obj_t* weatherRain_ = nullptr;
+  lv_obj_t* morningRain_ = nullptr;
+  lv_obj_t* noonRain_ = nullptr;
+  lv_obj_t* eveningRain_ = nullptr;
   lv_obj_t* clothingLabel_ = nullptr;
   lv_obj_t* accessoryLabel_ = nullptr;
   lv_obj_t* clockLabel_ = nullptr;
@@ -79,7 +82,6 @@ class WordUi {
   lv_obj_t* footerLabel_ = nullptr;
   lv_obj_t* artImage_ = nullptr;
   lv_obj_t* letterLabel_ = nullptr;
-  lv_obj_t* hintLabel_ = nullptr;
   const void* currentArt_ = nullptr;
   const WordbookCard* externalCard_ = nullptr;
   WordbookState wordbookState_ = WordbookState::Disabled;

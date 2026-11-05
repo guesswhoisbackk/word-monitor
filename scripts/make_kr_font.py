@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate the LVGL Korean font subset for the word card UI.
+"""Generate reproducible Paperlogy LVGL faces from bundled OFL sources.
 
 Extracts every Hangul syllable used by the current wordbook meanings plus the
-ASCII range from Malgun Gothic and compiles them with lv_font_conv (npx) into
+ASCII range from bundled Paperlogy and compiles them with lv_font_conv (npx) into
 ``src/font_kr_16.c``. Meanings served later that introduce syllables outside
 this subset render as blanks, so re-run this script after adding new Korean
 text and rebuild the firmware.
@@ -21,10 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VOCAB = ROOT / "content" / "illustrated-vocabulary" / "unique_words.json"
-SOURCE_FONT = Path(r"C:\Windows\Fonts\malgun.ttf")
-OUTPUT = ROOT / "src" / "font_kr_16.c"
-
-FONT_SIZE = 16
+SOURCE_FONT = ROOT / "assets" / "paperlogy" / "Paperlogy-5Medium.ttf"
 BPP = 4
 
 
@@ -72,20 +69,23 @@ def main() -> int:
     if not npx:
         print("npx not found; Node.js is required", file=sys.stderr)
         return 1
-    cmd = [npx, "--yes", "lv_font_conv",
-           "--font", str(SOURCE_FONT),
-           "--size", str(FONT_SIZE),
-           "--bpp", str(BPP),
-           "--format", "lvgl",
-           "--no-compress", "--no-prefilter", "--no-kerning",
-           "--lv-include", "lvgl.h",
-           "--lv-font-name", "font_kr_16"]
-    for spec in range_args:
-        cmd += ["-r", spec]
-    cmd += ["-o", str(OUTPUT)]
-    subprocess.run(cmd, check=True, cwd=ROOT)
-    size = OUTPUT.stat().st_size
-    print(f"wrote {OUTPUT} ({size:,} bytes)")
+    faces = [
+        ("font_kr_16", 16, "Paperlogy-5Medium.ttf", range_args),
+        ("font_kr_13", 13, "Paperlogy-4Regular.ttf", range_args),
+        ("font_ui_12", 12, "Paperlogy-5Medium.ttf", ["0x20-0x7E", "0xB0", "0xB7"]),
+        ("font_ui_18", 18, "Paperlogy-6SemiBold.ttf", ["0x20-0x7E", "0xB0", "0xB7"]),
+        ("font_ui_24", 24, "Paperlogy-6SemiBold.ttf", ["0x20-0x7E", "0xB0", "0xB7"]),
+    ]
+    for name, size, filename, specs in faces:
+        target = ROOT / "src" / (name + ".c")
+        cmd = [npx, "--yes", "lv_font_conv", "--font", str(SOURCE_FONT.parent / filename),
+               "--size", str(size), "--bpp", str(BPP), "--format", "lvgl", "--no-compress",
+               "--no-prefilter", "--no-kerning", "--lv-include", "lvgl.h", "--lv-font-name", name]
+        for spec in specs:
+            cmd += ["-r", spec]
+        cmd += ["-o", str(target)]
+        subprocess.run(cmd, check=True, cwd=ROOT)
+        print(f"wrote {target} ({target.stat().st_size:,} bytes)")
     return 0
 
 
