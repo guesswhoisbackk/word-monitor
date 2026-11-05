@@ -53,6 +53,7 @@ class WordUi {
   bool meaningVisible_ = false;
   bool graded_ = false;
   bool reviewRequested_ = false;
+  bool reviewLoading_ = false;
   bool hintVisible_ = false;
   int32_t sampleIndex_ = -1;
   int32_t sampleDay_ = -1;
@@ -61,6 +62,7 @@ class WordUi {
   lv_obj_t* studyLabel_ = nullptr;
   lv_obj_t* againButton_ = nullptr;
   lv_obj_t* goodButton_ = nullptr;
+  lv_obj_t* nextButton_ = nullptr;
   lv_obj_t* hintButton_ = nullptr;
   lv_obj_t* answerPanel_ = nullptr;
 

@@ -165,6 +165,10 @@ void WordUi::loop() {
     if (command == 's') showSettings();
     if (command == 'r') { meaningVisible_ = !meaningVisible_; refresh(); }
     if (command == 'f') { meaningVisible_ = false; refresh(); }
+    // USB-only loading preview; does not grade or request another card.
+    if (command == 'd') { reviewLoading_ = true; refresh(); }
+    if (command == 'u') { reviewLoading_ = false; refresh(); }
+    if (command == 'n') lv_obj_send_event(nextButton_, LV_EVENT_CLICKED, nullptr);
     if (command == 'b' && settingsOverlay_) { lv_obj_delete(settingsOverlay_); settingsOverlay_ = nullptr; }
     if (command == '!') {
       capture_ = true;
@@ -230,7 +234,8 @@ void WordUi::createLayout() {
   lv_obj_t* card = makeCard(screen, 8, 158, 224, 98);
   wordLabel_ = makeLabel(card, "--", 132, 37, 84, &font_ui_18,
                          kText, LV_TEXT_ALIGN_CENTER);
-  lv_label_set_long_mode(wordLabel_, LV_LABEL_LONG_SCROLL_CIRCULAR);
+  lv_label_set_long_mode(wordLabel_, LV_LABEL_LONG_DOT);
+  lv_obj_set_style_text_line_space(wordLabel_, 2, 0);
   // Flashcard front face: illustration art, or a big first letter when the
   // word has no art yet. The meaning/example rows are back-face content.
   artImage_ = lv_image_create(card);
@@ -263,6 +268,18 @@ void WordUi::createLayout() {
     lv_obj_set_pos(obj, x, y);
     lv_obj_set_size(obj, width, 42);
     lv_obj_set_style_bg_color(obj, lv_color_hex(kBorder), 0);
+    const lv_style_selector_t disabled = LV_PART_MAIN | LV_STATE_DISABLED;
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0x09131D), disabled);
+    lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, disabled);
+    lv_obj_set_style_opa(obj, LV_OPA_COVER, disabled);
+    lv_obj_set_style_text_color(obj, lv_color_hex(0x354857), disabled);
+    lv_obj_set_style_text_opa(obj, LV_OPA_COVER, disabled);
+    lv_obj_set_style_border_color(obj, lv_color_hex(0x142331), disabled);
+    lv_obj_set_style_border_width(obj, 1, disabled);
+    lv_obj_set_style_shadow_width(obj, 0, disabled);
+    // The default theme recolors disabled widgets light grey. Suppress that
+    // overlay so the explicit dark background is the color actually drawn.
+    lv_obj_set_style_recolor_opa(obj, LV_OPA_TRANSP, disabled);
     lv_obj_t* label = lv_label_create(obj);
     lv_label_set_text(label, text);
     lv_obj_set_style_text_font(label, &font_ui_12, 0);
@@ -272,7 +289,7 @@ void WordUi::createLayout() {
   };
   againButton_ = button("AGAIN", 8, 274, 70);
   goodButton_ = button("GOT IT", 85, 274, 70);
-  button("NEXT", 162, 274, 70);
+  nextButton_ = button("NEXT", 162, 274, 70);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
   // Art is always on the front face now; the hint reveal button stays hidden
@@ -440,7 +457,8 @@ void WordUi::refresh() {
     meaning = entry.meaning;
     art = entry.art;
   }
-  if (shownWord_ != word) {
+  const bool wordChanged = shownWord_ != word;
+  if (wordChanged) {
     audio_.cancel();
     audioFeedback_ = false;
     shownWord_ = word;
@@ -451,7 +469,22 @@ void WordUi::refresh() {
     currentArt_ = nullptr;
     lv_obj_scroll_to_y(answerPanel_, 0, LV_ANIM_OFF);
   }
-  setLabelTextIfChanged(wordLabel_, word);
+  if (wordChanged) {
+    // Fixed right column, up to three stationary lines, vertically centered.
+    // Dots are only a fallback for content exceeding the three-line area.
+    lv_point_t size;
+    const lv_font_t* font = &font_ui_18;
+    for (const lv_font_t* candidate : {&font_ui_18, &font_kr_16, &font_ui_12}) {
+      font = candidate;
+      lv_text_get_size(&size, word, font, 0, 2, 84, LV_TEXT_FLAG_NONE);
+      if (size.y <= font->line_height * 3 + 4) break;
+    }
+    lv_obj_set_style_text_font(wordLabel_, font, 0);
+    lv_label_set_text(wordLabel_, word);
+    const int height = std::min(int(size.y), int(font->line_height * 3 + 4));
+    lv_obj_set_height(wordLabel_, height);
+    lv_obj_set_y(wordLabel_, (98 - height) / 2);
+  }
   setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
 
   // The illustrated wordbook is used as picture cards: art shows on the
@@ -497,12 +530,14 @@ void WordUi::refresh() {
       study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
   // Grading works from either face (picture decks get rated on sight); the
   // reveal is still one tap away for checking the meaning/example.
-  const bool canGrade = !graded_ && timeValid && eligible;
+  const bool canGrade = !reviewLoading_ && !graded_ && timeValid && eligible;
   for (lv_obj_t* button : {againButton_, goodButton_}) {
     if (canGrade) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
   }
-  const char* message = !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
+  if (reviewLoading_) lv_obj_add_state(nextButton_, LV_STATE_DISABLED);
+  else lv_obj_remove_state(nextButton_, LV_STATE_DISABLED);
+  const char* message = reviewLoading_ ? "LOADING..." : !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
       !study_.ready() ? "STORAGE ERROR - CANNOT SAVE" :
       !studyMessage_.isEmpty() ? studyMessage_.c_str() :
       waiting ? "SAVED - TAP NEXT FOR MORE" :
@@ -610,6 +645,7 @@ void WordUi::cardEvent(lv_event_t* event) {
 void WordUi::studyEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_target(event));
+  if (self->reviewLoading_) return;
   self->audioFeedback_ = false;
   if (target == self->speakButton_) {
     self->audioFeedback_ = true;
@@ -621,7 +657,11 @@ void WordUi::studyEvent(lv_event_t* event) {
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
     if (self->graded_ || (record && !reviewDue(*record, now))) return;
     const bool good = target == self->goodButton_;
+    self->reviewLoading_ = true;
+    self->refresh();
+    lv_refr_now(self->lvDisplay_);
     if (!self->study_.grade(self->shownWord_.c_str(), now, good, self->settings_.dailyNewLimit)) {
+      self->reviewLoading_ = false;
       self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
     } else {
       self->graded_ = true;
@@ -639,10 +679,12 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->meaningVisible_ = false;
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
   } else {
+    self->reviewLoading_ = true;
     self->audio_.cancel();
     self->reviewRequested_ = true;
   }
   self->refresh();
+  if (self->reviewLoading_) lv_refr_now(self->lvDisplay_);
 }
 
 bool WordUi::takeReviewRequest() {
@@ -663,6 +705,7 @@ bool WordUi::takeReviewRequest() {
 }
 
 void WordUi::reviewFinished(bool found) {
+  reviewLoading_ = false;
   if (found) {
     meaningVisible_ = false;
     graded_ = false;
