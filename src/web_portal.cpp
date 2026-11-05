@@ -1,6 +1,7 @@
 #include "web_portal.hpp"
 
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <cmath>
 #include <cstdlib>
 
@@ -133,6 +134,28 @@ void WebPortal::begin(bool accessPointMode) {
 }
 
 void WebPortal::loop() {
+  // USB diagnostic: exercise the real HTTP handler while the main loop keeps
+  // serving it. Print only status/size, never saved Wi-Fi settings.
+  if (Serial.available() && Serial.peek() == '?') {
+    Serial.read();
+    xTaskCreate([](void* context) {
+      auto* self = static_cast<WebPortal*>(context);
+      {
+        WiFiClient client;
+        HTTPClient http;
+        const String ip = self->accessPointMode_ ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
+        http.setConnectTimeout(3000); http.setTimeout(5000);
+        if (http.begin(client, "http://" + ip + "/")) {
+          const int code = http.GET();
+          const String page = code == 200 ? http.getString() : String();
+          Serial.printf("[web] self-test HTTP=%d bytes=%u complete=%d stations=%u\n", code,
+              static_cast<unsigned>(page.length()), page.endsWith("</html>"), WiFi.softAPgetStationNum());
+          http.end();
+        }
+      }
+      vTaskDelete(nullptr);
+    }, "web-test", 4096, this, 1, nullptr);
+  }
   if (accessPointMode_) {
     dns_.processNextRequest();
   }
@@ -143,6 +166,8 @@ void WebPortal::loop() {
 }
 
 void WebPortal::handleRoot() {
+  Serial.printf("[web] GET / from %s heap=%u\n", server_.client().remoteIP().toString().c_str(), ESP.getFreeHeap());
+  server_.sendHeader("Cache-Control", "no-store");
   server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server_.send(200, "text/html; charset=utf-8", "");
   server_.sendContent_P(kPageStart);
@@ -178,6 +203,7 @@ void WebPortal::handleRoot() {
   server_.sendContent(String(settings_.weatherLongitude, 5));
   server_.sendContent_P(kPageEnd);
   server_.sendContent(String());
+  Serial.println("[web] setup page sent");
 }
 
 void WebPortal::handleWifiApi() {

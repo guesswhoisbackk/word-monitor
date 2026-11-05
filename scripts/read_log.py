@@ -4,7 +4,13 @@ port = sys.argv[1] if len(sys.argv) > 1 else "COM6"
 seconds = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 noreset = len(sys.argv) > 3
 
-s = serial.Serial(port, 115200, timeout=1)
+s = serial.Serial()
+s.port = port
+s.baudrate = 115200
+s.timeout = 1
+s.dtr = False
+s.rts = False
+s.open()
 # release handshake lines so the board is not held in reset
 s.dtr = False
 s.rts = False

@@ -64,7 +64,12 @@ void startNetwork() {
   }
 
   accessPointMode = true;
+  // Do not keep searching for an unavailable saved network: STA channel
+  // changes can interrupt the phone's connection to the setup AP.
+  WiFi.setAutoReconnect(false);
+  WiFi.disconnect(false, false);
   WiFi.mode(WIFI_AP_STA);
+  WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
   const String ssid = setupNetworkName();
   if (!WiFi.softAP(ssid.c_str(), "wordmon1")) {
     Serial.println("[wifi] access point failed");
@@ -81,6 +86,12 @@ void setup() {
   delay(200);
   Serial.printf("\n%s v%s | panel %s\n", wordmon::kAppName,
                 wordmon::kVersion, WORDMON_PANEL_NAME);
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED) Serial.println("[wifi] phone joined setup AP");
+    if (event == ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED) Serial.println("[wifi] phone received DHCP address");
+    if (event == ARDUINO_EVENT_WIFI_AP_STADISCONNECTED) Serial.println("[wifi] phone left setup AP");
+    if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) Serial.printf("[wifi] station disconnect reason=%u\n", info.wifi_sta_disconnected.reason);
+  });
 
   if (!settingsStore.load(settings)) {
     // Reuse only network settings from the previous Dayboard. Tasks stay intact
