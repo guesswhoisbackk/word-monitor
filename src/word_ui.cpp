@@ -197,13 +197,13 @@ void WordUi::createLayout() {
   lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
   lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
-  clockLabel_ = makeLabel(screen, "--:--", 10, 5, 76, &font_ui_24, kText);
+  clockLabel_ = makeLabel(screen, "--:--", 8, 5, 70, &font_ui_24, kText);
   lv_obj_t* setup = lv_button_create(screen);
   lv_obj_set_pos(setup, 198, 3); lv_obj_set_size(setup, 34, 32);
   lv_obj_set_style_bg_color(setup, lv_color_hex(kBorder), 0);
   lv_obj_t* gear = lv_label_create(setup); lv_label_set_text(gear, LV_SYMBOL_SETTINGS); lv_obj_center(gear);
   lv_obj_add_event_cb(setup, [](lv_event_t* e) { static_cast<WordUi*>(lv_event_get_user_data(e))->showSettings(); }, LV_EVENT_CLICKED, this);
-  progressLabel_ = makeLabel(screen, "0/5", 86, 13, 38, &font_ui_12, kGreen, LV_TEXT_ALIGN_RIGHT);
+  progressLabel_ = makeLabel(screen, "새0/5", 80, 12, 44, &font_kr_13, kGreen, LV_TEXT_ALIGN_RIGHT);
   lv_obj_t* weatherCard = makeCard(screen, 8, 38, 224, 112);
   lv_obj_add_flag(weatherCard, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(weatherCard, [](lv_event_t* event) {
@@ -261,8 +261,8 @@ void WordUi::createLayout() {
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
-  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 257, 224,
-                         &font_ui_12, kMuted, LV_TEXT_ALIGN_CENTER);
+  studyLabel_ = makeLabel(screen, "단어를 떠올리고 평가해요", 8, 257, 224,
+                         &font_kr_13, kMuted, LV_TEXT_ALIGN_CENTER);
   auto button = [&](const char* text, int x, int y, int width) {
     lv_obj_t* obj = lv_button_create(screen);
     lv_obj_set_pos(obj, x, y);
@@ -289,7 +289,8 @@ void WordUi::createLayout() {
   };
   againButton_ = button("AGAIN", 8, 274, 70);
   goodButton_ = button("GOT IT", 85, 274, 70);
-  nextButton_ = button("NEXT", 162, 274, 70);
+  nextButton_ = button("복습 선택", 162, 274, 70);
+  lv_obj_set_style_text_font(lv_obj_get_child(nextButton_,0), &font_kr_13,0);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
   // Art is always on the front face now; the hint reveal button stays hidden
@@ -388,9 +389,9 @@ void WordUi::refresh() {
   }
   if (weatherBusy_) {
     setLabelTextIfChanged(accessoryLabel_, "날씨 새로 받는 중");
-    lv_obj_add_state(speakButton_, LV_STATE_DISABLED);
+
   }
-  else lv_obj_remove_state(speakButton_, LV_STATE_DISABLED);
+
   if (ipAddress_.isEmpty()) {
     setLabelTextIfChanged(statusLabel_, "STARTING");
   } else if (accessPointMode_) {
@@ -435,7 +436,7 @@ void WordUi::refresh() {
              study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(dateLabel_, dateText);
     char progress[32];
-    snprintf(progress, sizeof(progress), "%u/%u", study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
+    snprintf(progress, sizeof(progress), "새%u/%u", study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(progressLabel_, progress);
   } else {
     setLabelTextIfChanged(dateLabel_, "TIME WAITING FOR WI-FI");
@@ -460,6 +461,7 @@ void WordUi::refresh() {
   const bool wordChanged = shownWord_ != word;
   if (wordChanged) {
     audio_.cancel();
+    speakRequested_=false;
     audioFeedback_ = false;
     shownWord_ = word;
     meaningVisible_ = false;
@@ -485,7 +487,7 @@ void WordUi::refresh() {
     lv_obj_set_height(wordLabel_, height);
     lv_obj_set_y(wordLabel_, (98 - height) / 2);
   }
-  setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
+  setLabelTextIfChanged(speakLabel_, audio_.busy() || speakRequested_ ? "STOP" : "SPEAK");
 
   // The illustrated wordbook is used as picture cards: art shows on the
   // left side at all times. Tapping replaces the word with only its Korean meaning on the right.
@@ -540,11 +542,14 @@ void WordUi::refresh() {
   const char* message = reviewLoading_ ? "LOADING..." : !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
       !study_.ready() ? "STORAGE ERROR - CANNOT SAVE" :
       !studyMessage_.isEmpty() ? studyMessage_.c_str() :
-      waiting ? "SAVED - TAP NEXT FOR MORE" :
-      !eligible ? "DAILY LIMIT - TAP NEXT" :
-      meaningVisible_ ? "SAY IT ALOUD, THEN RATE" : "RECALL IT, THEN RATE";
+      "";
+  char progressText[100];
+  if(!*message) {
+    snprintf(progressText,sizeof(progressText),"새 단어 %u/%u · 복습 %u개",study_.newToday(static_cast<uint32_t>(now)),settings_.dailyNewLimit,dueCount_);
+    message=progressText;
+  }
   setLabelTextIfChanged(studyLabel_, message);
-  if (audioFeedback_) setLabelTextIfChanged(studyLabel_, audio_.message());
+  if(audioFeedback_) setLabelTextIfChanged(studyLabel_,speakRequested_?"발음 준비 중":audio_.message());
 
   if (front) lv_obj_clear_flag(wordLabel_, LV_OBJ_FLAG_HIDDEN);
   else lv_obj_add_flag(wordLabel_, LV_OBJ_FLAG_HIDDEN);
@@ -649,9 +654,8 @@ void WordUi::studyEvent(lv_event_t* event) {
   self->audioFeedback_ = false;
   if (target == self->speakButton_) {
     self->audioFeedback_ = true;
-    if (self->audio_.busy()) self->audio_.cancel();
-    else if (!self->weatherBusy_) self->audio_.start(self->shownWord_, self->externalCard_ ? self->externalCard_->audio : "",
-                           self->settings_.wordbookUrl, self->settings_.audioVolume);
+    if(self->audio_.busy() || self->speakRequested_) {self->audio_.cancel();self->speakRequested_=false;}
+    else self->speakRequested_=true;
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
@@ -665,6 +669,8 @@ void WordUi::studyEvent(lv_event_t* event) {
       self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
     } else {
       self->graded_ = true;
+      self->manualReview_=false;
+      self->speakRequested_=false;
       Serial.printf("[ui] grade %s -> %s\n", self->shownWord_.c_str(),
                     good ? "GOT IT" : "AGAIN");
       // Advance straight to the next card: an explicit NEXT after every
@@ -680,6 +686,8 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
   } else {
     self->reviewLoading_ = true;
+    self->manualReview_=true; self->selectionWord_=self->shownWord_;
+    self->speakRequested_=false;
     self->audio_.cancel();
     self->reviewRequested_ = true;
   }
@@ -704,6 +712,14 @@ bool WordUi::takeReviewRequest() {
   return false;
 }
 
+void WordUi::closeSettings() {
+  if(settingsOverlay_) {lv_obj_delete(settingsOverlay_);settingsOverlay_=nullptr;}
+}
+void WordUi::serviceAudio(bool canStart) {
+  if(!canStart || !speakRequested_ || audio_.busy()) return;
+  speakRequested_=false;
+  audio_.start(shownWord_,externalCard_?externalCard_->audio:"",settings_.wordbookUrl,settings_.audioVolume);
+}
 void WordUi::reviewFinished(bool found) {
   reviewLoading_ = false;
   if (found) {
@@ -712,8 +728,10 @@ void WordUi::reviewFinished(bool found) {
     hintVisible_ = false;
     studyMessage_ = "";
   } else {
-    studyMessage_ = "ALL DONE - COME BACK LATER";
+    studyMessage_ = "오늘 학습을 마쳤어요";
   }
+  if(found && manualReview_ && selectionWord_==shownWord_) studyMessage_="현재 단어를 먼저 평가해 주세요";
+  manualReview_=false;
   refresh();
 }
 

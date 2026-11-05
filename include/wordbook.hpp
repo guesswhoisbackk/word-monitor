@@ -5,6 +5,10 @@
 
 #include "models.hpp"
 #include "study_store.hpp"
+#include "study_plan.hpp"
+#include "cache_policy.hpp"
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 namespace wordmon {
 
@@ -36,7 +40,13 @@ class Wordbook {
   Wordbook(AppSettings& settings, StudyStore& study);
 
   void begin();
-  void loop();
+  void loop(bool allowNetwork = true);
+  void poll();
+  bool busy() const { return busy_; }
+  void networkRestored() { retries_.reset(); if (!everSynced_) forceSync_ = true; }
+  uint16_t dueCount() const { return plan_.dueCount; }
+  uint8_t cachedAssets() const;
+  uint8_t plannedAssets() const { return assetCount_; }
 
   const WordbookCard* card() const {
     return cardValid_ ? &card_ : nullptr;
@@ -54,7 +64,13 @@ class Wordbook {
   bool fetchToFile(const String& url, const String& path, size_t maxBytes,
                    uint16_t* lineCount);
   bool readManifestLine(uint16_t index, String& out);
-  void evictOtherArt(const String& keepName);
+  void rebuildPlan();
+  void rebuildAssets();
+  void appendAsset(const String& name, bool voice);
+  void pruneCache();
+  void startJob(uint8_t type, const String& name = "", const String& path = "");
+  static void downloadTask(void* context);
+  bool validAsset(const String& path, bool voice);
   bool loadArt(const String& path);
 
   AppSettings& settings_;
@@ -73,6 +89,17 @@ class Wordbook {
   lv_image_dsc_t artDsc_{};
   uint16_t* artPixels_ = nullptr;
 
+  struct Asset { char name[41] = {}; char path[40] = {}; bool voice = false; bool ready = false; } assets_[12];
+  struct Job { uint8_t type = 0; String url; String path; } job_;
+  struct Result { bool ok = false; uint16_t count = 0; };
+  QueueHandle_t results_ = nullptr;
+  bool busy_ = false, forceSync_ = false, assetsDirty_ = true;
+  uint8_t assetCount_ = 0;
+  String cardArtName_, cardArtPath_;
+  StudyPlan plan_;
+  uint32_t plannedStudyRevision_ = UINT32_MAX, planCheckAt_ = 0;
+  int32_t planDay_ = -1;
+  AssetRetries retries_;
   uint32_t lastAttemptMs_ = 0;
   uint32_t lastSyncOkMs_ = 0;
   bool everAttempted_ = false;

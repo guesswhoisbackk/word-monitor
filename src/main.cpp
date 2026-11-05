@@ -21,11 +21,14 @@ wordmon::AudioPlayer audio;
 wordmon::WordUi wordUi(settings, study, audio);
 wordmon::Wordbook wordbook(settings, study);
 wordmon::WeatherService weather(settings);
-wordmon::WebPortal webPortal(settings, settingsStore, weather);
+wordmon::WebPortal webPortal(settings, settingsStore, weather, wordbook, study);
 wordmon::NetworkRecovery networkRecovery;
+wordmon::SetupRecovery setupRecovery;
+bool setupAttempt = false, setupOnline = false;
 uint32_t pushedWordbookRevision = 0;
 
 bool accessPointMode = false;
+RTC_NOINIT_ATTR uint32_t setupBootTest;
 
 String setupNetworkName() {
   const uint64_t chip = ESP.getEfuseMac();
@@ -35,9 +38,38 @@ String setupNetworkName() {
   return String("WordMon-") + suffix;
 }
 
+void startSetupAP() {
+  accessPointMode = true;
+  // Do not keep searching for an unavailable saved network: STA channel
+  // changes can interrupt the phone's connection to the setup AP.
+  WiFi.setAutoReconnect(false);
+  WiFi.disconnect(false, false);
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
+  const String ssid = setupNetworkName();
+  if (!WiFi.softAP(ssid.c_str(), "wordmon1")) {
+    Serial.println("[wifi] access point failed");
+  }
+  wordUi.setNetworkInfo(true, WiFi.softAPIP().toString());
+  Serial.printf("[wifi] setup AP: %s / password: wordmon1 / %s\n",
+                ssid.c_str(), WiFi.softAPIP().toString().c_str());
+  setupRecovery.reset(); setupAttempt = setupOnline = false;
+}
+
+void stationRestored() {
+  MDNS.end(); MDNS.begin("wordmon");
+  configTzTime(wordmon::kTimezone, wordmon::kNtpServer1, wordmon::kNtpServer2);
+  wordUi.setNetworkInfo(accessPointMode, accessPointMode ? WiFi.softAPIP().toString() : WiFi.localIP().toString());
+  weather.requestRefresh(); wordbook.networkRestored();
+  Serial.printf("[wifi] connection restored rssi=%d; refreshing weather\n", WiFi.RSSI());
+}
+
 void startNetwork() {
   WiFi.persistent(false);
   WiFi.setSleep(false);
+  const bool testSetup = esp_reset_reason() == ESP_RST_SW && setupBootTest == 0x574D4150;
+  setupBootTest = 0;
+  if (testSetup) { startSetupAP(); return; }
 
   if (!settings.wifiSsid.isEmpty()) {
     WiFi.mode(WIFI_STA);
@@ -66,20 +98,7 @@ void startNetwork() {
     return;
   }
 
-  accessPointMode = true;
-  // Do not keep searching for an unavailable saved network: STA channel
-  // changes can interrupt the phone's connection to the setup AP.
-  WiFi.setAutoReconnect(false);
-  WiFi.disconnect(false, false);
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
-  const String ssid = setupNetworkName();
-  if (!WiFi.softAP(ssid.c_str(), "wordmon1")) {
-    Serial.println("[wifi] access point failed");
-  }
-  wordUi.setNetworkInfo(true, WiFi.softAPIP().toString());
-  Serial.printf("[wifi] setup AP: %s / password: wordmon1 / %s\n",
-                ssid.c_str(), WiFi.softAPIP().toString().c_str());
+  startSetupAP();
 }
 
 void maintainNetwork() {
@@ -91,6 +110,33 @@ void maintainNetwork() {
     WiFi.disconnect(false, false);
     Serial.println("[wifi] USB recovery test: disconnected");
   }
+  if (Serial.available() && Serial.peek() == 'z') {
+    Serial.read(); setupBootTest = 0x574D4150;
+    Serial.println("[wifi] USB setup recovery test: restarting into setup AP");
+    ESP.restart();
+  }
+  if (accessPointMode) {
+    const unsigned clients = WiFi.softAPgetStationNum();
+    const bool connected = WiFi.status() == WL_CONNECTED;
+    if (clients && setupAttempt && !connected) {
+      WiFi.disconnect(false, false); setupAttempt = false;
+      Serial.println("[wifi] paused recovery for setup phone");
+    }
+    if (connected && !setupOnline) { setupOnline = true; stationRestored(); }
+    if (!connected) setupOnline = false;
+    const auto action = setupRecovery.poll(millis(), connected, !settings.wifiSsid.isEmpty(), clients);
+    if (action == wordmon::SetupAction::Retry) {
+      Serial.println("[wifi] setup idle: retry saved network");
+      WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str()); setupAttempt = true;
+    } else if (action == wordmon::SetupAction::Finish) {
+      WiFi.softAPdisconnect(true); WiFi.mode(WIFI_STA); WiFi.setAutoReconnect(true);
+      accessPointMode = false; webPortal.setAccessPointMode(false); wordUi.closeSettings();
+      wordUi.setNetworkInfo(false, WiFi.localIP().toString());
+      networkRecovery.poll(millis(), true, false);
+      Serial.println("[wifi] setup recovery complete; AP closed");
+    }
+    return;
+  }
   const auto action = networkRecovery.poll(millis(), WiFi.status() == WL_CONNECTED,
                                            accessPointMode || settings.wifiSsid.isEmpty());
   if (action == wordmon::NetworkAction::Retry) {
@@ -99,12 +145,7 @@ void maintainNetwork() {
     WiFi.disconnect(false, false);
     WiFi.begin(settings.wifiSsid.c_str(), settings.wifiPassword.c_str());
   } else if (action == wordmon::NetworkAction::Restored) {
-    MDNS.end();
-    MDNS.begin("wordmon");
-    configTzTime(wordmon::kTimezone, wordmon::kNtpServer1, wordmon::kNtpServer2);
-    wordUi.setNetworkInfo(false, WiFi.localIP().toString());
-    weather.requestRefresh();
-    Serial.printf("[wifi] connection restored rssi=%d; refreshing weather\n", WiFi.RSSI());
+    stationRestored();
   }
 }
 
@@ -147,13 +188,10 @@ void loop() {
   webPortal.loop();
   wordUi.loop();
   if (wordUi.takeWeatherRefreshRequest()) weather.requestRefresh();
-  // Audio worker owns network/FS while active; LVGL and portal keep running.
-  // Avoid concurrent downloads/decoding and changing the active card mid-word.
-  if (audio.busy()) { delay(5); return; }
-  weather.loop(!audio.busy());
+  wordbook.poll();
+  weather.loop(false);
   wordUi.setWeather(weather.reading(), weather.busy());
-  if (weather.busy()) { delay(5); return; }
-  wordbook.loop();
+  if (audio.busy()) { delay(5); return; }
   if (wordUi.takeReviewRequest()) {
     const bool found = wordbook.nextReview(study);
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
@@ -162,8 +200,13 @@ void loop() {
   }
   if (wordbook.revision() != pushedWordbookRevision) {
     pushedWordbookRevision = wordbook.revision();
-    wordUi.setWordbookCard(wordbook.card(), wordbook.state(),
-                           wordbook.wordCount());
+    wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
   }
+  wordUi.serviceAudio(!wordbook.busy() && !weather.busy());
+  if (!audio.busy()) {
+    if (!wordbook.busy()) weather.loop(true);
+    wordbook.loop(!weather.busy());
+  }
+  wordUi.setDueCount(wordbook.dueCount());
   delay(5);
 }

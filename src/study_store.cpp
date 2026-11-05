@@ -144,7 +144,7 @@ bool StudyStore::grade(const char* word, uint32_t now, bool remembered, uint8_t 
     newCount_ = static_cast<uint16_t>(newToday(now) + 1);
     newDay_ = studyDay(now);
   }
-  if (save()) return true;
+  if (save()) { ++revision_; return true; }
   *target = before;
   if (isNew) --count_;
   newDay_ = oldDay; newCount_ = oldCount;

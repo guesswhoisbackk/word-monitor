@@ -21,6 +21,9 @@ class WordUi {
   void loop();
   void setWeather(const WeatherReading& reading, bool busy) { weather_ = reading; weatherBusy_ = busy; }
   void showSettings();
+  void closeSettings();
+  void setDueCount(uint16_t count) { dueCount_=count; }
+  void serviceAudio(bool canStart);
   bool takeWeatherRefreshRequest() {
     const bool requested = weatherRefreshRequested_;
     weatherRefreshRequested_ = false; return requested;
@@ -40,6 +43,10 @@ class WordUi {
   lv_obj_t* speakButton_ = nullptr;
   lv_obj_t* speakLabel_ = nullptr;
   bool audioFeedback_ = false;
+  bool speakRequested_ = false;
+  bool manualReview_ = false;
+  String selectionWord_;
+  uint16_t dueCount_ = 0;
   CydDisplay display_;
   SPIClass touchSpi_{VSPI};
   XPT2046_Touchscreen touch_{kTouchCs, kTouchIrq};

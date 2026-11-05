@@ -6,6 +6,7 @@
 #include <driver/dac.h>
 #include <driver/i2s.h>
 #include "assets/speech_audio.hpp"
+#include "asset_cache.hpp"
 
 namespace wordmon {
 namespace {
@@ -95,6 +96,8 @@ void AudioPlayer::run() {
   state_ = playPcmFile(file, info) ? AudioState::Done : AudioState::Failed;
 }
 bool AudioPlayer::openCached(File& file, WavInfo& info) {
+  const String shared=assetPathFromUrl(url_,true);
+  if (LittleFS.exists(shared) && openVoice(shared.c_str(),file,info)) return true;
   File key = LittleFS.open(kKey, "r");
   if (!key || key.size() != url_.length() || key.readString() != url_) return false;
   key.close();
@@ -153,15 +156,8 @@ bool AudioPlayer::download() {
   return true;
 }
 void AudioPlayer::finalizeDownload() {
-  // Clear identity first: power loss must never associate old identity with new audio.
-  if (LittleFS.exists(kKey) && !LittleFS.remove(kKey)) { LittleFS.remove(kTemp); return; }
-  if (!LittleFS.rename(kTemp, kCache)) { LittleFS.remove(kTemp); return; }
-  File key = LittleFS.open(kKey, "w");
-  if (key) {
-    const bool saved = key.print(url_) == url_.length();
-    key.close();
-    if (!saved) LittleFS.remove(kKey);
-  }
+  const String shared=assetPathFromUrl(url_,true);
+  if(!LittleFS.rename(kTemp,shared)) LittleFS.remove(kTemp);
 }
 bool AudioPlayer::playPcmFile(File& file, const WavInfo& info) {
   if (!file.seek(info.offset, SeekSet)) return false;

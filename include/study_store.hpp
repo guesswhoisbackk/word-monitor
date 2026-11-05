@@ -14,6 +14,7 @@ class StudyStore {
   uint16_t newToday(uint32_t now) const;
   bool allowsNew(uint32_t now, uint8_t limit) const;
   bool ready() const { return ready_; }
+  uint32_t revision() const { return revision_; }
   bool grade(const char* word, uint32_t now, bool remembered, uint8_t limit = 5);
  private:
   bool save();
@@ -23,5 +24,6 @@ class StudyStore {
   int32_t newDay_ = -1;
   uint16_t newCount_ = 0;
   bool ready_ = false;
+  uint32_t revision_ = 0;
 };
 }

@@ -25,3 +25,7 @@ if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /EHsc /W4 /Iinclude tests\network_policy_test.cpp /Fobuild\network_policy_test.obj /Febuild\network_policy_test.exe
 if not "%errorlevel%"=="0" exit /b 1
 build\network_policy_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /EHsc /W4 /Iinclude tests\prefetch_policy_test.cpp /Fobuild\prefetch_policy_test.obj /Febuild\prefetch_policy_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+build\prefetch_policy_test.exe

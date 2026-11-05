@@ -6,21 +6,25 @@
 #include "models.hpp"
 #include "settings_store.hpp"
 #include "weather.hpp"
+#include "wordbook.hpp"
 
 namespace wordmon {
 
 class WebPortal {
  public:
-  WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather);
+  WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather, Wordbook& wordbook, StudyStore& study);
 
   void begin(bool accessPointMode);
   void loop();
+  void setAccessPointMode(bool mode);
   bool restartPending() const { return restartAt_ != 0; }
 
  private:
   AppSettings& settings_;
   SettingsStore& store_;
   WeatherService& weather_;
+  Wordbook& wordbook_;
+  StudyStore& study_;
   WebServer server_{80};
   DNSServer dns_;
   bool accessPointMode_ = false;

@@ -115,8 +115,8 @@ document.getElementById('citySearch').addEventListener('click',async function(){
 
 }  // namespace
 
-WebPortal::WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather)
-    : settings_(settings), store_(store), weather_(weather) {}
+WebPortal::WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather, Wordbook& wordbook, StudyStore& study)
+    : settings_(settings), store_(store), weather_(weather), wordbook_(wordbook), study_(study) {}
 
 void WebPortal::begin(bool accessPointMode) {
   accessPointMode_ = accessPointMode;
@@ -126,6 +126,18 @@ void WebPortal::begin(bool accessPointMode) {
 
   server_.on("/", HTTP_GET, [this]() { handleRoot(); });
   server_.on("/api/wifi", HTTP_GET, [this]() { handleWifiApi(); });
+  server_.on("/api/learning", HTTP_GET, [this]() {
+    JsonDocument doc;
+    doc["word"]=wordbook_.card()?wordbook_.card()->word:"";
+    doc["words"]=wordbook_.wordCount();
+    doc["newToday"]=study_.newToday(static_cast<uint32_t>(time(nullptr)));
+    doc["dailyLimit"]=settings_.dailyNewLimit;
+    doc["due"]=wordbook_.dueCount();
+    doc["cacheReady"]=wordbook_.cachedAssets(); doc["cachePlanned"]=wordbook_.plannedAssets();
+    doc["downloading"]=wordbook_.busy();
+    doc["hasArt"]=wordbook_.card() && wordbook_.card()->art;
+    String body;serializeJson(doc,body);server_.sendHeader("Cache-Control","no-store");server_.send(200,"application/json",body);
+  });
   server_.on("/api/weather", HTTP_GET, [this]() {
     JsonDocument doc;
     doc["connected"] = WiFi.status() == WL_CONNECTED;
@@ -154,6 +166,12 @@ void WebPortal::begin(bool accessPointMode) {
   Serial.printf("[web] config portal: http://%s/\n",
                 accessPointMode_ ? WiFi.softAPIP().toString().c_str()
                                  : WiFi.localIP().toString().c_str());
+}
+
+void WebPortal::setAccessPointMode(bool mode) {
+  if(mode==accessPointMode_) return;
+  accessPointMode_=mode;
+  if(mode) dns_.start(53,"*",WiFi.softAPIP()); else dns_.stop();
 }
 
 void WebPortal::loop() {
