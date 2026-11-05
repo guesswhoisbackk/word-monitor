@@ -1,6 +1,8 @@
 #include "web_portal.hpp"
 
 #include <WiFi.h>
+#include <cmath>
+#include <cstdlib>
 
 #include "app_config.hpp"
 
@@ -16,41 +18,45 @@ constexpr int16_t kMaxWifiScanResults = 20;
 const char kPageStart[] PROGMEM = R"HTML(<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WordMon 설정</title><style>
-:root{color-scheme:dark;--bg:#07111f;--card:#0d1b2d;--line:#1d3550;--text:#e8f2ff;--muted:#8ba3ba;--green:#38e29d;--cyan:#27c7ff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#07111f,#0b2031);color:var(--text);font:15px/1.5 system-ui,sans-serif}
-main{max-width:900px;margin:auto;padding:22px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}
+:root{color-scheme:light;--bg:#f4f3ed;--card:#fff;--line:#dde4dc;--text:#182d30;--muted:#647371;--green:#216c55;--cyan:#216c55}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+main{max-width:600px;margin:auto;padding:22px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}
 h1{margin:0;font-size:28px}.tag{color:var(--green);font-weight:800}.muted{color:var(--muted)}
-.card{background:rgba(13,27,45,.94);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 12px 40px #0005}
-label{display:block;color:var(--muted);font-size:13px;margin:8px 0 4px}input{width:100%;background:#071523;color:var(--text);border:1px solid #29435f;border-radius:9px;padding:11px;font-size:16px}
-select{width:100%;background:#071523;color:var(--text);border:1px solid #29435f;border-radius:9px;padding:11px;font-size:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;margin:14px 0;box-shadow:none}
+label{display:block;color:var(--muted);font-size:13px;margin:8px 0 4px}input{width:100%;background:#f7f9f4;color:var(--text);border:1px solid #ccd7cf;border-radius:9px;padding:11px;font-size:16px}
+select{width:100%;background:#f7f9f4;color:var(--text);border:1px solid #ccd7cf;border-radius:9px;padding:11px;font-size:16px}
 .warning{background:#392b13;border:1px solid #80652b;border-radius:10px;padding:12px;color:#ffdaa0}
-button{width:100%;border:0;border-radius:11px;padding:15px;background:linear-gradient(90deg,var(--green),var(--cyan));color:#03131d;font-weight:900;font-size:17px;cursor:pointer;margin-top:12px}
-.wifi-status{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:#071523;color:var(--muted)}
+button{width:100%;border:0;border-radius:11px;padding:15px;background:var(--green);color:#fff;font-weight:900;font-size:17px;cursor:pointer;margin-top:12px}
+.wifi-status{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f7f9f4;color:var(--muted)}
 .wifi-status.connected{border-color:#20795b;color:var(--green)}.wifi-status.setup{border-color:#176b88;color:var(--cyan)}.wifi-actions{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:8px}
 .wifi-actions button{width:auto;margin:0;padding:11px 16px;font-size:14px}.wifi-actions button:disabled{opacity:.55;cursor:wait}.scan-note{min-height:22px;color:var(--muted);font-size:13px}
 @media(max-width:640px){.wifi-actions{grid-template-columns:1fr}.wifi-actions button{width:100%}.hero{display:block}}
-</style></head><body><main><div class="hero"><div><div class="tag">WORDMON STUDIO</div><h1>영어 단어장 설정</h1></div><div class="muted">v)HTML";
+</style></head><body><main><div class="hero"><div><div class="tag">WORD / DAY</div><h1>매일 조금씩, 나만의 단어 시간.</h1></div><div class="muted">v)HTML";
 
 const char kWifiStart[] PROGMEM = R"HTML(</div></div>
-<div class="warning">이 설정은 기기 안에 저장됩니다. 신뢰할 수 있는 집이나 작업실 네트워크에서만 설정하세요.</div>
+<p class="muted">Wi-Fi와 날씨 지역을 고르면 준비 끝. 설정은 이 기기에 저장됩니다.</p>
 <form method="post" action="/save"><section class="card"><h2>Wi-Fi와 화면</h2>
 <div id="wifiStatus" class="wifi-status">연결 상태 확인 중...</div>
 <div class="wifi-actions"><div><label for="wifiNetworkSelect">주변 2.4GHz Wi-Fi</label><select id="wifiNetworkSelect"><option value="">검색 버튼을 눌러주세요</option></select></div><button type="button" id="wifiScanButton">Wi-Fi 검색</button></div>
 <div id="wifiScanNote" class="scan-note">목록에 없어도 아래에서 직접 입력할 수 있습니다.</div>
 <div class="grid"><div><label for="ssidInput">2.4GHz Wi-Fi 이름(SSID)</label><input id="ssidInput" name="ssid" required value=")HTML";
 
-const char kWifiMiddle[] PROGMEM = R"HTML("></div><div><label>Wi-Fi 비밀번호</label><input type="password" name="wifiPassword" placeholder="처음 설정할 때는 반드시 입력"></div></div>
+const char kWifiMiddle[] PROGMEM = R"HTML("></div><div><label>Wi-Fi 비밀번호</label><input type="password" name="wifiPassword" placeholder="같은 Wi-Fi라면 비워 두어도 돼요"></div></div>
 <label>화면 밝기(20~255, 추천 220)</label><input type="number" min="20" max="255" name="brightness" value=")HTML";
 
-const char kWordbookStart[] PROGMEM = R"HTML("></section><section class="card"><h2>단어장 (인터넷)</h2>
-<p class="muted">words.jsonl과 그림 PNG를 올려둔 공개 저장소 폴더의 주소를 입력하세요. 비워 두면 기기에 내장된 샘플 단어가 나옵니다. GitHub를 쓴다면 raw 주소보다 jsDelivr 주소를 권장합니다.</p>
+const char kWordbookStart[] PROGMEM = R"HTML("></section><section class="card"><h2>단어 학습</h2><details><summary>단어장 주소 변경 · 기본 단어장이 준비되어 있어요</summary>
+<p class="muted">기본 주소로 바로 시작할 수 있어요. 비우면 내장 샘플 단어를 보여드립니다.</p>
 <label for="wordbookUrl">단어장 기본 URL</label><input id="wordbookUrl" name="wordbookUrl" placeholder="https://cdn.jsdelivr.net/gh/사용자명/저장소@main" value=")HTML";
 
 const char kAudioStart[] PROGMEM = R"HTML("><label>발음 음량 (0: 음소거, 1~60, 처음에는 20 권장)</label><input type="number" name="audioVolume" min="0" max="60" value=")HTML";
 
-const char kStudyStart[] PROGMEM = R"HTML("><label>하루 새 단어 (0~20, 처음에는 5개 권장)</label><input type="number" name="dailyNewLimit" min="0" max="20" value=")HTML";
+const char kStudyStart[] PROGMEM = R"HTML("></details><label>하루 새 단어 (0~20, 처음에는 5개 권장)</label><input type="number" name="dailyNewLimit" min="0" max="20" value=")HTML";
 
-const char kPageEnd[] PROGMEM = R"HTML("><p class="muted">밀린 복습부터 시작하고 처음 평가한 새 단어만 하루 학습량에 셉니다. 쉬었던 날은 건너뛰지 않습니다. 0은 새 단어를 쉬고 복습만 합니다.</p></section><button type="submit">저장하고 다시 시작</button></form>
+const char kWeatherStart[] PROGMEM = R"HTML("><p class="muted">밀린 복습부터 보여드려요. 하루 5개부터 가볍게 시작해 보세요.</p></section><section class="card"><h2>오늘의 날씨</h2><label><input style="width:20px" type="checkbox" name="weatherEnabled" value="1")HTML";
+const char kCityStart[] PROGMEM = R"HTML(> 날씨 표시하기</label><label>빠른 지역 선택</label><select id="cityPreset"><option value="">지역 선택</option><option value="37.6063,127.0928">서울 중랑구</option><option value="37.5665,126.9780">서울</option><option value="37.4563,126.7052">인천</option><option value="37.2636,127.0286">수원</option><option value="36.3504,127.3845">대전</option><option value="35.1796,129.0756">부산</option><option value="35.8714,128.6014">대구</option><option value="35.1595,126.8526">광주</option><option value="35.5384,129.3114">울산</option><option value="37.8813,127.7298">춘천</option><option value="37.7519,128.8761">강릉</option><option value="33.4996,126.5312">제주</option></select><details><summary>다른 도시 검색</summary><label>도시 이름</label><input id="cityQuery" placeholder="예: 성남 / Tokyo" maxlength="60"><button id="citySearch" type="button">도시 찾기</button><div id="cityResults" aria-live="polite"></div><p class="muted">검색은 휴대폰 인터넷 연결이 필요해요.</p></details><label>선택한 지역</label><input id="weatherCity" name="weatherCity" readonly value=")HTML";
+const char kLatitude[] PROGMEM = R"HTML("><input type="hidden" id="weatherLatitude" name="weatherLatitude" value=")HTML";
+const char kLongitude[] PROGMEM = R"HTML("><input type="hidden" id="weatherLongitude" name="weatherLongitude" value=")HTML";
+const char kPageEnd[] PROGMEM = R"HTML("><p class="muted">15분마다 자동 갱신 · <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">날씨: Open-Meteo</a><br>30분 이상 갱신되지 않은 날씨에는 * 표시가 붙어요.</p></section><button type="submit">저장하고 시작하기</button><p class="muted">저장 후 기기가 다시 시작됩니다. 같은 Wi-Fi에서 설정 페이지를 다시 열 수 있어요.</p></form>
 <script>
 const wifiStatus=document.getElementById('wifiStatus');
 const wifiSelect=document.getElementById('wifiNetworkSelect');
@@ -99,6 +105,9 @@ async function loadWifi(scan=false){
 wifiSelect.addEventListener('change',()=>{if(wifiSelect.value)ssidInput.value=wifiSelect.value});
 wifiScanButton.addEventListener('click',()=>loadWifi(true));
 loadWifi(false);
+function chooseCity(name,lat,lon){document.getElementById('weatherCity').value=name;document.getElementById('weatherLatitude').value=lat;document.getElementById('weatherLongitude').value=lon}
+document.getElementById('cityPreset').addEventListener('change',function(){if(this.value){const [lat,lon]=this.value.split(',');chooseCity(this.options[this.selectedIndex].textContent,lat,lon)}});
+document.getElementById('citySearch').addEventListener('click',async function(){const out=document.getElementById('cityResults');const q=document.getElementById('cityQuery').value.trim();if(q.length<2){out.textContent='도시 이름을 두 글자 이상 입력해 주세요.';return}this.disabled=true;out.textContent='찾는 중...';try{const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=ko&name='+encodeURIComponent(q),{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error();const data=await r.json();out.replaceChildren();if(!data.results?.length)out.textContent='찾은 도시가 없어요.';for(const city of data.results||[]){const b=document.createElement('button');b.type='button';b.textContent=[city.name,city.admin1,city.country].filter(Boolean).join(' · ');b.addEventListener('click',()=>{chooseCity(city.name,city.latitude,city.longitude);out.replaceChildren();document.getElementById('cityPreset').value=''});out.appendChild(b)}}catch{out.textContent='검색에 연결하지 못했어요. 휴대폰 인터넷을 확인하거나 빠른 지역을 선택해 주세요.'}finally{this.disabled=false}});
 </script>
 </main></body></html>)HTML";
 
@@ -158,6 +167,15 @@ void WebPortal::handleRoot() {
   }
   server_.sendContent_P(kStudyStart);
   server_.sendContent(String(settings_.dailyNewLimit));
+  server_.sendContent_P(kWeatherStart);
+  if (settings_.weatherEnabled) server_.sendContent(F(" checked"));
+  server_.sendContent_P(kCityStart);
+  const String city = escapeHtml(settings_.weatherCity);
+  if (!city.isEmpty()) server_.sendContent(city);
+  server_.sendContent_P(kLatitude);
+  server_.sendContent(String(settings_.weatherLatitude, 5));
+  server_.sendContent_P(kLongitude);
+  server_.sendContent(String(settings_.weatherLongitude, 5));
   server_.sendContent_P(kPageEnd);
   server_.sendContent(String());
 }
@@ -272,34 +290,50 @@ void WebPortal::handleWifiApi() {
 }
 
 void WebPortal::handleSave() {
-  settings_.wifiSsid = server_.arg("ssid");
+  AppSettings candidate = settings_;
+  candidate.wifiSsid = server_.arg("ssid");
   const String wifiPassword = server_.arg("wifiPassword");
   if (!wifiPassword.isEmpty()) {
-    settings_.wifiPassword = wifiPassword;
+    candidate.wifiPassword = wifiPassword;
   }
-  settings_.brightness = constrain(server_.arg("brightness").toInt(), 20, 255);
-  if (server_.hasArg("audioVolume")) settings_.audioVolume = constrain(server_.arg("audioVolume").toInt(), 0, 60);
-  if (server_.hasArg("dailyNewLimit")) settings_.dailyNewLimit = constrain(server_.arg("dailyNewLimit").toInt(), 0, 20);
-  settings_.wordbookUrl = server_.arg("wordbookUrl");
-  settings_.wordbookUrl.trim();
-  if (!settings_.wordbookUrl.isEmpty() &&
-      !settings_.wordbookUrl.startsWith("http://") &&
-      !settings_.wordbookUrl.startsWith("https://")) {
+  candidate.brightness = constrain(server_.arg("brightness").toInt(), 20, 255);
+  if (server_.hasArg("audioVolume")) candidate.audioVolume = constrain(server_.arg("audioVolume").toInt(), 0, 60);
+  if (server_.hasArg("dailyNewLimit")) candidate.dailyNewLimit = constrain(server_.arg("dailyNewLimit").toInt(), 0, 20);
+  candidate.wordbookUrl = server_.arg("wordbookUrl");
+  candidate.wordbookUrl.trim();
+  if (!candidate.wordbookUrl.isEmpty() &&
+      !candidate.wordbookUrl.startsWith("http://") &&
+      !candidate.wordbookUrl.startsWith("https://")) {
     server_.send(400, "text/html; charset=utf-8",
                  "<!doctype html><meta charset='utf-8'><style>body{font-family:sans-serif;background:#07111f;color:#e8f2ff;padding:32px}a{color:#38e29d}</style>"
                  "<h1>URL 오류</h1><p>단어장 URL은 http:// 또는 https://로 시작해야 합니다.</p><p><a href='/'>돌아가기</a></p>");
     return;
   }
 
-  if (!store_.save(settings_)) {
+  candidate.weatherEnabled = server_.hasArg("weatherEnabled");
+  candidate.weatherCity = server_.arg("weatherCity");
+  const String latText = server_.arg("weatherLatitude"), lonText = server_.arg("weatherLongitude");
+  char* latEnd = nullptr; char* lonEnd = nullptr;
+  candidate.weatherLatitude = strtof(latText.c_str(), &latEnd);
+  candidate.weatherLongitude = strtof(lonText.c_str(), &lonEnd);
+  if (candidate.wifiSsid.isEmpty() || candidate.wifiSsid.length() > 32 || candidate.wifiPassword.length() > 63 ||
+      candidate.weatherCity.isEmpty() || candidate.weatherCity.length() > 80 || candidate.wordbookUrl.length() > 250 ||
+      latEnd == latText.c_str() || *latEnd || lonEnd == lonText.c_str() || *lonEnd ||
+      !isfinite(candidate.weatherLatitude) || !isfinite(candidate.weatherLongitude) ||
+      candidate.weatherLatitude < -90 || candidate.weatherLatitude > 90 || candidate.weatherLongitude < -180 || candidate.weatherLongitude > 180 ||
+      (candidate.wifiSsid != settings_.wifiSsid && wifiPassword.isEmpty())) {
+    server_.send(400, "text/plain; charset=utf-8", "Wi-Fi 이름·비밀번호와 날씨 지역을 확인해 주세요. 새 Wi-Fi에는 비밀번호가 필요합니다."); return;
+  }
+  if (!store_.save(candidate)) {
     server_.send(500, "text/plain; charset=utf-8", "Settings could not be saved.");
     return;
   }
 
+  settings_ = candidate;
   server_.send(200, "text/html; charset=utf-8",
                "<!doctype html><meta charset='utf-8'><style>body{font-family:sans-serif;background:#07111f;color:#e8f2ff;padding:32px}a{color:#38e29d}</style>"
-               "<h1>Saved</h1><p>WordMon will restart and apply the new settings.</p>"
-               "<p>Reconnect to your home Wi-Fi if this page was opened from the setup network.</p>");
+               "<h1>준비됐어요!</h1><p>기기가 다시 시작됩니다. 잠시 후 새 날씨와 단어를 만나보세요.</p>"
+               "<p>휴대폰도 집 Wi-Fi로 다시 연결해 주세요.</p>");
   restartAt_ = millis() + 1500;
 }
 

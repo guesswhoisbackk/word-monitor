@@ -9,6 +9,7 @@
 #include "models.hpp"
 #include "wordbook.hpp"
 #include "audio_player.hpp"
+#include "weather.hpp"
 
 namespace wordmon {
 
@@ -18,6 +19,8 @@ class WordUi {
 
   void begin();
   void loop();
+  void setWeather(const WeatherReading& reading, bool busy) { weather_ = reading; weatherBusy_ = busy; }
+  void showSettings();
   void setNetworkInfo(bool accessPointMode, const String& ipAddress);
   // Swap the visible card source to the network wordbook (nullptr = use the
   // built-in sample pack) and show its sync status in the footer.
@@ -57,6 +60,14 @@ class WordUi {
   lv_obj_t* hintButton_ = nullptr;
   lv_obj_t* answerPanel_ = nullptr;
 
+  WeatherReading weather_;
+  bool weatherBusy_ = false;
+  bool capture_ = false;
+  lv_obj_t* progressLabel_ = nullptr;
+  lv_obj_t* weatherTemperature_ = nullptr;
+  lv_obj_t* weatherDetail_ = nullptr;
+  lv_obj_t* clockLabel_ = nullptr;
+  lv_obj_t* settingsOverlay_ = nullptr;
   lv_obj_t* statusLabel_ = nullptr;
   lv_obj_t* dateLabel_ = nullptr;
   lv_obj_t* wordLabel_ = nullptr;

@@ -1,6 +1,7 @@
 #include "settings_store.hpp"
 
 #include <ArduinoJson.h>
+#include <cmath>
 
 #include "app_config.hpp"
 
@@ -39,19 +40,32 @@ bool SettingsStore::load(AppSettings& settings) {
   settings.brightness = constrain(doc["display"]["brightness"] | 220, 20, 255);
   settings.audioVolume = constrain(doc["audio"]["volume"] | 20, 0, 60);
   settings.dailyNewLimit = constrain(doc["study"]["dailyNew"] | 5, 0, 20);
-  settings.wordbookUrl = doc["wordbook"]["url"] | "";
+  settings.wordbookUrl = doc["wordbook"]["url"] | settings.wordbookUrl;
+  settings.weatherEnabled = doc["weather"]["enabled"] | true;
+  settings.weatherCity = doc["weather"]["city"] | "서울 중랑구";
+  settings.weatherLatitude = doc["weather"]["latitude"] | 37.6063f;
+  settings.weatherLongitude = doc["weather"]["longitude"] | 127.0928f;
+  if (!isfinite(settings.weatherLatitude) || settings.weatherLatitude < -90 || settings.weatherLatitude > 90 ||
+      !isfinite(settings.weatherLongitude) || settings.weatherLongitude < -180 || settings.weatherLongitude > 180) {
+    settings.weatherLatitude = 37.6063f; settings.weatherLongitude = 127.0928f;
+    settings.weatherCity = "서울 중랑구";
+  }
   return true;
 }
 
 bool SettingsStore::save(const AppSettings& settings) {
   JsonDocument doc;
-  doc["schema"] = 1;
+  doc["schema"] = 2;
   doc["wifi"]["ssid"] = settings.wifiSsid;
   doc["wifi"]["password"] = settings.wifiPassword;
   doc["display"]["brightness"] = settings.brightness;
   doc["audio"]["volume"] = settings.audioVolume;
   doc["study"]["dailyNew"] = settings.dailyNewLimit;
   doc["wordbook"]["url"] = settings.wordbookUrl;
+  doc["weather"]["enabled"] = settings.weatherEnabled;
+  doc["weather"]["city"] = settings.weatherCity;
+  doc["weather"]["latitude"] = settings.weatherLatitude;
+  doc["weather"]["longitude"] = settings.weatherLongitude;
 
   String json;
   serializeJson(doc, json);

@@ -5,14 +5,15 @@
 namespace wordmon {
 
 constexpr char kAppName[] = "WordMon Studio";
-constexpr char kVersion[] = "0.5.3";
+constexpr char kVersion[] = "0.6.0";
 constexpr char kPreferencesNamespace[] = "wordmon";
 constexpr char kPreferencesKey[] = "config";
 constexpr uint16_t kScreenWidth = 240;
 constexpr uint16_t kScreenHeight = 320;
 // Rotation 2 puts the USB power connector at the bottom of the portrait UI.
 constexpr uint8_t kDisplayRotation = 2;
-constexpr uint8_t kTouchRotation = 2;
+// This connected board previously ran Dayboard with display=2, touch=0.
+constexpr uint8_t kTouchRotation = 0;
 constexpr uint8_t kBacklightPin = 21;
 
 // Common ESP32-2432S028R display pins.

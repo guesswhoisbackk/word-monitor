@@ -1,5 +1,26 @@
 # WordMon Studio 인수인계 문서
 
+## 최신 인계 — 2026-11-05, v0.6.0 Word / Day
+
+단어 학습에 날씨를 통합했다. 숙제 기능은 포함하지 않는다. 네이비·아이보리·민트 화면: 시계, SPEAK/STOP, 설정 톱니바퀴, 날씨, 그림 카드, 오늘 새 단어 진행, AGAIN/GOT IT/NEXT. 그림 배경색은 기존 WMR과 호환되게 유지했다.
+
+- `src/weather.cpp`, `include/weather.hpp`: Open-Meteo 현재 온도·WMO 상태·오늘 최대 강수확률. 15분 갱신, 실패 시 1분 재시도. 30분 이상 오래된 값은 `*`. 재부팅하면 온라인에서 다시 받는다. 날씨는 공개 HTTP 요청(좌표만 전송)이다. 인증된 HTTPS로 전환하는 개선은 남아 있다.
+- 날씨 작업은 별도 FreeRTOS 작업/큐를 사용하며 LVGL·설정 서버는 유지된다. 단어장 다운로드·발음과 네트워크 사용을 직렬화한다. 날씨 처리 중 발음은 잠시 비활성화하고 NEXT 요청은 처리 후 이어간다.
+- 설정 톱니바퀴 → 설정 URL QR. AP 모드에서는 이 화면이 자동으로 열린다. QR 스캔 전에 휴대폰을 표시된 `WordMon-XXXX` Wi-Fi(비밀번호 `wordmon1`)에 연결한다. 주소는 `http://192.168.4.1/`. 연결 후에는 같은 LAN에서 표시된 IP 또는 `http://wordmon.local/`.
+- 설정 페이지는 밝은 아이보리·초록 카드 디자인. Wi-Fi 검색, 지역 12개 빠른 선택, 인터넷 도시 검색(휴대폰 인터넷 필요), 하루 새 단어, 밝기, 발음 음량, 날씨 끄기. 기본 단어장 주소는 자동 입력하며 고급 항목으로 접었다.
+- 지역 이름·위도·경도·사용 여부는 WordMon NVS config schema 2에 저장한다. 잘못된 좌표/길이/URL은 저장 전에 거부한다. 기존 설정 로드는 호환된다.
+- 기존 기기는 `bambu-monitoring`의 `feat/dayboard`, MAC `68:09:47:85:98:44`, CH340 COM4였다. 기존 WordMon config가 없으면 `dayboard` NVS에서 Wi-Fi만 가져온다. 원래 숙제와 설정 namespace는 삭제하지 않는다.
+- 이 보드의 Dayboard 검증값을 따라 터치 rotation=0, 화면 rotation=2를 사용한다. 다른 보드에서는 터치 재확인이 필요하다.
+- 전체 원본 플래시 백업: 로컬 `build/backups/dayboard-before-wordmon-20261105.bin` (4MB, Git 제외, 개인 설정이 들어 있으므로 공유 금지). 복원은 이 파일을 `0x0`에 기록한다. v0.6은 새 파티션 테이블 `0x8000`, 앱 `0x10000`을 사용한다. 기존 Dayboard에서 최초 이동 시 새 LittleFS 영역 `0x250000/0x1A0000`을 지웠다. NVS는 보존했다.
+- `scripts/capture_screen.py COM4 build/screen.png words|settings`: USB로 실제 LVGL 화면을 캡처한다. 기기 시리얼 `!`=캡처, `s`=설정, `b`=학습 화면. 호스트에는 pyserial/Pillow 필요. 웹 공개 기능이 아니다.
+
+검증 상태 (2026-11-05): 두 패널 빌드·BIN 생성 성공. RAM 119,056B(36.3%), ILI9341 앱 1,903,569B(80.7%). 기존 복습 정책·1000개 저장/마이그레이션·오디오 호스트 테스트 모두 통과. 휴대폰 390px 폭에서 가로 넘침 없음, 빠른 지역 선택 좌표 변경·도시 검색 결과/실패 안내 확인. COM4 앱·파티션 플래시 후 해시 검증과 v0.6.0 부팅 성공. QR/단어 화면을 실제 LVGL 플러시에서 USB 캡처해 육안 확인했다 (`build/wordday-{settings,screen}.png`). 현재 이전 Wi-Fi 접속 실패로 `WordMon-0968` AP에서 사용자 설정 대기 중이다. **온라인 날씨 수신·893단어 동기화·손가락 터치·스피커는 이 세션에서 아직 미확인**이다. 날씨 API 동일 요청은 PC에서 HTTP 200과 예상 필드 응답을 확인했다. 백업 SHA-256은 `49A4F92142EF9E35D733DF740F2F7936CE1F0F55BE11A837C1D79F312BBB29BB`.
+
+빌드: `scripts/build.ps1 -Environment all`, 회귀 검사: `scripts/test_host.cmd`. 산출물은 `build/WordMonitor-v0.6.0-cyd-ili9341-{firmware,merged}.bin`. merged는 `0x0`, firmware는 `0x10000`이다.
+
+다음 세션 시작: “docs/HANDOFF.md의 v0.6.0 절을 읽고 COM 포트·현재 Git 상태부터 확인해 줘. Wi-Fi/날씨/893단어 동기화와 QR 설정, 카드 터치·학습 평가·스피커를 실제 기기에서 확인해 줘.”
+
+
 ## 다음 세션용 최신 요약 — 2026-10-10 저녁 4차, v0.5.3 어느 면에서든 평가·자동 진행
 
 **소스 버전:** v0.5.3 · **원격:** https://github.com/guesswhoisbackk/word-monitor (`main`)  

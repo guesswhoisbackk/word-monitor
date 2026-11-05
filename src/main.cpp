@@ -9,6 +9,7 @@
 #include "web_portal.hpp"
 #include "word_ui.hpp"
 #include "wordbook.hpp"
+#include "weather.hpp"
 
 namespace {
 
@@ -19,6 +20,7 @@ wordmon::AudioPlayer audio;
 wordmon::WordUi wordUi(settings, study, audio);
 wordmon::WebPortal webPortal(settings, settingsStore);
 wordmon::Wordbook wordbook(settings, study);
+wordmon::WeatherService weather(settings);
 uint32_t pushedWordbookRevision = 0;
 
 bool accessPointMode = false;
@@ -80,12 +82,23 @@ void setup() {
   Serial.printf("\n%s v%s | panel %s\n", wordmon::kAppName,
                 wordmon::kVersion, WORDMON_PANEL_NAME);
 
-  settingsStore.load(settings);
+  if (!settingsStore.load(settings)) {
+    // Reuse only network settings from the previous Dayboard. Tasks stay intact
+    // in their original namespace and are not part of the Word / Day UI.
+    Preferences previous;
+    if (previous.begin("dayboard", true)) {
+      settings.wifiSsid = previous.getString("ssid", "");
+      settings.wifiPassword = previous.getString("password", "");
+      previous.end();
+      if (!settings.wifiSsid.isEmpty()) settingsStore.save(settings);
+    }
+  }
   wordbook.begin(); // Mount LittleFS before reading/migrating study records.
   study.begin();
   wordUi.begin();
   startNetwork();
   webPortal.begin(accessPointMode);
+  if (accessPointMode) wordUi.showSettings();
 }
 
 void loop() {
@@ -94,6 +107,9 @@ void loop() {
   // Audio worker owns network/FS while active; LVGL and portal keep running.
   // Avoid concurrent downloads/decoding and changing the active card mid-word.
   if (audio.busy()) { delay(5); return; }
+  weather.loop(!audio.busy());
+  wordUi.setWeather(weather.reading(), weather.busy());
+  if (weather.busy()) { delay(5); return; }
   wordbook.loop();
   if (wordUi.takeReviewRequest()) {
     const bool found = wordbook.nextReview(study);

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <ctime>
 #include <new>
+#include <WiFi.h>
 #include <src/misc/cache/instance/lv_image_cache.h>
 
 #include "app_config.hpp"
@@ -23,10 +24,10 @@ namespace {
 constexpr uint32_t kBackground = 0x07111F;
 constexpr uint32_t kCard = 0x0D1B2D;
 constexpr uint32_t kBorder = 0x1D3550;
-constexpr uint32_t kText = 0xE8F2FF;
+constexpr uint32_t kText = 0xF4F0E6;
 constexpr uint32_t kMuted = 0x8BA3BA;
-constexpr uint32_t kGreen = 0x38E29D;
-constexpr uint32_t kCyan = 0x27C7FF;
+constexpr uint32_t kGreen = 0xBCE8C8;
+constexpr uint32_t kCyan = 0xA9D9D0;
 
 constexpr int kCardWidth = 224;
 constexpr int kArtY = 62;
@@ -102,7 +103,7 @@ lv_obj_t* makeCard(lv_obj_t* parent, int x, int y, int width, int height) {
   lv_obj_t* card = lv_obj_create(parent);
   lv_obj_set_pos(card, x, y);
   lv_obj_set_size(card, width, height);
-  lv_obj_set_style_radius(card, 8, 0);
+  lv_obj_set_style_radius(card, 16, 0);
   lv_obj_set_style_bg_color(card, lv_color_hex(kCard), 0);
   lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
   lv_obj_set_style_border_color(card, lv_color_hex(kBorder), 0);
@@ -159,6 +160,18 @@ void WordUi::begin() {
 }
 
 void WordUi::loop() {
+  if (Serial.available()) {
+    const char command = Serial.read();
+    if (command == 's') showSettings();
+    if (command == 'b' && settingsOverlay_) { lv_obj_delete(settingsOverlay_); settingsOverlay_ = nullptr; }
+    if (command == '!') {
+      capture_ = true;
+      lv_obj_invalidate(lv_screen_active());
+      lv_refr_now(lvDisplay_);
+      capture_ = false;
+      Serial.println("WMEND");
+    }
+  }
   lv_timer_handler();
   const uint32_t now = millis();
   if (now - lastRefresh_ >= 500) {
@@ -178,14 +191,27 @@ void WordUi::createLayout() {
   lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
   lv_obj_remove_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
+  clockLabel_ = makeLabel(screen, "--:--", 10, 5, 126, &lv_font_montserrat_24, kText);
+  lv_obj_t* setup = lv_button_create(screen);
+  lv_obj_set_pos(setup, 198, 3); lv_obj_set_size(setup, 34, 32);
+  lv_obj_set_style_bg_color(setup, lv_color_hex(kBorder), 0);
+  lv_obj_t* gear = lv_label_create(setup); lv_label_set_text(gear, LV_SYMBOL_SETTINGS); lv_obj_center(gear);
+  lv_obj_add_event_cb(setup, [](lv_event_t* e) { static_cast<WordUi*>(lv_event_get_user_data(e))->showSettings(); }, LV_EVENT_CLICKED, this);
+  lv_obj_t* weatherCard = makeCard(screen, 8, 38, 224, 36);
+  weatherTemperature_ = makeLabel(weatherCard, "-- C", 9, 7, 66, &lv_font_montserrat_18, kGreen);
+  weatherDetail_ = makeLabel(weatherCard, "Connecting weather", 80, 2, 136, &lv_font_montserrat_12, kText);
+  lv_label_set_long_mode(weatherDetail_, LV_LABEL_LONG_WRAP);
+  lv_obj_set_height(weatherDetail_, 32);
   statusLabel_ = makeLabel(screen, "STARTING", 104, 10, 62,
                            &lv_font_montserrat_12, kMuted,
                            LV_TEXT_ALIGN_RIGHT);
   dateLabel_ = makeLabel(screen, "TIME WAITING FOR WI-FI", 8, 34, 224,
                          &lv_font_montserrat_12, kMuted);
 
-  lv_obj_t* card = makeCard(screen, 8, 58, 224, 168);
-  makeLabel(card, "RECALL THE MEANING", 0, 10, 224, &lv_font_montserrat_12,
+  lv_obj_add_flag(statusLabel_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_add_flag(dateLabel_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_t* card = makeCard(screen, 8, 80, 224, 168);
+  progressLabel_ = makeLabel(card, "A LITTLE EVERY DAY", 0, 10, 224, &lv_font_montserrat_12,
             kMuted, LV_TEXT_ALIGN_CENTER);
   wordLabel_ = makeLabel(card, "--", 0, 34, 224, &lv_font_montserrat_24,
                          kText, LV_TEXT_ALIGN_CENTER);
@@ -220,7 +246,7 @@ void WordUi::createLayout() {
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
-  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 231, 224,
+  studyLabel_ = makeLabel(screen, "RECALL IT, THEN RATE", 8, 252, 224,
                          &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
   auto button = [&](const char* text, int x, int y, int width) {
     lv_obj_t* obj = lv_button_create(screen);
@@ -234,21 +260,48 @@ void WordUi::createLayout() {
     lv_obj_add_event_cb(obj, studyEvent, LV_EVENT_CLICKED, this);
     return obj;
   };
-  againButton_ = button("AGAIN", 8, 252, 70);
-  goodButton_ = button("GOT IT", 85, 252, 70);
-  button("NEXT", 162, 252, 70);
+  againButton_ = button("AGAIN", 8, 274, 70);
+  goodButton_ = button("GOT IT", 85, 274, 70);
+  button("NEXT", 162, 274, 70);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
   // Art is always on the front face now; the hint reveal button stays hidden
   // (kept wired so a future hide-art study mode can re-enable it).
   lv_obj_add_flag(hintButton_, LV_OBJ_FLAG_HIDDEN);
-  speakButton_ = button("SPEAK", 8, 3, 88);
+  speakButton_ = button("SPEAK", 130, 3, 62);
   lv_obj_set_height(speakButton_, 28);
   speakLabel_ = lv_obj_get_child(speakButton_, 0);
 
+  lv_obj_set_style_bg_color(goodButton_, lv_color_hex(kGreen), 0);
+  lv_obj_set_style_text_color(goodButton_, lv_color_hex(kBackground), 0);
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &lv_font_montserrat_12, kMuted,
                            LV_TEXT_ALIGN_CENTER);
+  lv_obj_add_flag(footerLabel_, LV_OBJ_FLAG_HIDDEN);
+}
+
+void WordUi::showSettings() {
+  if (settingsOverlay_) return;
+  settingsOverlay_ = makeCard(lv_screen_active(), 4, 4, 232, 312);
+  makeLabel(settingsOverlay_, "PHONE SETUP", 12, 10, 200, &lv_font_montserrat_18, kText);
+  const String url = "http://" + ipAddress_ + "/";
+  lv_obj_t* qr = lv_qrcode_create(settingsOverlay_);
+  lv_qrcode_set_size(qr, 116);
+  lv_qrcode_set_dark_color(qr, lv_color_hex(0x07111F));
+  lv_qrcode_set_light_color(qr, lv_color_hex(0xFFFFFF));
+  lv_qrcode_set_quiet_zone(qr, true);
+  lv_qrcode_set_data(qr, url.c_str()); lv_obj_set_pos(qr, 58, 44);
+  const String instructions = accessPointMode_ ? String("Join ") + WiFi.softAPSSID() + "\nPassword: wordmon1" : "Use the same Wi-Fi as this device";
+  auto* info = makeLabel(settingsOverlay_, instructions.c_str(), 10, 172, 210, &lv_font_montserrat_12, kText, LV_TEXT_ALIGN_CENTER);
+  lv_label_set_long_mode(info, LV_LABEL_LONG_WRAP); lv_obj_set_height(info, 38);
+  makeLabel(settingsOverlay_, url.c_str(), 8, 216, 216, &lv_font_montserrat_12, kGreen, LV_TEXT_ALIGN_CENTER);
+  makeLabel(settingsOverlay_, wordbookSuffix(), 8, 239, 216, &lv_font_montserrat_12, kMuted, LV_TEXT_ALIGN_CENTER);
+  auto* close = lv_button_create(settingsOverlay_); lv_obj_set_pos(close, 16, 264); lv_obj_set_size(close, 198, 36);
+  auto* text = lv_label_create(close); lv_label_set_text(text, "BACK TO WORDS"); lv_obj_center(text);
+  lv_obj_add_event_cb(close, [](lv_event_t* e) {
+    auto* self = static_cast<WordUi*>(lv_event_get_user_data(e));
+    lv_obj_delete(self->settingsOverlay_); self->settingsOverlay_ = nullptr;
+  }, LV_EVENT_CLICKED, this);
 }
 
 void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
@@ -263,6 +316,21 @@ void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
 }
 
 void WordUi::refresh() {
+  char weatherText[96];
+  if (!settings_.weatherEnabled) {
+    setLabelTextIfChanged(weatherTemperature_, "--");
+    setLabelTextIfChanged(weatherDetail_, "Weather is off");
+  } else if (weather_.valid) {
+    snprintf(weatherText, sizeof(weatherText), "%.0f C", weather_.temperature);
+    setLabelTextIfChanged(weatherTemperature_, weatherText);
+    const bool stale = millis() - weather_.receivedAt > 1800000;
+    snprintf(weatherText, sizeof(weatherText), "%s\nRain %d%%%s", weatherDescription(weather_.code), weather_.rain, stale ? " *" : "");
+    setLabelTextIfChanged(weatherDetail_, weatherText);
+  } else {
+    setLabelTextIfChanged(weatherDetail_, accessPointMode_ ? "Set Wi-Fi in Settings" : "Connecting weather...");
+  }
+  if (weatherBusy_) lv_obj_add_state(speakButton_, LV_STATE_DISABLED);
+  else lv_obj_remove_state(speakButton_, LV_STATE_DISABLED);
   if (ipAddress_.isEmpty()) {
     setLabelTextIfChanged(statusLabel_, "STARTING");
   } else if (accessPointMode_) {
@@ -298,11 +366,17 @@ void WordUi::refresh() {
                         study_.find(kSampleWords[i].word), static_cast<uint32_t>(now));
       sampleIndex_ = choice.index();
     }
+    char clockText[16];
+    snprintf(clockText, sizeof(clockText), "%02d:%02d", local.tm_hour, local.tm_min);
+    setLabelTextIfChanged(clockLabel_, clockText);
     char dateText[32];
     snprintf(dateText, sizeof(dateText), "%s %02d - NEW %u/%u",
              kMonthNames[local.tm_mon], local.tm_mday,
              study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
     setLabelTextIfChanged(dateLabel_, dateText);
+    char progress[32];
+    snprintf(progress, sizeof(progress), "TODAY  %u / %u NEW", study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit);
+    setLabelTextIfChanged(progressLabel_, progress);
   } else {
     setLabelTextIfChanged(dateLabel_, "TIME WAITING FOR WI-FI");
   }
@@ -451,6 +525,13 @@ void WordUi::flushDisplay(lv_display_t* display, const lv_area_t* area,
   const uint32_t width = area->x2 - area->x1 + 1;
   const uint32_t height = area->y2 - area->y1 + 1;
   lv_draw_sw_rgb565_swap(pixels, width * height);
+  if (self->capture_) {
+    const uint16_t rect[] = {static_cast<uint16_t>(area->x1), static_cast<uint16_t>(area->y1),
+                             static_cast<uint16_t>(width), static_cast<uint16_t>(height)};
+    Serial.write(reinterpret_cast<const uint8_t*>("WMFR"), 4);
+    Serial.write(reinterpret_cast<const uint8_t*>(rect), sizeof(rect));
+    Serial.write(pixels, width * height * 2);
+  }
   self->display_.pushImage(area->x1, area->y1, width, height,
                            reinterpret_cast<uint16_t*>(pixels));
   lv_display_flush_ready(display);
@@ -490,7 +571,7 @@ void WordUi::studyEvent(lv_event_t* event) {
   if (target == self->speakButton_) {
     self->audioFeedback_ = true;
     if (self->audio_.busy()) self->audio_.cancel();
-    else self->audio_.start(self->shownWord_, self->externalCard_ ? self->externalCard_->audio : "",
+    else if (!self->weatherBusy_) self->audio_.start(self->shownWord_, self->externalCard_ ? self->externalCard_->audio : "",
                            self->settings_.wordbookUrl, self->settings_.audioVolume);
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
