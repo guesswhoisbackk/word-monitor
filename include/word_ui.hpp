@@ -10,6 +10,7 @@
 #include "wordbook.hpp"
 #include "audio_player.hpp"
 #include "weather.hpp"
+#include "today_review.hpp"
 
 namespace wordmon {
 
@@ -33,6 +34,9 @@ class WordUi {
   // built-in sample pack) and show its sync status in the footer.
   void setWordbookCard(const WordbookCard* card, WordbookState state,
                        uint16_t wordCount);
+  uint8_t takeTodayRequest(bool ready) { if(!ready) return 0; const uint8_t request=todayRequest_; todayRequest_=0; return request; }
+  void setTodayState(bool active, uint16_t position, uint16_t count, bool reset = false);
+  void todayUnavailable();
   bool takeReviewRequest();
   void reviewFinished(bool found);
 
@@ -73,6 +77,15 @@ class WordUi {
   lv_obj_t* hintButton_ = nullptr;
   lv_obj_t* answerPanel_ = nullptr;
 
+  bool todayMode_ = false;
+  uint16_t todayPosition_ = 0, todayCount_ = 0;
+  uint8_t todayRequest_ = 0;
+  TodayPlayback playback_;
+  lv_obj_t* weatherCard_ = nullptr;
+  lv_obj_t* wordCard_ = nullptr;
+  lv_obj_t* sentencePanel_ = nullptr;
+  lv_obj_t* exampleLabel_ = nullptr;
+  lv_obj_t* translationLabel_ = nullptr;
   WeatherReading weather_;
   bool weatherBusy_ = false;
   bool weatherRefreshRequested_ = false;

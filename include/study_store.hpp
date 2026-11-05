@@ -18,8 +18,10 @@ class StudyStore {
   bool grade(const char* word, uint32_t now, bool remembered, uint8_t limit = 5);
  private:
   bool save();
+  bool reserveRecords(size_t needed);
   static constexpr size_t kCapacity = kMaxStudyWords;
   ReviewRecord* records_ = nullptr;
+  size_t capacity_ = 0;
   uint16_t count_ = 0;
   int32_t newDay_ = -1;
   uint16_t newCount_ = 0;

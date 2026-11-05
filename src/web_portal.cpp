@@ -133,6 +133,10 @@ void WebPortal::begin(bool accessPointMode) {
     doc["newToday"]=study_.newToday(static_cast<uint32_t>(time(nullptr)));
     doc["dailyLimit"]=settings_.dailyNewLimit;
     doc["due"]=wordbook_.dueCount();
+    doc["todayMode"]=wordbook_.todayMode();
+    doc["todayCount"]=wordbook_.todayCount();
+    doc["todayPosition"]=wordbook_.todayPosition();
+    doc["historyRevision"]=study_.revision();
     doc["cacheReady"]=wordbook_.cachedAssets(); doc["cachePlanned"]=wordbook_.plannedAssets();
     doc["downloading"]=wordbook_.busy();
     doc["hasArt"]=wordbook_.card() && wordbook_.card()->art;

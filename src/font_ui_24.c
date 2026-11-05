@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 24 px
  * Bpp: 4
- * Opts: --font C:\antigravity\word monitor\assets\paperlogy\Paperlogy-6SemiBold.ttf --size 24 --bpp 4 --format lvgl --no-compress --no-prefilter --no-kerning --lv-include lvgl.h --lv-font-name font_ui_24 -r 0x20-0x7E -r 0xB0 -r 0xB7 -o C:\antigravity\word monitor\src\font_ui_24.c
+ * Opts: --font C:\antigravity\word monitor\assets\paperlogy\Paperlogy-6SemiBold.ttf --size 24 --bpp 4 --format lvgl --no-compress --no-prefilter --no-kerning --lv-include lvgl.h --lv-font-name font_ui_24 -r 0x20-0x7E,0xB0,0xB7 -o C:\antigravity\word monitor\src\font_ui_24.c
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 12 px
  * Bpp: 4
- * Opts: --font C:\antigravity\word monitor\assets\paperlogy\Paperlogy-5Medium.ttf --size 12 --bpp 4 --format lvgl --no-compress --no-prefilter --no-kerning --lv-include lvgl.h --lv-font-name font_ui_12 -r 0x20-0x7E -r 0xB0 -r 0xB7 -o C:\antigravity\word monitor\src\font_ui_12.c
+ * Opts: --font C:\antigravity\word monitor\assets\paperlogy\Paperlogy-5Medium.ttf --size 12 --bpp 4 --format lvgl --no-compress --no-prefilter --no-kerning --lv-include lvgl.h --lv-font-name font_ui_12 -r 0x20-0x7E,0xB0,0xB7 -o C:\antigravity\word monitor\src\font_ui_12.c
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE

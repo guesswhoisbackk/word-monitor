@@ -44,17 +44,28 @@ bool readState(const char* path, Header& header, ReviewRecord* records = nullptr
 }
 }
 StudyStore::~StudyStore() { delete[] records_; }
+bool StudyStore::reserveRecords(size_t needed) {
+  if(records_ && needed<=capacity_) return true;
+  size_t capacity=capacity_?capacity_:128;
+  while(capacity<needed && capacity<kCapacity) capacity=capacity*2>kCapacity?kCapacity:capacity*2;
+  if(needed>capacity) return false;
+  auto* records=new(std::nothrow) ReviewRecord[capacity]{};
+  if(!records) return false;
+  if(records_ && count_) memcpy(records,records_,count_*sizeof(ReviewRecord));
+  delete[] records_; records_=records; capacity_=capacity;
+  return true;
+}
 void StudyStore::begin() {
   if (records_) return;
-  records_ = new (std::nothrow) ReviewRecord[kCapacity]{};
-  if (!records_ || !LittleFS.begin(false)) return;
+  if (!reserveRecords(128) || !LittleFS.begin(false)) return;
   LittleFS.remove(kTemp); // An interrupted transaction never becomes saved history.
   // Startup runs before either worker can own a download transaction.
   LittleFS.remove("/voice.tmp");
   LittleFS.remove("/wb/words.tmp");
   if (LittleFS.exists(kState)) {
     Header header;
-    if (!readState(kState, header, records_)) return; // Fail closed on corruption.
+    if (!readState(kState, header) || !reserveRecords(header.count) ||
+        !readState(kState, header, records_)) return; // Fail closed on corruption.
     count_ = static_cast<uint16_t>(header.count);
     newDay_ = header.day;
     newCount_ = static_cast<uint16_t>(header.introduced);
@@ -132,6 +143,7 @@ bool StudyStore::grade(const char* word, uint32_t now, bool remembered, uint8_t 
   for (size_t i = 0; i < count_; ++i) if (records_[i].key == key) { target = &records_[i]; break; }
   const bool isNew = !target;
   if (isNew && !allowsNew(now, limit)) return false;
+  if (isNew && !reserveRecords(count_+1)) return false;
   if (!target) target = &records_[count_];
   const ReviewRecord before = *target;
   const int32_t oldDay = newDay_;

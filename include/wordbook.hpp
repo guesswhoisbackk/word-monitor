@@ -18,6 +18,7 @@ struct WordbookCard {
   const char* word = "";
   const char* meaning = "";
   const char* example = "";
+  const char* translation = "";
   const lv_image_dsc_t* art = nullptr;
   const char* audio = ""; // Optional same-origin WAV basename in manifest field "s".
 };
@@ -56,6 +57,13 @@ class Wordbook {
   // Bumped whenever state or card content changes; the app pushes it to the UI.
   uint32_t revision() const { return revision_; }
   bool nextReview(const StudyStore& study);
+  bool beginToday();
+  void endToday();
+  void stepToday(int direction);
+  bool todayMode() const { return todayMode_; }
+  bool readyForToday() const { return !busy_ || job_.type != 1; }
+  uint16_t todayCount() const { return todayCount_; }
+  uint16_t todayPosition() const { return todayPosition_; }
 
  private:
   bool syncDue(uint32_t now, int32_t yday);
@@ -84,6 +92,11 @@ class Wordbook {
   String cardWord_;
   String cardMeaning_;
   String cardExample_;
+  String cardTranslation_;
+  bool todayMode_ = false;
+  uint16_t todayIndices_[kMaxStudyWords]{};
+  uint16_t todayCount_ = 0, todayPosition_ = 0, activeIndex_ = 0, savedIndex_ = 0;
+  int32_t todayDay_ = -1;
   String cardAudio_;
   WordbookCard card_;
   lv_image_dsc_t artDsc_{};

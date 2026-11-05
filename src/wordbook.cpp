@@ -14,6 +14,8 @@
 #include "app_config.hpp"
 #include "audio_policy.hpp"
 #include "asset_cache.hpp"
+#include "sentence_translations.hpp"
+#include "today_review.hpp"
 
 namespace wordmon {
 
@@ -157,12 +159,13 @@ void Wordbook::loop(bool allowNetwork) {
   poll();
   if (settings_.wordbookUrl.isEmpty()) return;
   const int32_t day = todayDay();
+  if(todayMode_ && day >= 0 && todayDay_ != day) endToday();
   if (wordCount_ && (!cardValid_ || (day >= 0 && cardDay_ != day))) selectCard(day);
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   if (now >= 1700000000 && (planDay_ != day || plannedStudyRevision_ != study_.revision() || now >= planCheckAt_)) rebuildPlan();
   if (assetsDirty_) rebuildAssets();
   if (!allowNetwork || busy_ || !results_ || WiFi.status() != WL_CONNECTED) return;
-  const bool manifestDue = forceSync_ || syncDue(millis(), day);
+  const bool manifestDue = !todayMode_ && (forceSync_ || syncDue(millis(), day));
   if (!wordCount_ && manifestDue) { startJob(1); return; }
   // No speculative pencil download while the clock is still synchronizing.
   if (now < 1700000000) { if (manifestDue) startJob(1); return; }
@@ -273,7 +276,7 @@ void Wordbook::rebuildAssets() {
   appendAsset(cardArtName_,false); appendAsset(cardAudio_,true);
   File file=LittleFS.open(kWordbookManifestPath,"r");String line;uint16_t index=0;
   while(file && readEntry(file,line)==1 && index<wordCount_) {
-    bool wanted=false;for(size_t i=0;i<5;++i) if(plan_.prefetch(i)==index) wanted=true;
+    bool wanted=false;for(size_t i=0;i<5;++i) if((todayMode_ ? todayIndices_[(todayPosition_+i+1)%todayCount_] : plan_.prefetch(i))==index) wanted=true;
     if(wanted) { JsonDocument doc; if(!deserializeJson(doc,line)) {appendAsset(doc["a"]|"",false);appendAsset(doc["s"]|"",true);} }
     ++index;
   }
@@ -333,10 +336,13 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   cardWord_ = doc["w"] | "";
   cardMeaning_ = doc["m"] | "";
   cardExample_ = doc["e"] | "";
+  cardTranslation_ = doc["t"] | sentenceTranslation(cardExample_.c_str());
+  activeIndex_ = index;
   cardAudio_ = doc["s"] | "";
   card_.word = cardWord_.c_str();
   card_.meaning = cardMeaning_.c_str();
   card_.example = cardExample_.c_str();
+  card_.translation = cardTranslation_.c_str();
   card_.audio = cardAudio_.c_str();
   card_.art = nullptr;
 
@@ -351,6 +357,34 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   Serial.printf("[wb] card #%u: %s%s\n", static_cast<unsigned>(index),
                 cardWord_.c_str(), card_.art != nullptr ? " (art)" : "");
   ++revision_;
+}
+
+bool Wordbook::beginToday() {
+  const uint32_t now=static_cast<uint32_t>(time(nullptr));
+  if(todayMode_ || studyDay(now)<0 || !wordCount_) return false;
+  todayCount_=0;
+  File file=LittleFS.open(kWordbookManifestPath,"r"); String line; uint16_t index=0;
+  while(file && readEntry(file,line)==1 && index<wordCount_) {
+    JsonDocument doc;
+    if(!deserializeJson(doc,line)) {
+      const auto* record=study_.find(doc["w"]|"");
+      if(record && reviewedToday(*record,now)) todayIndices_[todayCount_++]=index;
+    }
+    ++index;
+  }
+  if(!todayCount_) return false;
+  savedIndex_=activeIndex_; todayPosition_=0; todayDay_=studyDay(now); todayMode_=true;
+  selectCard(todayDay_,todayIndices_[0]); return true;
+}
+void Wordbook::endToday() {
+  if(!todayMode_) return;
+  todayMode_=false;
+  selectCard(todayDay(),savedIndex_<wordCount_?savedIndex_:0);
+}
+void Wordbook::stepToday(int direction) {
+  if(!todayMode_ || !todayCount_) return;
+  todayPosition_=static_cast<uint16_t>((int(todayPosition_)+int(todayCount_)+(direction<0?-1:1))%todayCount_);
+  selectCard(todayDay_,todayIndices_[todayPosition_]);
 }
 
 bool Wordbook::nextReview(const StudyStore& study) {

@@ -192,7 +192,16 @@ void loop() {
   weather.loop(false);
   wordUi.setWeather(weather.reading(), weather.busy());
   if (audio.busy()) { delay(5); return; }
-  if (wordUi.takeReviewRequest()) {
+  const uint8_t todayRequest=wordUi.takeTodayRequest(wordbook.readyForToday());
+  if(todayRequest) {
+    audio.cancel();
+    if(todayRequest==1 && !wordbook.beginToday()) wordUi.todayUnavailable();
+    if(todayRequest==2) wordbook.endToday();
+    if(todayRequest==3) wordbook.stepToday(-1);
+    if(todayRequest==4) wordbook.stepToday(1);
+  }
+  wordUi.setTodayState(wordbook.todayMode(),wordbook.todayPosition(),wordbook.todayCount(),todayRequest>=3);
+  if (wordUi.takeReviewRequest() && !wordbook.todayMode()) {
     const bool found = wordbook.nextReview(study);
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
     pushedWordbookRevision = wordbook.revision();

@@ -40,7 +40,7 @@ def collect_ranges() -> list[tuple[int, int]]:
                 )
     # Weather/clothing and reveal prompts are product UI, so include their
     # literal syllables along with hosted vocabulary. Symbols are explicit.
-    for source in (ROOT / "include" / "weather_policy.hpp", ROOT / "src" / "word_ui.cpp"):
+    for source in (ROOT / "include" / "weather_policy.hpp", ROOT / "src" / "word_ui.cpp", ROOT / "include" / "sentence_translations.hpp"):
         for ch in source.read_text(encoding="utf-8"):
             if 0xAC00 <= ord(ch) <= 0xD7A3:
                 needed.add(ord(ch))
@@ -81,8 +81,7 @@ def main() -> int:
         cmd = [npx, "--yes", "lv_font_conv", "--font", str(SOURCE_FONT.parent / filename),
                "--size", str(size), "--bpp", str(BPP), "--format", "lvgl", "--no-compress",
                "--no-prefilter", "--no-kerning", "--lv-include", "lvgl.h", "--lv-font-name", name]
-        for spec in specs:
-            cmd += ["-r", spec]
+        cmd += ["-r", ",".join(specs)]
         cmd += ["-o", str(target)]
         subprocess.run(cmd, check=True, cwd=ROOT)
         print(f"wrote {target} ({target.stat().st_size:,} bytes)")
