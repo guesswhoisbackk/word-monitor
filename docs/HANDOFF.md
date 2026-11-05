@@ -1,5 +1,14 @@
 # WordMon Studio 인수인계 문서
 
+## 최신 인계 — 2026-11-05, v0.8.2 한글 뜻만 표시
+
+**기기 적용·확인 완료:** ILI9341 빌드/통합 BIN 생성 성공, 앱만 COM4에 적용해 해시 검증. v0.8.2 부팅, 893단어 동기화, 날씨 갱신도 확인했다. 실제 캡처 `build/wordday-korean-meaning-only.png`에서 ruler의 뜻 ‘자’가 오른쪽 중앙에 표시되고 영어 예문은 사라졌음을 확인했다. 학습 이력 2/5와 Paperlogy·그림·날씨 배치는 유지했다. 마지막 기기는 한글 뜻을 공개한 상태다. 이번 표시/샘플 수정은 실사용 ILI9341만 빌드했다.
+
+사용자가 ‘단어장 뜻을 한글로’를 요청했다. 운영 CDN의 893개 항목을 확인해 `m`에 모두 한글이 있음을 확인했다(누락 0). 오른쪽에 함께 표시되던 영어 예문을 제거하고 한글 뜻만 보여준다. 앞면 영단어는 유지하며 터치 시 한글 뜻으로 바뀐다. 짧은 뜻은 오른쪽 중앙, 긴 뜻은 위쪽부터 스크롤한다. 예문 원본 데이터(`e`)는 보존하지만 UI에서는 표시하지 않는다.
+
+내장 오프라인 8단어 뜻도 한글로 번역했다: resilient 회복력이 있는, diligent 부지런한, curious 호기심이 많은, vivid 생생한, apple 사과, frugal 검소한, serene 평온한, profound 뜻이 깊은. `docs/wordbook-sample/words.jsonl`, `docs/audio-sample/words.jsonl`의 같은 샘플 뜻도 맞췄다. 새 음절을 포함하도록 Paperlogy 폰트를 재생성했다. 온라인 감사 기록은 로컬 `build/korean-meaning-audit.json`.
+
+
 ## 최신 인계 — 2026-11-05, v0.8.1 날씨 갱신 복구
 
 **검증·기기 적용 완료:** 호스트 검사 5종(기존 4종+네트워크 복구 정책)과 두 패널 빌드 성공. RAM 119,160B(36.4%), ILI9341 앱 1,833,353B(77.7%). 앱만 COM4에 적용하고 해시·v0.8.1 부팅·893단어 동기화를 확인했다. 새 펌웨어 첫 부팅에서도 동일한 Wi-Fi 이탈/202를 관측했지만, 추가 재부팅 없이 연결 복구와 첫 날씨 성공을 확인했다. 수동 갱신 3회로 updates 1→4, SDK 자동 재접속을 꺼 둔 USB 강제 이탈 시험에서 `[wifi] recovery attempt` → `connection restored` → 날씨 HTTP 200으로 updates 5, ageSeconds 0, 다음 정기 갱신 899초를 확인했다. 반복 성공 후 유휴 힙 약 107KB, 복구 후 약 106.7KB. 로컬 증거는 `build/recovery-verification.json`, `build/recovery-outage-events.log`, `build/recovery-verification.log`다.

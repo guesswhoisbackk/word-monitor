@@ -83,7 +83,6 @@ class WordUi {
   lv_obj_t* dateLabel_ = nullptr;
   lv_obj_t* wordLabel_ = nullptr;
   lv_obj_t* meaningLabel_ = nullptr;
-  lv_obj_t* exampleLabel_ = nullptr;
   lv_obj_t* footerLabel_ = nullptr;
   lv_obj_t* artImage_ = nullptr;
   lv_obj_t* letterLabel_ = nullptr;

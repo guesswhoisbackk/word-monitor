@@ -38,7 +38,6 @@ constexpr int kArtSlotWidth = 120;
 struct SampleWord {
   const char* word;
   const char* meaning;
-  const char* example;
   const lv_image_dsc_t* art;  // optional front-face illustration
 };
 
@@ -56,14 +55,14 @@ lv_image_dsc_t makeArtDsc(const uint8_t* data, uint16_t width, uint16_t height) 
 lv_image_dsc_t appleArt = makeArtDsc(art::kApple, art::kAppleW, art::kAppleH);
 
 const SampleWord kSampleWords[] = {
-    {"resilient", "bounces back quickly", "The little shop survived it all.", nullptr},
-    {"diligent", "steady, careful effort", "Five words a day, every day.", nullptr},
-    {"curious", "eager to learn", "One more question before sleep.", nullptr},
-    {"vivid", "strikingly clear", "The blue sea left a vivid memory.", nullptr},
-    {"apple", "a round red fruit", "She ate an apple at lunch.", &appleArt},
-    {"frugal", "careful with resources", "A frugal maker saves every scrap.", nullptr},
-    {"serene", "calm and peaceful", "The workshop was serene at dawn.", nullptr},
-    {"profound", "deep and thoughtful", "Simple words carry deep ideas.", nullptr},
+    {"resilient", "회복력이 있는", nullptr},
+    {"diligent", "부지런한", nullptr},
+    {"curious", "호기심이 많은", nullptr},
+    {"vivid", "생생한", nullptr},
+    {"apple", "사과", &appleArt},
+    {"frugal", "검소한", nullptr},
+    {"serene", "평온한", nullptr},
+    {"profound", "뜻이 깊은", nullptr},
 };
 constexpr size_t kSampleWordCount = sizeof(kSampleWords) / sizeof(kSampleWords[0]);
 
@@ -252,12 +251,8 @@ void WordUi::createLayout() {
   meaningLabel_ = makeLabel(answerPanel_, "", 0, 0, 80,
                             &font_kr_16, kCyan,
                             LV_TEXT_ALIGN_CENTER);
-  exampleLabel_ = makeLabel(answerPanel_, "", 0, 0, 80, &font_ui_12,
-                            kMuted, LV_TEXT_ALIGN_CENTER);
   lv_label_set_long_mode(meaningLabel_, LV_LABEL_LONG_WRAP);
   lv_obj_set_height(meaningLabel_, LV_SIZE_CONTENT);
-  lv_label_set_long_mode(exampleLabel_, LV_LABEL_LONG_WRAP);
-  lv_obj_set_height(exampleLabel_, LV_SIZE_CONTENT);
   lv_obj_add_flag(card, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(card, cardEvent, LV_EVENT_CLICKED, this);
 
@@ -434,18 +429,15 @@ void WordUi::refresh() {
   // was selected from it (fetched or cached); nullptr keeps the samples.
   const char* word = nullptr;
   const char* meaning = nullptr;
-  const char* example = nullptr;
   const lv_image_dsc_t* art = nullptr;
   if (externalCard_ != nullptr) {
     word = externalCard_->word;
     meaning = externalCard_->meaning;
-    example = externalCard_->example;
     art = externalCard_->art;
   } else {
     const SampleWord& entry = kSampleWords[index];
     word = entry.word;
     meaning = entry.meaning;
-    example = entry.example;
     art = entry.art;
   }
   if (shownWord_ != word) {
@@ -463,7 +455,7 @@ void WordUi::refresh() {
   setLabelTextIfChanged(speakLabel_, audio_.busy() ? "STOP" : "SPEAK");
 
   // The illustrated wordbook is used as picture cards: art shows on the
-  // left side at all times. Tapping reveals meaning/example on the right.
+  // left side at all times. Tapping replaces the word with only its Korean meaning on the right.
   const bool front = !meaningVisible_;
   const bool showArt = art != nullptr;
   if (showArt && currentArt_ != art) {
@@ -525,11 +517,13 @@ void WordUi::refresh() {
   if (meaningVisible_) {
     lv_obj_remove_flag(answerPanel_, LV_OBJ_FLAG_HIDDEN);
     setLabelTextIfChanged(meaningLabel_, meaning);
-    setLabelTextIfChanged(exampleLabel_, example);
+    lv_obj_update_layout(meaningLabel_);
+    const bool overflows = lv_obj_get_height(meaningLabel_) > lv_obj_get_content_height(answerPanel_);
+    lv_obj_set_flex_align(answerPanel_, overflows ? LV_FLEX_ALIGN_START : LV_FLEX_ALIGN_CENTER,
+                         LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
   } else {
     lv_obj_add_flag(answerPanel_, LV_OBJ_FLAG_HIDDEN);
     setLabelTextIfChanged(meaningLabel_, "");
-    setLabelTextIfChanged(exampleLabel_, "");
   }
 
   if (ipAddress_.isEmpty()) {
