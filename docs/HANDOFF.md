@@ -1,10 +1,69 @@
 # WordMon Studio 인수인계 문서
 
+## 세션 종료 요약 — 2026-11-05 (다음 세션은 여기부터)
+
+### 현재 저장소와 기기
+
+- 현재 실제 체크아웃: `C:\antigravity\word monitor`. 과거 기록에 나오는 하위 `word-monitor` 경로와 COM6은 과거 환경이다.
+- GitHub: `https://github.com/guesswhoisbackk/word-monitor`, 작업 브랜치 `codex/word-weather`. main은 변경하지 않았다.
+- 최신 기능 커밋: `15c0965` (v0.10.0 오늘 복습). 앞선 `6d9fe44`는 v0.9.0 자동 복구·미리 받기, `a995f0e`는 시스템 점검 기록이다.
+- 연결된 기기: ESP32 CYD **ILI9341 / COM4**, 디스플레이 rotation 2·터치 rotation 0. 다른 패널/ST7789 펌웨어를 적용하지 않는다. 소스·기기 모두 **v0.10.0**.
+- 앱 `0x10000`만 업데이트했다. 저장된 Wi-Fi·날씨 지역·학습 이력·파티션을 유지했다. 전체 지우기/파일시스템 초기화를 하지 않는다.
+
+### 오늘 완료한 범위
+
+1. 기존 단어+날씨 화면을 유지했다. Paperlogy, 한글 뜻 공개, 왼쪽 큰 그림/오른쪽 최대 세 줄 영단어, 더 어두운 로딩 버튼, 한글 날씨·옷차림·아침/점심/저녁 강수확률이 적용돼 있다. 숙제 기능은 없다.
+2. Wi-Fi가 끊기면 재연결하고 날씨를 다시 갱신한다. 부팅 때 집 Wi-Fi가 없어 설정 AP로 들어가도 휴대폰이 연결돼 있지 않으면 60초마다 복구를 시도하며, 연결 10초 유지 후 AP를 닫는다. 휴대폰 설정 중에는 재접속 시도를 중단한다.
+3. 현재 카드와 다음 후보의 그림·발음을 백그라운드로 캐시하고 실패 자료를 자동 재시도한다. 학습 진도를 새 단어/기한이 된 복습으로 구분했다.
+4. **오늘 복습**을 새로 만들었다. 오늘 평가한 단어와 예문을 12초마다 순환한다. 첫 터치는 뜻·해석 공개, 다음 터치는 일시정지/재개다. 헤더 `자동/멈춤`, 아래 `이전/다음/나가기`를 사용할 수 있다. 복습 모드에서는 날씨 자리까지 예문 표시 공간으로 쓰고 나가면 기존 화면으로 돌아온다. 진도·복습 기한은 변경하지 않는다.
+5. 기존 예문 893개의 한글 초벌 해석을 펌웨어에 넣었고 오늘 카드 5개는 직접 다듬었다. 번역 서비스나 문장 서버 없이 기기에서 해석을 보여준다. 새 예문은 선택적 `t` 필드로 해석을 제공할 수 있다.
+6. 새 그림 다운로드 때 발생한 HTTPS RSA 메모리 부족을 보완했다. 학습 기록 RAM을 128개부터 필요에 따라 확장해 현재 기기에서 약 14KiB 여유를 확보했다. 최대 1,000개·기존 파일 형식·원자적 저장은 유지한다.
+
+### 마지막 실기기 상태와 검증
+
+종료 직전 `/api/learning`과 `/api/weather`를 다시 읽었다. **오늘 복습 활성, 오늘 카드 5개, 새 단어 5/5, 복습 대기 0개, 그림·발음 캐시 10/10, 다운로드 없음, 그림 표시 정상, historyRevision 0**이었다. 스냅샷에는 `pencil`가 표시됐고 자동 순환하므로 다음 세션의 카드 위치는 달라질 수 있다. Wi-Fi 연결·날씨 유효·최근 요청 HTTP 200도 확인했다. 마지막 유휴 힙은 약 119KB였다. 스냅샷은 로컬 `build/session-end-2026-11-05.json`에 있다.
+
+- 호스트 테스트 **7종 통과**. 오늘 카드 판정·자정·자동 넘김·일시정지·타이머 오버플로·해석 조회와 기존 1,000개 기록 저장/재시작/실패 롤백을 포함한다.
+- **두 패널 빌드 통과**, 실기기에는 ILI9341만 앱 플래시·해시 검증. RAM 122,704B(37.4%), 앱 1,956,945B(82.9%).
+- 실기기 79초 관찰과 추가 수동 순환으로 자동/멈춤/재개/이전/다음/5개 전체 순환/나가기/재진입을 확인했다. 진도 5/5·historyRevision 0 유지. 테스트 입력은 USB로 실제 LVGL 이벤트를 호출했으며 평가 저장은 하지 않았다.
+- 실제 화면: `build/today-review-front.png`, `build/today-review-answer.png`. 테스트 결과: `build/today-verification.json`, `build/today-cycle-exit.json`, `build/today-runtime.log`, `build/today-host-tests.log`, `build/today-build-final.log`.
+- `build/`는 Git 제외다. 로컬 증거·펌웨어·백업은 같은 PC에서만 존재하며 새 PC에서는 다시 빌드한다. `build/backups/dayboard-before-wordmon-20261105.bin`은 전체 기기 백업이며 네트워크 설정이 들어 있어 GitHub에 올리지 않는다.
+
+### 남은 확인과 후속 후보
+
+- 893개 전체 한글 예문 해석은 기계 번역 초벌이다. 전체 수동 교정은 아직 하지 않았다.
+- 장시간 순환·실제 손가락 터치·스피커 청취·휴대폰이 설정 AP에 연결된 상태의 복구 보호는 추가 실사용 확인 대상이다. 전화 연결 보호 조건 자체는 호스트 정책 테스트를 통과했다.
+- 복습 나가기/재진입 검사 후 한 번 `todayMode=false`가 관측돼 다시 진입했다. 이후 자동 이동과 최종 활성 상태를 확인했다. 물리 입력 등 모드 변경 원인 로그가 없어 자동 종료 버그로 단정하지 않았다. 다음 세션에서 재현 여부를 관찰하면 좋다.
+- 학습/오늘 복습 전환 시 현재 후보 밖 캐시를 정리하므로 다시 자료를 받는 경우가 있다. 캐시 재사용 개선은 후속 후보이며 현재 기능을 막는 항목은 아니다.
+- `5개 더 배우기`처럼 오늘만 새 단어를 추가하는 버튼은 구현하지 않았다. 현재는 설정의 하루 새 단어 목표(0~20)를 올리면 추가 학습할 수 있고, 변경한 목표는 다음 날에도 적용된다. 이번 승인/구현 범위는 오늘 복습 모드였다.
+
+### 재개에 필요한 명령과 자료
+
+프로젝트 루트 PowerShell에서 실행한다. 포트가 바뀌었는지 먼저 확인하고 앱만 기록한다.
+
+```powershell
+$env:PYTHONUTF8='1'
+cmd /c scripts\test_host.cmd
+.\scripts\build.ps1 -Environment all
+& .venv/Scripts/python.exe "$env:USERPROFILE\.platformio\packages\tool-esptoolpy\esptool.py" --chip esp32 --port COM4 --baud 460800 write_flash 0x10000 .pio/build/cyd-ili9341/firmware.bin
+.venv/Scripts/python.exe scripts/read_log.py COM4 15 noreset
+```
+
+`http://wordmon.local/api/learning`, `/api/weather`는 읽기 전용 진단이다. USB `t`는 오늘 복습 진입/나가기, `j/k`는 다음/이전, `r`은 카드 터치, `p`는 멈춤/재개다. 화면 캡처는 메인 루프를 약 14초 점유하므로 동시에 HTTP 응답 시간을 재면 잘못된 타임아웃을 볼 수 있다.
+
+원본 921쌍은 `content/illustrated-vocabulary/vocabulary.json`과 `images/`, 중복을 묶은 893단어는 `unique_words.json`, 영문 예문은 `examples.json`, 한글 예문 해석은 `examples_ko.json`이다. 그림 원본과 variants를 지우지 않는다. 해석 수정 후 `scripts/build_sentence_translations.py` → `scripts/make_kr_font.py` → 펌웨어 빌드 순서로 반영한다.
+
+**다음 세션에 붙여 넣을 시작 문장**
+
+> `C:\antigravity\word monitor\docs\HANDOFF.md`의 2026-11-05 세션 종료 요약부터 읽고 이어서 작업해줘. 현재 브랜치는 `codex/word-weather`, 기기는 COM4의 ILI9341이고 v0.10.0이 적용돼 있어. 오늘 복습 자동 순환·한글 예문 해석·날씨·캐시 상태부터 읽기 전용으로 확인하고, 남은 실사용 검증과 번역 교정을 이어서 봐줘. 기존 학습 기록과 Paperlogy를 유지하고, 기기 업데이트가 필요하면 포트를 확인한 뒤 앱 0x10000만 기록해줘.
+
+---
+
 ## 최신 인계 — 2026-11-05, v0.10.0 오늘 복습
 
 호스트 검사 7종과 두 패널 빌드가 통과했다. 앱만 COM4의 0x10000에 적용하고 해시를 검증했다. 메모리 보완 후 실기기에서 오늘 학습한 5개 카드의 그림·발음 10/10 다운로드를 완료했다. 이전 부팅의 새 단어 진도 5/5와 기록 revision 0을 유지했다.
 
-실기기 79초 관찰에서 12초 자동 이동, 카드 터치로 공개/일시정지, 재개, 이전/다음을 확인했다. 이어서 수동 5회 이동으로 5개 전체 순환과 원래 위치 복귀, 나가기/재진입을 확인했고 모든 API 표본에서 newToday 5·historyRevision 0을 유지했다. 실제 화면 `build/today-review-front.png`와 `build/today-review-answer.png`에서 예문·뜻·해석·버튼의 Paperlogy 표시와 줄바꿈을 확인했다. RAM 122,704B(37.4%), ILI9341 앱 1,956,945B(82.9%). 로컬 검증 근거는 `build/today-{verification,cycle-exit}.json`, `build/today-runtime.log`, `build/today-host-tests.log`, `build/today-build-final.log`다. 기기는 오늘 복습 첫 카드에서 자동 재생으로 다시 진입한 상태로 남겼다. 첫 실행에서 Wi-Fi 접속 실패도 있었지만 기존 60초 AP 복구로 재접속했다. 시각 동기화 전 시험 진입은 오늘 기록을 찾지 못하므로, 검증은 시간 동기화 뒤 재실행했다.
+실기기 79초 관찰에서 12초 자동 이동, 카드 터치로 공개/일시정지, 재개, 이전/다음을 확인했다. 이어서 수동 5회 이동으로 5개 전체 순환과 원래 위치 복귀, 나가기/재진입을 확인했고 모든 API 표본에서 newToday 5·historyRevision 0을 유지했다. 실제 화면 `build/today-review-front.png`와 `build/today-review-answer.png`에서 예문·뜻·해석·버튼의 Paperlogy 표시와 줄바꿈을 확인했다. RAM 122,704B(37.4%), ILI9341 앱 1,956,945B(82.9%). 로컬 검증 근거는 `build/today-{verification,cycle-exit}.json`, `build/today-runtime.log`, `build/today-host-tests.log`, `build/today-build-final.log`다. 기기는 오늘 복습 자동 재생으로 남겼다. 최종 카드 위치·진단 값은 문서 맨 위 세션 종료 요약을 우선한다. 첫 실행에서 Wi-Fi 접속 실패도 있었지만 기존 60초 AP 복구로 재접속했다. 시각 동기화 전 시험 진입은 오늘 기록을 찾지 못하므로, 검증은 시간 동기화 뒤 재실행했다.
 
 오른쪽 아래 `오늘 복습` 버튼으로 진입한다. 오늘 AGAIN/GOT IT으로 평가한 단어(새 단어와 기존 복습 포함)를 단어장 순서대로 12초마다 반복한다. 기존 학습 이력의 stage/due 간격에서 마지막 평가 시각을 복원하므로 이미 오늘 학습한 단어도 즉시 포함된다. 학습 이력 파일 형식이나 날짜를 변경하지 않는다. 현재 카드를 보존했다가 `나가기`로 돌아간다. 오늘 학습한 항목이 없거나 시각/단어장이 없으면 안내한다. 날짜가 바뀌면 정상 학습 화면으로 복귀한다.
 
