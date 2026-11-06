@@ -115,10 +115,11 @@ lv_obj_t* makeCard(lv_obj_t* parent, int x, int y, int width, int height) {
 
 }  // namespace
 
-WordUi::WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio)
-    : settings_(settings), study_(study), audio_(audio) {}
+WordUi::WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio, QuizGame& quiz)
+    : settings_(settings), study_(study), audio_(audio), quiz_(quiz) {}
 
 void WordUi::begin() {
+  quiz_.begin();
   display_.init();
   display_.setRotation(kDisplayRotation);
   display_.setBrightness(settings_.brightness);
@@ -168,7 +169,13 @@ void WordUi::loop() {
     // USB-only loading preview; does not grade or request another card.
     if (command == 'd') { reviewLoading_ = true; refresh(); }
     if (command == 'u') { reviewLoading_ = false; refresh(); }
-    if (command == 'n' || command == 't') lv_obj_send_event(nextButton_, LV_EVENT_CLICKED, nullptr);
+    if ((command == 'n' || command == 't') && !quizOverlay_) todayRequest_=todayMode_?2:1;
+    if (command == 'q') startQuiz(true);
+    if (command == 'Q') startQuiz(false,true); // USB practice: never writes points/history.
+    if (command == 'm') showLearningMenu();
+    if (command == 'x') closeQuiz();
+    if (command >= '1' && command <= '6' && quizOverlay_) quizAnswer(command-'1');
+    if (command == 'v' && quizOverlay_) quizNext();
     if (command == 'j' && todayMode_) lv_obj_send_event(goodButton_, LV_EVENT_CLICKED, nullptr);
     if (command == 'k' && todayMode_) lv_obj_send_event(againButton_, LV_EVENT_CLICKED, nullptr);
     if (command == 'p' && todayMode_) { playback_.toggle(millis()); refresh(); }
@@ -182,7 +189,7 @@ void WordUi::loop() {
     }
   }
   lv_timer_handler();
-  if(todayMode_ && !todayRequest_ && playback_.tick(millis(),settingsOverlay_ || audio_.busy() || speakRequested_)) todayRequest_=4;
+  if(todayMode_ && !todayRequest_ && playback_.tick(millis(),settingsOverlay_ || quizOverlay_ || audio_.busy() || speakRequested_)) todayRequest_=4;
   const uint32_t now = millis();
   if (now - lastRefresh_ >= 500) {
     lastRefresh_ = now;
@@ -314,7 +321,7 @@ void WordUi::createLayout() {
   };
   againButton_ = button("AGAIN", 8, 274, 70);
   goodButton_ = button("GOT IT", 85, 274, 70);
-  nextButton_ = button("오늘 복습", 162, 274, 70);
+  nextButton_ = button("더 배우기", 162, 274, 70);
   lv_obj_set_style_text_font(lv_obj_get_child(nextButton_,0), &font_kr_13,0);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
@@ -694,7 +701,7 @@ void WordUi::cardEvent(lv_event_t* event) {
 void WordUi::studyEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
-  if (self->reviewLoading_) return;
+  if (self->reviewLoading_ || self->quizOverlay_) return;
   self->audioFeedback_ = false;
   if(self->todayMode_ && target!=self->speakButton_) {
     // Only the registered navigation buttons may change replay state.
@@ -738,8 +745,7 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
   } else if (target == self->nextButton_) {
     self->speakRequested_=false; self->audio_.cancel();
-    self->todayRequest_=1;
-    self->studyMessage_="오늘 복습 준비 중";
+    self->showLearningMenu();
   }
 
   self->refresh();
@@ -774,7 +780,7 @@ void WordUi::setTodayState(bool active,uint16_t position,uint16_t count,bool res
   lv_obj_set_y(wordCard_,active?42:158);
   lv_label_set_text(lv_obj_get_child(againButton_,0),active?"이전":"AGAIN");
   lv_label_set_text(lv_obj_get_child(goodButton_,0),active?"다음":"GOT IT");
-  lv_label_set_text(lv_obj_get_child(nextButton_,0),active?"나가기":"오늘 복습");
+  lv_label_set_text(lv_obj_get_child(nextButton_,0),active?"나가기":"더 배우기");
   for(auto* button:{againButton_,goodButton_}) lv_obj_set_style_text_font(lv_obj_get_child(button,0),active?&font_kr_13:&font_ui_12,0);
   lv_obj_scroll_to_y(sentencePanel_,0,LV_ANIM_OFF);
   refresh();
@@ -787,7 +793,7 @@ void WordUi::closeSettings() {
   if(settingsOverlay_) {lv_obj_delete(settingsOverlay_);settingsOverlay_=nullptr;}
 }
 void WordUi::serviceAudio(bool canStart) {
-  if(!canStart || !speakRequested_ || audio_.busy()) return;
+  if(quizOverlay_ || !canStart || !speakRequested_ || audio_.busy()) return;
   speakRequested_=false;
   audio_.start(shownWord_,externalCard_?externalCard_->audio:"",settings_.wordbookUrl,settings_.audioVolume);
 }
@@ -804,6 +810,132 @@ void WordUi::reviewFinished(bool found) {
   if(found && manualReview_ && selectionWord_==shownWord_) studyMessage_="현재 단어를 먼저 평가해 주세요";
   manualReview_=false;
   refresh();
+}
+
+
+void WordUi::closeQuiz() {
+  quiz_.stop();
+  if(quizOverlay_) { lv_obj_delete(quizOverlay_); quizOverlay_=nullptr; }
+  playback_.reset(millis());
+}
+
+void WordUi::showLearningMenu() {
+  closeQuiz(); closeSettings();
+  audio_.cancel(); speakRequested_=false; todayRequest_=0;
+  quizOverlay_=makeCard(lv_screen_active(),0,0,240,320);
+  lv_obj_set_style_radius(quizOverlay_,0,0);
+  makeLabel(quizOverlay_,"더 배우기",12,12,210,&font_kr_16,kText);
+  char points[40]; snprintf(points,sizeof(points),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
+  makeLabel(quizOverlay_,points,12,43,216,&font_ui_24,kGreen);
+  makeLabel(quizOverlay_,"정답 +10점 · 틀려도 괜찮아요",12,77,216,&font_kr_13,kMuted);
+  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","오늘 단어 다시 보기","돌아가기"};
+  for(int i=0;i<4;++i) {
+    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,108+i*49);lv_obj_set_size(button,216,42);
+    lv_obj_set_style_bg_color(button,lv_color_hex(i==0?kGreen:kBorder),0);
+    auto* label=lv_label_create(button);lv_label_set_text(label,labels[i]);
+    lv_obj_set_style_text_font(label,&font_kr_16,0);lv_obj_set_style_text_color(label,lv_color_hex(i==0?kBackground:kText),0);lv_obj_center(label);
+    lv_obj_set_user_data(button,reinterpret_cast<void*>(static_cast<uintptr_t>(i+1)));
+    lv_obj_add_event_cb(button,[](lv_event_t* e){
+      auto* self=static_cast<WordUi*>(lv_event_get_user_data(e));
+      const uint32_t index=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(lv_obj_get_user_data(static_cast<lv_obj_t*>(lv_event_get_current_target(e)))))-1;
+      if(index==0 || index==1) self->startQuiz(index==0);
+      else if(index==2) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=1;}
+      else self->closeQuiz();
+    },LV_EVENT_CLICKED,this);
+  }
+}
+
+void WordUi::startQuiz(bool learnedOnly,bool practice) {
+  closeSettings();
+  audio_.cancel();speakRequested_=false;todayRequest_=0;
+  if(!quizOverlay_) quizOverlay_=makeCard(lv_screen_active(),0,0,240,320);
+  lv_obj_set_style_radius(quizOverlay_,0,0);
+  quiz_.start(learnedOnly,esp_random(),practice);
+  renderQuiz();
+}
+
+void WordUi::quizAnswer(uint8_t choice) {
+  if(!quizOverlay_ || !quiz_.active() || quiz_.finished() || quiz_.answered()) return;
+  quiz_.answer(choice);quizAnsweredAt_=millis();renderQuiz();
+}
+
+void WordUi::quizNext() {
+  if(!quizOverlay_ || !quiz_.active() || uint32_t(millis()-quizAnsweredAt_)<500) return;
+  if(quiz_.finished()) {startQuiz(quiz_.learnedOnly(),quiz_.practice());return;}
+  if(!quiz_.answered() && quiz_.selected()>=0) {quizAnswer(static_cast<uint8_t>(quiz_.selected()));return;}
+  if(quiz_.next()) renderQuiz();
+}
+
+void WordUi::renderQuiz() {
+  lv_obj_clean(quizOverlay_);
+  auto label=[&](const char* text,int x,int y,int w,int h,const lv_font_t* font,uint32_t color,lv_text_align_t align=LV_TEXT_ALIGN_LEFT) {
+    auto* obj=makeLabel(quizOverlay_,text,x,y,w,font,color,align);
+    lv_label_set_long_mode(obj,LV_LABEL_LONG_WRAP);lv_obj_set_height(obj,h);return obj;
+  };
+  auto button=[&](const char* text,int x,int y,int w,int h,uint32_t color) {
+    auto* obj=lv_button_create(quizOverlay_);lv_obj_set_pos(obj,x,y);lv_obj_set_size(obj,w,h);
+    lv_obj_set_style_bg_color(obj,lv_color_hex(color),0);lv_obj_set_style_pad_all(obj,4,0);
+    lv_obj_set_style_radius(obj,10,0);lv_obj_set_style_shadow_width(obj,0,0);
+    auto* caption=lv_label_create(obj);lv_label_set_text(caption,text);lv_obj_set_width(caption,w-10);
+    lv_label_set_long_mode(caption,LV_LABEL_LONG_WRAP);lv_obj_set_style_text_align(caption,LV_TEXT_ALIGN_CENTER,0);
+    lv_obj_set_style_text_font(caption,&font_kr_13,0);lv_obj_set_style_text_color(caption,lv_color_hex(kText),0);lv_obj_center(caption);
+    return obj;
+  };
+  auto* exit=button("닫기",182,6,50,32,kBorder);
+  lv_obj_add_event_cb(exit,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->closeQuiz();},LV_EVENT_CLICKED,this);
+  char text[96];
+  if(!quiz_.active()) {
+    label("배운 단어가 없어요",12,70,216,30,&font_kr_16,kText,LV_TEXT_ALIGN_CENTER);
+    label("단어를 학습한 뒤 퀴즈를 풀거나\n전체 단어 퀴즈를 시작해 보세요.",12,112,216,60,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+    auto* all=button("전체 단어 퀴즈",12,205,216,45,kBorder);
+    lv_obj_add_event_cb(all,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->startQuiz(false);},LV_EVENT_CLICKED,this);
+    return;
+  }
+  if(quiz_.finished()) {
+    label("퀴즈 완료!",12,50,216,30,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
+    snprintf(text,sizeof(text),"%u / %u",quiz_.roundCorrect(),quiz_.count());
+    label(text,12,90,216,40,&font_ui_24,kText,LV_TEXT_ALIGN_CENTER);
+    snprintf(text,sizeof(text),"이번 퀴즈 +%u점",quiz_.roundCorrect()*10);
+    label(text,12,138,216,25,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
+    snprintf(text,sizeof(text),"누적 %lu점",static_cast<unsigned long>(quiz_.totals().points));
+    label(quiz_.practice()?"체험 모드 · 포인트 저장 안 함":text,12,178,216,36,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+    auto* again=button("한 번 더",12,232,216,42,kBorder);
+    lv_obj_add_event_cb(again,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
+    return;
+  }
+  snprintf(text,sizeof(text),"%u / %u",quiz_.position()+1,quiz_.count());
+  label(text,10,12,70,22,&font_ui_18,kText);
+  snprintf(text,sizeof(text),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
+  label(quiz_.practice()?"체험":text,82,14,94,22,&font_kr_13,kGreen,LV_TEXT_ALIGN_RIGHT);
+  auto* word=label(quiz_.word(),12,49,216,65,&font_ui_24,kText,LV_TEXT_ALIGN_CENTER);
+  if(strlen(quiz_.word())>20) lv_obj_set_style_text_font(word,&font_ui_18,0);
+  const char* prompt="알맞은 뜻을 고르세요";
+  if(quiz_.selected()>=0) {
+    if(!quiz_.answered()) prompt="저장 실패 · 다시 저장해 주세요";
+    else prompt=quiz_.selected()==quiz_.correctChoice()?"정답이에요! +10점":"괜찮아요! 초록색이 정답이에요";
+  }
+  label(prompt,8,115,224,22,&font_kr_13,quiz_.answered()?kGreen:kMuted,LV_TEXT_ALIGN_CENTER);
+  for(uint8_t i=0;i<6;++i) {
+    uint32_t color=kBorder;
+    if(quiz_.selected()>=0) {
+      if(i==quiz_.correctChoice()) color=0x235743;
+      else if(i==quiz_.selected()) color=0x713C45;
+      else color=0x122335;
+    }
+    auto* choice=button(quiz_.choice(i),8+(i%2)*116,142+(i/2)*43,108,42,color);
+    if(quiz_.selected()>=0) lv_obj_remove_flag(choice,LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_user_data(choice,reinterpret_cast<void*>(static_cast<uintptr_t>(i+1)));
+    lv_obj_add_event_cb(choice,[](lv_event_t* e){
+      auto* self=static_cast<WordUi*>(lv_event_get_user_data(e));
+      auto* target=static_cast<lv_obj_t*>(lv_event_get_current_target(e));
+      const uint8_t i=static_cast<uint8_t>(reinterpret_cast<uintptr_t>(lv_obj_get_user_data(target))-1);
+      self->quizAnswer(i);
+    },LV_EVENT_CLICKED,this);
+  }
+  if(quiz_.selected()>=0) {
+    auto* next=button(quiz_.answered()?(quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제"):"다시 저장",8,277,224,35,kBorder);
+    lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
+  } else label(quiz_.learnedOnly()?"배운 단어 · 정답마다 +10점":"전체 단어 · 정답마다 +10점",8,287,224,22,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
 }
 
 }  // namespace wordmon

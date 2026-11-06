@@ -1,4 +1,5 @@
 #include "wordbook.hpp"
+#include "content_corrections.hpp"
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -336,7 +337,12 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   cardWord_ = doc["w"] | "";
   cardMeaning_ = doc["m"] | "";
   cardExample_ = doc["e"] | "";
-  cardTranslation_ = doc["t"] | sentenceTranslation(cardExample_.c_str());
+  const char* meaning = correctedMeaning(cardWord_.c_str(),cardMeaning_.c_str());
+  if(meaning != cardMeaning_.c_str()) cardMeaning_=meaning;
+  const char* revised = correctedExample(cardWord_.c_str(),cardExample_.c_str());
+  const bool revisedExample = cardExample_ != revised;
+  if(revisedExample) cardExample_ = revised;
+  cardTranslation_ = revisedExample ? sentenceTranslation(cardExample_.c_str()) : (doc["t"] | sentenceTranslation(cardExample_.c_str()));
   activeIndex_ = index;
   cardAudio_ = doc["s"] | "";
   card_.word = cardWord_.c_str();

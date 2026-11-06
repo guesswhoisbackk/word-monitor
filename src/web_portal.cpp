@@ -115,8 +115,8 @@ document.getElementById('citySearch').addEventListener('click',async function(){
 
 }  // namespace
 
-WebPortal::WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather, Wordbook& wordbook, StudyStore& study)
-    : settings_(settings), store_(store), weather_(weather), wordbook_(wordbook), study_(study) {}
+WebPortal::WebPortal(AppSettings& settings, SettingsStore& store, WeatherService& weather, Wordbook& wordbook, StudyStore& study, QuizGame& quiz)
+    : settings_(settings), store_(store), weather_(weather), wordbook_(wordbook), study_(study), quiz_(quiz) {}
 
 void WebPortal::begin(bool accessPointMode) {
   accessPointMode_ = accessPointMode;
@@ -145,6 +145,21 @@ void WebPortal::begin(bool accessPointMode) {
     doc["cacheReady"]=wordbook_.cachedAssets(); doc["cachePlanned"]=wordbook_.plannedAssets();
     doc["downloading"]=wordbook_.busy();
     doc["hasArt"]=wordbook_.card() && wordbook_.card()->art;
+    String body;serializeJson(doc,body);server_.sendHeader("Cache-Control","no-store");server_.send(200,"application/json",body);
+  });
+  server_.on("/api/quiz", HTTP_GET, [this]() {
+    JsonDocument doc;
+    doc["active"]=quiz_.active(); doc["finished"]=quiz_.finished();
+    doc["practice"]=quiz_.practice(); doc["learnedOnly"]=quiz_.learnedOnly();
+    doc["word"]=quiz_.word(); doc["position"]=quiz_.position(); doc["count"]=quiz_.count();
+    doc["answered"]=quiz_.answered(); doc["selected"]=quiz_.selected();
+    doc["roundCorrect"]=quiz_.roundCorrect(); doc["points"]=quiz_.totals().points;
+    doc["totalAnswered"]=quiz_.totals().answered; doc["totalCorrect"]=quiz_.totals().correct;
+    doc["storageReady"]=quiz_.storageReady();
+    JsonArray choices=doc["choices"].to<JsonArray>();
+    for(uint8_t i=0;i<6;++i) choices.add(quiz_.choice(i));
+    // The answer key is exposed only for USB-started, non-persistent practice.
+    if(quiz_.practice() || quiz_.answered()) doc["correctChoice"]=quiz_.correctChoice();
     String body;serializeJson(doc,body);server_.sendHeader("Cache-Control","no-store");server_.send(200,"application/json",body);
   });
   server_.on("/api/weather", HTTP_GET, [this]() {

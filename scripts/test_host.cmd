@@ -33,3 +33,8 @@ if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /EHsc /W4 /utf-8 /Iinclude tests\today_review_test.cpp /Fobuild\today_review_test.obj /Febuild\today_review_test.exe
 if not "%errorlevel%"=="0" exit /b 1
 build\today_review_test.exe
+
+if not "%errorlevel%"=="0" exit /b 1
+cl /nologo /EHsc /W4 /utf-8 /Itests\stubs /Iinclude tests\quiz_game_test.cpp src\quiz_game.cpp src\study_store.cpp /Fobuild\ /Febuild\quiz_game_test.exe
+if not "%errorlevel%"=="0" exit /b 1
+build\quiz_game_test.exe

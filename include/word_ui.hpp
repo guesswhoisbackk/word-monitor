@@ -11,12 +11,13 @@
 #include "audio_player.hpp"
 #include "weather.hpp"
 #include "today_review.hpp"
+#include "quiz_game.hpp"
 
 namespace wordmon {
 
 class WordUi {
  public:
-  WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio);
+  WordUi(AppSettings& settings, StudyStore& study, AudioPlayer& audio, QuizGame& quiz);
 
   void begin();
   void loop();
@@ -44,6 +45,15 @@ class WordUi {
   AppSettings& settings_;
   StudyStore& study_;
   AudioPlayer& audio_;
+  QuizGame& quiz_;
+  lv_obj_t* quizOverlay_ = nullptr;
+  uint32_t quizAnsweredAt_ = 0;
+  void showLearningMenu();
+  void startQuiz(bool learnedOnly, bool practice = false);
+  void renderQuiz();
+  void closeQuiz();
+  void quizAnswer(uint8_t choice);
+  void quizNext();
   lv_obj_t* speakButton_ = nullptr;
   lv_obj_t* speakLabel_ = nullptr;
   bool audioFeedback_ = false;

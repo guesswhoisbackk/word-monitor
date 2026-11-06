@@ -44,7 +44,7 @@
   {
     "word": "crayon box",
     "en": "Crayon box",
-    "ko": "크레용",
+    "ko": "크레용 상자",
     "image": "images/004_crayon_box_color.png",
     "source_id": "004_crayon_box",
     "variants": [
@@ -576,7 +576,7 @@
   {
     "word": "puzzle piece",
     "en": "Puzzle piece",
-    "ko": "퍼즐",
+    "ko": "퍼즐 조각",
     "image": "images/042_puzzle_piece_color.png",
     "source_id": "042_puzzle_piece",
     "variants": [
@@ -1472,7 +1472,7 @@
   {
     "word": "rolling pin",
     "en": "Rolling pin",
-    "ko": "밀대",
+    "ko": "밀방망이",
     "image": "images/106_rolling_pin_color.png",
     "source_id": "106_rolling_pin",
     "variants": [
@@ -1570,7 +1570,7 @@
   {
     "word": "pizza slice",
     "en": "Pizza slice",
-    "ko": "피자",
+    "ko": "피자 조각",
     "image": "images/113_pizza_slice_color.png",
     "source_id": "113_pizza_slice",
     "variants": [
@@ -2102,7 +2102,7 @@
   {
     "word": "moon",
     "en": "Moon",
-    "ko": "초승달",
+    "ko": "달",
     "image": "images/151_moon_color.png",
     "source_id": "151_moon",
     "variants": [
@@ -3031,7 +3031,7 @@
   {
     "word": "sushi roll",
     "en": "Sushi roll",
-    "ko": "김밥",
+    "ko": "초밥 롤",
     "image": "images/217_sushi_roll_color.png",
     "source_id": "217_sushi_roll",
     "variants": [
@@ -3171,7 +3171,7 @@
   {
     "word": "mop",
     "en": "Mop",
-    "ko": "밀대",
+    "ko": "대걸레",
     "image": "images/227_mop_color.png",
     "source_id": "227_mop",
     "variants": [
@@ -3526,7 +3526,7 @@
   {
     "word": "dog",
     "en": "Dog",
-    "ko": "강아지",
+    "ko": "개",
     "image": "images/252_dog_color.png",
     "source_id": "252_dog",
     "variants": [
@@ -4265,7 +4265,7 @@
   {
     "word": "piano keyboard",
     "en": "Piano keyboard",
-    "ko": "피아노",
+    "ko": "피아노 건반",
     "image": "images/298_piano_keyboard_color.png",
     "source_id": "298_piano_keyboard",
     "variants": [
@@ -5210,7 +5210,7 @@
   {
     "word": "yarn ball",
     "en": "Yarn ball",
-    "ko": "털실",
+    "ko": "털실 뭉치",
     "image": "images/363_yarn_ball_color.png",
     "source_id": "363_yarn_ball",
     "variants": [
@@ -8150,7 +8150,7 @@
   {
     "word": "hair lock",
     "en": "Hair lock",
-    "ko": "머리카락",
+    "ko": "머리카락 한 타래",
     "image": "images/599_hair_lock_color.png",
     "source_id": "599_hair_lock",
     "variants": [
@@ -9130,7 +9130,7 @@
   {
     "word": "fern",
     "en": "Fern",
-    "ko": "고사리 잎",
+    "ko": "고사리",
     "image": "images/669_fern_color.png",
     "source_id": "669_fern",
     "variants": [
@@ -10068,7 +10068,7 @@
   {
     "word": "ticket stub",
     "en": "Ticket stub",
-    "ko": "표 조각",
+    "ko": "표의 반권",
     "image": "images/736_ticket_stub_color.png",
     "source_id": "736_ticket_stub",
     "variants": [
@@ -10264,7 +10264,7 @@
   {
     "word": "medicine dropper",
     "en": "Medicine dropper",
-    "ko": "스포이드",
+    "ko": "약 스포이트",
     "image": "images/750_medicine_dropper_color.png",
     "source_id": "750_medicine_dropper",
     "variants": [
@@ -11258,7 +11258,7 @@
   {
     "word": "wall anchor",
     "en": "Wall anchor",
-    "ko": "벽 고정못",
+    "ko": "벽 고정 앵커",
     "image": "images/821_wall_anchor_color.png",
     "source_id": "821_wall_anchor",
     "variants": [
@@ -12126,7 +12126,7 @@
   {
     "word": "envelope moistener",
     "en": "Envelope moistener",
-    "ko": "봉투 접착기",
+    "ko": "봉투 풀 적심 도구",
     "image": "images/883_envelope_moistener_color.png",
     "source_id": "883_envelope_moistener",
     "variants": [
@@ -12630,7 +12630,7 @@
   {
     "word": "soup",
     "en": "Soup",
-    "ko": "탕",
+    "ko": "수프",
     "image": "images/921_soup_color.png",
     "source_id": "921_soup",
     "variants": [

@@ -21,3 +21,11 @@ $env:PYTHONUTF8='1'
 .venv/Scripts/python.exe scripts/build_sentence_translations.py
 .venv/Scripts/python.exe scripts/make_kr_font.py
 ```
+
+## 추가 내용 검토와 퀴즈 준비 — v0.11.0
+
+단어 뜻 893개와 예문을 재검토해 뜻 17개, 영어/한글 예문 25쌍을 교정했다. `moon`은 달, `rolling pin`은 밀방망이, `mop`은 대걸레, `crayon box`는 크레용 상자, `soup`은 수프로 바로잡았다. 수식어가 누락된 뜻과 그릇 자체를 먹는 식의 문장도 정리했다. 이전 절에서 남긴 marble, cereal bowl, ear의 원문도 이번에 수정했다.
+
+변경 목록은 `content/illustrated-vocabulary/corrections.json`에 이전/새 표현으로 기록했다. `scripts/build_quiz_content.py`는 수정한 893개 단어로 퀴즈 자료와 호환 교정 헤더를 만든다. 기기의 기존 원격 단어장도 단어 키와 이전 표현이 정확히 일치할 때 교정한 뜻/예문으로 표시한다. 사용자 정의 표현은 유지한다. 원격 저장소 자체는 변경하지 않았다. 원문을 교체한 문장은 교정된 한글 해석을 사용한다.
+
+`vocabulary.json`과 이미지/변형 자료는 역사적 원본으로 유지한다. 실행·생성용 편집 원본은 `unique_words.json`, `examples.json`, `examples_ko.json`이다.
