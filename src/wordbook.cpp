@@ -159,7 +159,7 @@ void Wordbook::loop(bool allowNetwork) {
   poll();
   if (settings_.wordbookUrl.isEmpty()) return;
   const int32_t day = todayDay();
-  if(todayMode_ && day >= 0 && todayDay_ != day) endToday();
+  if(todayMode_ && day >= 0 && todayDay_ != day) endToday(true);
   if (wordCount_ && (!cardValid_ || (day >= 0 && cardDay_ != day))) selectCard(day);
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   if (now >= 1700000000 && (planDay_ != day || plannedStudyRevision_ != study_.revision() || now >= planCheckAt_)) rebuildPlan();
@@ -374,15 +374,20 @@ bool Wordbook::beginToday() {
   }
   if(!todayCount_) return false;
   savedIndex_=activeIndex_; todayPosition_=0; todayDay_=studyDay(now); todayMode_=true;
+  todayMoves_=0; ++todayTransitions_;
+  Serial.printf("[today] enter count=%u day=%ld uptime=%lu\n",todayCount_,long(todayDay_),millis());
   selectCard(todayDay_,todayIndices_[0]); return true;
 }
-void Wordbook::endToday() {
+void Wordbook::endToday(bool dayChanged) {
   if(!todayMode_) return;
-  todayMode_=false;
+  todayMode_=false; ++todayTransitions_; todayExitMs_=millis();
+  todayExitReason_=dayChanged?"day_changed":"user";
+  Serial.printf("[today] exit reason=%s uptime=%lu\n",todayExitReason_,todayExitMs_);
   selectCard(todayDay(),savedIndex_<wordCount_?savedIndex_:0);
 }
 void Wordbook::stepToday(int direction) {
   if(!todayMode_ || !todayCount_) return;
+  ++todayMoves_;
   todayPosition_=static_cast<uint16_t>((int(todayPosition_)+int(todayCount_)+(direction<0?-1:1))%todayCount_);
   selectCard(todayDay_,todayIndices_[todayPosition_]);
 }

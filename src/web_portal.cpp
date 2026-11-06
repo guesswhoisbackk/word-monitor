@@ -136,6 +136,11 @@ void WebPortal::begin(bool accessPointMode) {
     doc["todayMode"]=wordbook_.todayMode();
     doc["todayCount"]=wordbook_.todayCount();
     doc["todayPosition"]=wordbook_.todayPosition();
+    doc["todayMoves"]=wordbook_.todayMoves();
+    doc["todayTransitions"]=wordbook_.todayTransitions();
+    doc["todayExitReason"]=wordbook_.todayExitReason();
+    doc["todayExitMs"]=wordbook_.todayExitMs();
+    doc["uptimeMs"]=millis();
     doc["historyRevision"]=study_.revision();
     doc["cacheReady"]=wordbook_.cachedAssets(); doc["cachePlanned"]=wordbook_.plannedAssets();
     doc["downloading"]=wordbook_.busy();

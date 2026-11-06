@@ -693,12 +693,15 @@ void WordUi::cardEvent(lv_event_t* event) {
 
 void WordUi::studyEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
-  lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_target(event));
+  lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
   if (self->reviewLoading_) return;
   self->audioFeedback_ = false;
   if(self->todayMode_ && target!=self->speakButton_) {
+    // Only the registered navigation buttons may change replay state.
+    if(target!=self->againButton_ && target!=self->goodButton_ && target!=self->nextButton_) return;
     self->speakRequested_=false; self->audio_.cancel();
     self->todayRequest_=target==self->againButton_?3:target==self->goodButton_?4:2;
+    Serial.printf("[today] navigation request=%u\n",self->todayRequest_);
     return;
   }
   if (target == self->speakButton_) {
@@ -733,7 +736,7 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->hintVisible_ = true;
     self->meaningVisible_ = false;
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
-  } else {
+  } else if (target == self->nextButton_) {
     self->speakRequested_=false; self->audio_.cancel();
     self->todayRequest_=1;
     self->studyMessage_="오늘 복습 준비 중";

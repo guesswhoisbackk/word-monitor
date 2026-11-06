@@ -58,8 +58,12 @@ class Wordbook {
   uint32_t revision() const { return revision_; }
   bool nextReview(const StudyStore& study);
   bool beginToday();
-  void endToday();
+  void endToday(bool dayChanged = false);
   void stepToday(int direction);
+  uint32_t todayMoves() const { return todayMoves_; }
+  uint32_t todayTransitions() const { return todayTransitions_; }
+  const char* todayExitReason() const { return todayExitReason_; }
+  uint32_t todayExitMs() const { return todayExitMs_; }
   bool todayMode() const { return todayMode_; }
   bool readyForToday() const { return !busy_ || job_.type != 1; }
   uint16_t todayCount() const { return todayCount_; }
@@ -93,6 +97,8 @@ class Wordbook {
   String cardMeaning_;
   String cardExample_;
   String cardTranslation_;
+  uint32_t todayMoves_ = 0, todayTransitions_ = 0, todayExitMs_ = 0;
+  const char* todayExitReason_ = "none";
   bool todayMode_ = false;
   uint16_t todayIndices_[kMaxStudyWords]{};
   uint16_t todayCount_ = 0, todayPosition_ = 0, activeIndex_ = 0, savedIndex_ = 0;

@@ -53,7 +53,7 @@
   },
   "marker": {
     "en": "This marker has a bright red tip.",
-    "ko": "이 마커에는 밝은 빨간색 팁이 있습니다."
+    "ko": "이 마커는 펜촉이 선명한 빨간색이에요."
   },
   "paintbrush": {
     "en": "Rinse the paintbrush before the next color.",
@@ -61,23 +61,23 @@
   },
   "palette": {
     "en": "Mix the paints on the palette.",
-    "ko": "팔레트에 있는 물감을 섞으세요."
+    "ko": "팔레트 위에서 물감을 섞으세요."
   },
   "stapler": {
     "en": "The stapler joined the pages together.",
-    "ko": "스테이플러가 페이지를 하나로 묶었습니다."
+    "ko": "스테이플러로 종이들을 한데 묶었어요."
   },
   "paperclip": {
     "en": "A paperclip held the sheets in place.",
-    "ko": "클립이 시트를 제자리에 고정했습니다."
+    "ko": "클립으로 종이들이 움직이지 않게 고정했어요."
   },
   "calculator": {
     "en": "Check the answer with a calculator.",
-    "ko": "계산기로 답을 확인해보세요."
+    "ko": "계산기로 답을 확인해 보세요."
   },
   "clock": {
     "en": "The clock shows bedtime.",
-    "ko": "시계는 취침 시간을 보여줍니다."
+    "ko": "시계를 보니 잠잘 시간이에요."
   },
   "lunchbox": {
     "en": "Mom packed a sandwich in my lunchbox.",
@@ -89,7 +89,7 @@
   },
   "globe": {
     "en": "We found Korea on the globe.",
-    "ko": "우리는 지구 위에서 한국을 찾았습니다."
+    "ko": "우리는 지구본에서 한국을 찾았어요."
   },
   "map": {
     "en": "The map shows the way to school.",
@@ -97,11 +97,11 @@
   },
   "magnifying glass": {
     "en": "Look at the bug through a magnifying glass.",
-    "ko": "돋보기를 통해 버그를 살펴보세요."
+    "ko": "돋보기로 벌레를 살펴보세요."
   },
   "bell": {
     "en": "The bell rang at the end of class.",
-    "ko": "수업이 끝나자 종이 울렸다."
+    "ko": "수업이 끝나자 종이 울렸어요."
   },
   "calendar": {
     "en": "Mark your birthday on the calendar.",
@@ -113,11 +113,11 @@
   },
   "paper": {
     "en": "Fold the paper in half.",
-    "ko": "종이를 반으로 접습니다."
+    "ko": "종이를 반으로 접으세요."
   },
   "tape": {
     "en": "Stick the poster up with tape.",
-    "ko": "테이프로 포스터를 붙입니다."
+    "ko": "테이프로 포스터를 붙이세요."
   },
   "pencil case": {
     "en": "My pencil case has three pens.",
@@ -125,7 +125,7 @@
   },
   "sharpener": {
     "en": "The sharpener made the pencil pointy.",
-    "ko": "깎이는 연필을 뾰족하게 만들었습니다."
+    "ko": "연필깎이로 연필 끝을 뾰족하게 깎았어요."
   },
   "highlighter": {
     "en": "Mark the key word with a highlighter.",
@@ -137,7 +137,7 @@
   },
   "whiteboard": {
     "en": "The teacher wrote today on the whiteboard.",
-    "ko": "오늘 선생님이 화이트보드에 글을 쓰셨어요."
+    "ko": "오늘 선생님이 화이트보드에 글을 적으셨어요."
   },
   "computer": {
     "en": "She studies English on the computer.",
@@ -169,11 +169,11 @@
   },
   "building block": {
     "en": "Stack one more building block.",
-    "ko": "빌딩 블록을 하나 더 쌓으세요."
+    "ko": "쌓기 블록을 하나 더 쌓으세요."
   },
   "ball": {
     "en": "Throw the ball to me.",
-    "ko": "나에게 공을 던져라."
+    "ko": "나에게 공을 던지세요."
   },
   "kite": {
     "en": "The kite flies high in the wind.",
@@ -181,23 +181,23 @@
   },
   "umbrella": {
     "en": "Take an umbrella in the rain.",
-    "ko": "비오는날 우산을 가져가세요."
+    "ko": "비가 오면 우산을 가져가세요."
   },
   "rain boots": {
     "en": "Wear rain boots when it pours.",
-    "ko": "비가 올 때는 장화를 신으세요."
+    "ko": "비가 쏟아질 때는 장화를 신으세요."
   },
   "hat": {
     "en": "A hat keeps the sun off.",
-    "ko": "모자는 태양을 차단합니다."
+    "ko": "모자는 햇볕을 가려 줘요."
   },
   "shoe": {
     "en": "Tie your shoe before you run.",
-    "ko": "달리기 전에 신발을 묶으세요."
+    "ko": "달리기 전에 신발 끈을 묶으세요."
   },
   "socks": {
     "en": "Warm socks feel good in winter.",
-    "ko": "따뜻한 양말은 겨울에도 기분이 좋습니다."
+    "ko": "겨울에는 따뜻한 양말을 신으면 기분이 좋아요."
   },
   "apple": {
     "en": "She ate an apple at lunch.",
@@ -205,7 +205,7 @@
   },
   "banana": {
     "en": "A banana is easy to peel.",
-    "ko": "바나나는 껍질이 벗겨지기 쉽습니다."
+    "ko": "바나나는 껍질을 벗기기 쉬워요."
   },
   "orange": {
     "en": "Fresh oranges are full of juice.",
@@ -221,7 +221,7 @@
   },
   "watermelon": {
     "en": "Watermelon is the best summer fruit.",
-    "ko": "수박은 최고의 여름 과일이다."
+    "ko": "수박은 여름에 먹기 가장 좋은 과일이에요."
   },
   "pear": {
     "en": "This pear is ripe and sweet.",
@@ -233,7 +233,7 @@
   },
   "pineapple": {
     "en": "Pineapple tastes great on pizza.",
-    "ko": "파인애플은 피자에 정말 맛있습니다."
+    "ko": "파인애플을 피자에 올려 먹으면 맛있어요."
   },
   "cherries": {
     "en": "Two cherries sat on the cake.",
@@ -257,11 +257,11 @@
   },
   "corn": {
     "en": "Sweet corn is good in soup.",
-    "ko": "옥수수는 수프에 좋습니다."
+    "ko": "단옥수수를 수프에 넣으면 맛있어요."
   },
   "broccoli": {
     "en": "Eat your broccoli to grow strong.",
-    "ko": "브로콜리를 먹으면 튼튼해집니다."
+    "ko": "튼튼하게 자라도록 브로콜리를 먹으세요."
   },
   "mushroom": {
     "en": "A mushroom grew after the rain.",
@@ -269,19 +269,19 @@
   },
   "potato": {
     "en": "Mash the potato with butter.",
-    "ko": "감자를 버터로 으깨세요."
+    "ko": "감자에 버터를 넣고 으깨세요."
   },
   "onion": {
     "en": "Chop the onion carefully.",
-    "ko": "양파를 조심스럽게 자릅니다."
+    "ko": "양파를 조심스럽게 써세요."
   },
   "eggplant": {
     "en": "The eggplant has shiny purple skin.",
-    "ko": "가지에는 반짝이는 보라색 피부가 있습니다."
+    "ko": "가지의 껍질은 반짝이는 보라색이에요."
   },
   "bed": {
     "en": "Jump into bed, it is late.",
-    "ko": "침대에 들어가세요. 시간이 늦었습니다."
+    "ko": "시간이 늦었으니 어서 침대에 들어가세요."
   },
   "pillow": {
     "en": "A soft pillow helps you sleep.",
@@ -289,11 +289,11 @@
   },
   "blanket": {
     "en": "Pull the blanket up to your chin.",
-    "ko": "담요를 턱까지 끌어당깁니다."
+    "ko": "담요를 턱까지 끌어올리세요."
   },
   "lamp": {
     "en": "Turn on the lamp to read.",
-    "ko": "읽으려면 램프를 켜십시오."
+    "ko": "책을 읽으려면 스탠드를 켜세요."
   },
   "sofa": {
     "en": "The family sat on the sofa.",
@@ -305,11 +305,11 @@
   },
   "bookshelf": {
     "en": "Every book goes back on the bookshelf.",
-    "ko": "모든 책은 책장으로 돌아갑니다."
+    "ko": "책은 모두 책장에 다시 꽂아요."
   },
   "dresser": {
     "en": "Fold the shirts into the dresser.",
-    "ko": "셔츠를 옷장에 접어 넣으세요."
+    "ko": "셔츠를 개서 서랍장에 넣으세요."
   },
   "mirror": {
     "en": "She combed her hair at the mirror.",
@@ -317,11 +317,11 @@
   },
   "window": {
     "en": "Open the window for fresh air.",
-    "ko": "신선한 공기를 마시기 위해 창문을 엽니다."
+    "ko": "신선한 공기가 들어오도록 창문을 여세요."
   },
   "door": {
     "en": "Close the door softly.",
-    "ko": "문을 부드럽게 닫으세요."
+    "ko": "문을 살며시 닫으세요."
   },
   "bathtub": {
     "en": "The bathtub is full of bubbles.",
@@ -333,7 +333,7 @@
   },
   "toothbrush": {
     "en": "Use your toothbrush twice a day.",
-    "ko": "하루에 두 번 칫솔을 사용하십시오."
+    "ko": "하루에 두 번 칫솔을 사용하세요."
   },
   "toothpaste": {
     "en": "Squeeze a little toothpaste.",
@@ -341,19 +341,19 @@
   },
   "soap": {
     "en": "Soap and water clean the dirt.",
-    "ko": "비누와 물로 먼지를 청소하십시오."
+    "ko": "비누와 물로 때를 씻어 내요."
   },
   "towel": {
     "en": "Dry your hands on the towel.",
-    "ko": "수건으로 손을 말리세요."
+    "ko": "수건으로 손의 물기를 닦으세요."
   },
   "comb": {
     "en": "Comb your hair after the bath.",
-    "ko": "목욕 후 머리를 빗으십시오."
+    "ko": "목욕한 뒤 머리를 빗으세요."
   },
   "hairbrush": {
     "en": "The hairbrush untangled her hair.",
-    "ko": "빗이 그녀의 머리카락을 풀어주었다."
+    "ko": "머리빗으로 그녀의 엉킨 머리카락을 풀었어요."
   },
   "shampoo": {
     "en": "Rinse all the shampoo out.",
@@ -361,7 +361,7 @@
   },
   "fork": {
     "en": "Eat the noodles with a fork.",
-    "ko": "포크로 국수를 먹습니다."
+    "ko": "포크로 국수를 먹으세요."
   },
   "spoon": {
     "en": "Stir the soup with a spoon.",
@@ -369,15 +369,15 @@
   },
   "knife": {
     "en": "Cut the bread with a knife.",
-    "ko": "칼로 빵을 자릅니다."
+    "ko": "칼로 빵을 자르세요."
   },
   "plate": {
     "en": "Put the eggs on a plate.",
-    "ko": "계란을 접시에 담습니다."
+    "ko": "달걀을 접시에 담으세요."
   },
   "bowl": {
     "en": "Pour cereal into the bowl.",
-    "ko": "시리얼을 그릇에 붓습니다."
+    "ko": "그릇에 시리얼을 부으세요."
   },
   "cup": {
     "en": "Fill the cup with milk.",
@@ -393,7 +393,7 @@
   },
   "frying pan": {
     "en": "Cook the egg in the frying pan.",
-    "ko": "프라이팬에 계란을 요리합니다."
+    "ko": "프라이팬에 달걀을 익히세요."
   },
   "pot": {
     "en": "The soup bubbled in the pot.",
@@ -401,23 +401,23 @@
   },
   "kettle": {
     "en": "The kettle whistled as it boiled.",
-    "ko": "주전자가 끓으면서 윙윙거리는 소리가 났다."
+    "ko": "주전자의 물이 끓으면서 삐 소리가 났어요."
   },
   "whisk": {
     "en": "Beat the eggs with a whisk.",
-    "ko": "털로 계란을 치십시오."
+    "ko": "거품기로 달걀을 저어 풀어 주세요."
   },
   "spatula": {
     "en": "Flip the pancake with a spatula.",
-    "ko": "주걱으로 팬케이크를 뒤집습니다."
+    "ko": "뒤집개로 팬케이크를 뒤집으세요."
   },
   "ladle": {
     "en": "Serve soup with the ladle.",
-    "ko": "국자로 수프를 제공하십시오."
+    "ko": "국자로 수프를 떠 주세요."
   },
   "cutting board": {
     "en": "Chop the carrots on the cutting board.",
-    "ko": "도마에 당근을 자릅니다."
+    "ko": "도마 위에서 당근을 써세요."
   },
   "rolling pin": {
     "en": "Roll the dough flat with a rolling pin.",
@@ -433,7 +433,7 @@
   },
   "cupcake": {
     "en": "The cupcake has pink frosting.",
-    "ko": "컵케이크에는 핑크색 프로스팅이 들어있습니다."
+    "ko": "컵케이크 위에 분홍색 크림이 발라져 있어요."
   },
   "donut": {
     "en": "Choose a glazed donut.",
@@ -441,7 +441,7 @@
   },
   "cookie": {
     "en": "Share one cookie with me.",
-    "ko": "나에게 쿠키 하나를 나눠주세요."
+    "ko": "쿠키 하나를 나와 나눠 먹어요."
   },
   "ice cream": {
     "en": "Ice cream melts fast in summer.",
@@ -513,15 +513,15 @@
   },
   "rocket": {
     "en": "The rocket blasted into space.",
-    "ko": "로켓이 우주로 폭발했습니다."
+    "ko": "로켓이 우주로 힘차게 발사됐어요."
   },
   "traffic light": {
     "en": "Wait for the green traffic light.",
-    "ko": "녹색 신호등을 기다리세요."
+    "ko": "신호등이 초록불로 바뀔 때까지 기다리세요."
   },
   "road cone": {
     "en": "A road cone blocked the lane.",
-    "ko": "도로 원뿔이 차선을 막았습니다."
+    "ko": "안전 고깔이 차선을 막고 있었어요."
   },
   "excavator": {
     "en": "The excavator dug a big hole.",
@@ -537,7 +537,7 @@
   },
   "tram": {
     "en": "We rode the tram downtown.",
-    "ko": "우리는 시내에서 트램을 탔습니다."
+    "ko": "우리는 트램을 타고 시내로 갔어요."
   },
   "hot air balloon": {
     "en": "A hot air balloon rose at sunrise.",
@@ -545,7 +545,7 @@
   },
   "parachute": {
     "en": "The parachute slowed his fall.",
-    "ko": "낙하산이 그의 추락을 늦추었습니다."
+    "ko": "낙하산 덕분에 그가 천천히 내려왔어요."
   },
   "wheel": {
     "en": "The wheel spins as you pedal.",
@@ -569,7 +569,7 @@
   },
   "flower": {
     "en": "She picked a yellow flower.",
-    "ko": "그녀는 노란 꽃을 골랐습니다."
+    "ko": "그녀는 노란 꽃 한 송이를 꺾었어요."
   },
   "sunflower": {
     "en": "The sunflower faces the morning sun.",
@@ -585,15 +585,15 @@
   },
   "snowflake": {
     "en": "Each snowflake has six arms.",
-    "ko": "각 눈송이에는 6개의 팔이 있습니다."
+    "ko": "눈송이는 각각 가지가 여섯 개예요."
   },
   "cloud": {
     "en": "A fluffy cloud drifted by.",
-    "ko": "푹신한 구름이 흘러갔습니다."
+    "ko": "솜털 같은 구름이 둥실 떠갔어요."
   },
   "rainbow": {
     "en": "A rainbow appeared after the rain.",
-    "ko": "비온 뒤 무지개가 떴다."
+    "ko": "비가 온 뒤 무지개가 떴어요."
   },
   "sun": {
     "en": "The sun rises in the east.",
@@ -613,7 +613,7 @@
   },
   "seashell": {
     "en": "She found a pink seashell.",
-    "ko": "그녀는 분홍색 조개를 발견했습니다."
+    "ko": "그녀는 분홍색 조개껍데기를 발견했어요."
   },
   "palm tree": {
     "en": "Palm trees line the beach road.",
@@ -633,11 +633,11 @@
   },
   "rake": {
     "en": "Gather the leaves with a rake.",
-    "ko": "갈퀴로 나뭇잎을 모으십시오."
+    "ko": "갈퀴로 나뭇잎을 모으세요."
   },
   "trowel": {
     "en": "Plant the seedling with a trowel.",
-    "ko": "흙손으로 묘목을 심습니다."
+    "ko": "모종삽으로 모종을 심으세요."
   },
   "bucket": {
     "en": "The bucket is full of water.",
@@ -649,11 +649,11 @@
   },
   "garden hose": {
     "en": "Spray the garden with the hose.",
-    "ko": "정원에 호스를 뿌리세요."
+    "ko": "호스로 정원에 물을 뿌리세요."
   },
   "wheelbarrow": {
     "en": "Push the soil in the wheelbarrow.",
-    "ko": "수레에 흙을 밀어 넣습니다."
+    "ko": "흙을 담은 외바퀴 손수레를 미세요."
   },
   "key": {
     "en": "The key opened the old door.",
@@ -665,7 +665,7 @@
   },
   "gift box": {
     "en": "A ribbon tied the gift box.",
-    "ko": "리본이 선물 상자를 묶었습니다."
+    "ko": "선물 상자가 리본으로 묶여 있었어요."
   },
   "candle": {
     "en": "Blow out the candle and wish.",
@@ -721,7 +721,7 @@
   },
   "mittens": {
     "en": "Red mittens keep hands warm.",
-    "ko": "빨간 장갑은 손을 따뜻하게 해줍니다."
+    "ko": "빨간 벙어리장갑은 손을 따뜻하게 해 줘요."
   },
   "jacket": {
     "en": "Zip up your jacket, it is cold.",
@@ -753,7 +753,7 @@
   },
   "zipper": {
     "en": "The zipper stuck halfway up.",
-    "ko": "지퍼가 반쯤 올라갔네요."
+    "ko": "지퍼가 올라가다가 중간에 걸렸어요."
   },
   "belt": {
     "en": "He fastened his belt tightly.",
@@ -777,11 +777,11 @@
   },
   "spinning top": {
     "en": "The spinning top wobbled and fell.",
-    "ko": "팽이가 흔들리며 떨어졌습니다."
+    "ko": "팽이가 비틀거리다가 쓰러졌어요."
   },
   "jump rope": {
     "en": "Jump rope for one minute.",
-    "ko": "1분간 줄넘기."
+    "ko": "1분 동안 줄넘기를 하세요."
   },
   "toy drum": {
     "en": "He banged the toy drum loudly.",
@@ -797,7 +797,7 @@
   },
   "marble": {
     "en": "Shooter marble won the game.",
-    "ko": "슈터 마블이 게임에서 승리했습니다."
+    "ko": "치는 구슬로 구슬치기에서 이겼어요."
   },
   "soccer ball": {
     "en": "Kick the soccer ball hard.",
@@ -805,11 +805,11 @@
   },
   "basketball": {
     "en": "He dribbles the basketball well.",
-    "ko": "그는 농구를 잘 드리블한다."
+    "ko": "그는 농구공으로 드리블을 잘해요."
   },
   "baseball bat": {
     "en": "Swing the baseball bat level.",
-    "ko": "야구 방망이를 휘두르세요."
+    "ko": "야구 방망이를 수평으로 휘두르세요."
   },
   "tennis racket": {
     "en": "Grip the tennis racket firmly.",
@@ -829,7 +829,7 @@
   },
   "avocado": {
     "en": "The avocado is ripe and creamy.",
-    "ko": "아보카도는 잘 익고 크리미합니다."
+    "ko": "아보카도가 잘 익어서 부드러워요."
   },
   "lemon": {
     "en": "Add lemon to the cold water.",
@@ -837,19 +837,19 @@
   },
   "coconut": {
     "en": "The coconut fell from the palm.",
-    "ko": "코코넛이 손바닥에서 떨어졌습니다."
+    "ko": "코코넛이 야자수에서 떨어졌어요."
   },
   "cheese": {
     "en": "The cheese melted on toast.",
-    "ko": "토스트에 치즈가 녹더라구요."
+    "ko": "토스트 위에서 치즈가 녹았어요."
   },
   "milk carton": {
     "en": "The milk carton is nearly empty.",
-    "ko": "우유통이 거의 비어 있습니다."
+    "ko": "우유 팩이 거의 비어 있어요."
   },
   "juice box": {
     "en": "Punch the straw into the juice box.",
-    "ko": "주스 상자에 빨대를 펀칭합니다."
+    "ko": "팩 주스에 빨대를 꽂으세요."
   },
   "jam jar": {
     "en": "Open the jam jar for breakfast.",
@@ -877,7 +877,7 @@
   },
   "fried egg": {
     "en": "The fried egg has a runny yolk.",
-    "ko": "계란 후라이에는 노른자가 흐릅니다."
+    "ko": "달걀프라이의 노른자가 덜 익어 흐를 정도예요."
   },
   "picnic basket": {
     "en": "The picnic basket holds our lunch.",
@@ -901,11 +901,11 @@
   },
   "paint roller": {
     "en": "Roll the wall with the paint roller.",
-    "ko": "페인트 롤러로 벽을 굴려보세요."
+    "ko": "페인트 롤러로 벽에 페인트를 바르세요."
   },
   "mop": {
     "en": "The mop cleaned up the spill.",
-    "ko": "걸레가 흘린 것을 청소했습니다."
+    "ko": "대걸레로 쏟아진 것을 닦았어요."
   },
   "broom": {
     "en": "Sweep the floor with the broom.",
@@ -925,11 +925,11 @@
   },
   "alarm clock": {
     "en": "The alarm clock rings at seven.",
-    "ko": "일곱시에 알람시계가 울린다."
+    "ko": "알람 시계가 일곱 시에 울려요."
   },
   "hourglass": {
     "en": "The hourglass ran out of sand.",
-    "ko": "모래시계에 모래가 떨어졌습니다."
+    "ko": "모래시계의 모래가 모두 아래로 내려갔어요."
   },
   "notepad": {
     "en": "Jot the phone number on a notepad.",
@@ -941,15 +941,15 @@
   },
   "rubber stamp": {
     "en": "Press the rubber stamp in ink.",
-    "ko": "고무 스탬프를 잉크로 누릅니다."
+    "ko": "고무도장을 잉크에 꾹 눌러 찍으세요."
   },
   "lunch tray": {
     "en": "Set the cups on the lunch tray.",
-    "ko": "점심 트레이에 컵을 놓으십시오."
+    "ko": "식판 위에 컵들을 놓으세요."
   },
   "chef hat": {
     "en": "He wears a tall chef hat.",
-    "ko": "그는 키가 큰 요리사 모자를 쓰고 있습니다."
+    "ko": "그는 높이가 높은 요리사 모자를 쓰고 있어요."
   },
   "treasure chest": {
     "en": "The treasure chest held gold coins.",
@@ -977,11 +977,11 @@
   },
   "triangle ruler": {
     "en": "Draw angles with a triangle ruler.",
-    "ko": "삼각형 자로 각도를 그립니다."
+    "ko": "삼각자로 각을 그리세요."
   },
   "paint tube": {
     "en": "Squeeze blue from the paint tube.",
-    "ko": "페인트 튜브에서 파란색을 짜냅니다."
+    "ko": "물감 튜브에서 파란 물감을 짜세요."
   },
   "apron": {
     "en": "Wear an apron while painting.",
@@ -989,7 +989,7 @@
   },
   "safety pin": {
     "en": "Fix the strap with a safety pin.",
-    "ko": "안전핀으로 스트랩을 고정하세요."
+    "ko": "옷핀으로 끈을 고정하세요."
   },
   "feather": {
     "en": "The feather drifted to the ground.",
@@ -997,7 +997,7 @@
   },
   "crown": {
     "en": "The king placed the crown on.",
-    "ko": "왕은 왕관을 씌웠습니다."
+    "ko": "왕이 왕관을 썼어요."
   },
   "cat": {
     "en": "The cat naps in the sun.",
@@ -1065,7 +1065,7 @@
   },
   "giraffe": {
     "en": "The giraffe eats the tall leaves.",
-    "ko": "기린은 키가 큰 잎을 먹습니다."
+    "ko": "기린은 높은 곳에 있는 잎을 먹어요."
   },
   "zebra": {
     "en": "A zebra grazed with the herd.",
@@ -1073,7 +1073,7 @@
   },
   "monkey": {
     "en": "The monkey swung branch to branch.",
-    "ko": "원숭이는 가지를 저 가지로 흔들었습니다."
+    "ko": "원숭이가 나뭇가지에 매달려 이 가지에서 저 가지로 옮겨 갔어요."
   },
   "panda": {
     "en": "The panda munches bamboo all day.",
@@ -1085,7 +1085,7 @@
   },
   "fox": {
     "en": "The fox crept through the snow.",
-    "ko": "여우는 눈 사이로 기어 들어갔습니다."
+    "ko": "여우가 눈밭을 살금살금 지나갔어요."
   },
   "deer": {
     "en": "A deer stood at the forest edge.",
@@ -1093,7 +1093,7 @@
   },
   "penguin": {
     "en": "Penguins huddle to keep warm.",
-    "ko": "펭귄들은 몸을 따뜻하게 유지하기 위해 모여있습니다."
+    "ko": "펭귄들은 몸을 따뜻하게 하려고 옹기종기 모여 있어요."
   },
   "whale": {
     "en": "The whale spouted water high.",
@@ -1117,7 +1117,7 @@
   },
   "bee": {
     "en": "The bee buzzed from bloom to bloom.",
-    "ko": "벌은 꽃이 필 때마다 윙윙거렸다."
+    "ko": "벌이 윙윙거리며 꽃에서 꽃으로 날아다녔어요."
   },
   "ladybug": {
     "en": "A ladybug crawled up the stem.",
@@ -1177,7 +1177,7 @@
   },
   "light bulb": {
     "en": "Change the light bulb, it burned out.",
-    "ko": "전구를 바꾸세요. 다 타버렸어요."
+    "ko": "전구가 나갔으니 새것으로 바꾸세요."
   },
   "electric plug": {
     "en": "Push the electric plug in firmly.",
@@ -1209,7 +1209,7 @@
   },
   "xylophone": {
     "en": "She tapped a tune on the xylophone.",
-    "ko": "그녀는 실로폰의 곡을 두드렸다."
+    "ko": "그녀는 실로폰을 두드려 가락을 연주했어요."
   },
   "mailbox": {
     "en": "Drop the letter in the mailbox.",
@@ -1229,7 +1229,7 @@
   },
   "toilet": {
     "en": "Flush the toilet after use.",
-    "ko": "사용 후 화장실을 물을 내리십시오."
+    "ko": "변기를 사용한 뒤 물을 내리세요."
   },
   "toilet paper": {
     "en": "We are out of toilet paper.",
@@ -1265,7 +1265,7 @@
   },
   "post office": {
     "en": "Mail the parcel at the post office.",
-    "ko": "우체국으로 소포를 부쳐주세요."
+    "ko": "우체국에서 소포를 부치세요."
   },
   "library building": {
     "en": "The library building is quiet inside.",
@@ -1281,7 +1281,7 @@
   },
   "restaurant": {
     "en": "This restaurant serves good noodles.",
-    "ko": "이 식당은 좋은 국수를 제공합니다."
+    "ko": "이 식당은 맛있는 국수를 팔아요."
   },
   "bank": {
     "en": "The bank opens at nine sharp.",
@@ -1317,7 +1317,7 @@
   },
   "playground slide": {
     "en": "Line up for the playground slide.",
-    "ko": "놀이터 미끄럼틀을 위해 줄을 서세요."
+    "ko": "놀이터 미끄럼틀을 타려고 줄을 서세요."
   },
   "swing set": {
     "en": "The swing set squeaks in the wind.",
@@ -1329,11 +1329,11 @@
   },
   "sandbox": {
     "en": "Build a castle in the sandbox.",
-    "ko": "샌드박스에 성을 건설하세요."
+    "ko": "모래 놀이터에서 성을 만드세요."
   },
   "beach ball": {
     "en": "We batted the beach ball around.",
-    "ko": "우리는 비치볼을 쳤습니다."
+    "ko": "우리는 비치볼을 서로 쳐서 주고받았어요."
   },
   "life ring": {
     "en": "The life ring floated beside the boat.",
@@ -1341,11 +1341,11 @@
   },
   "sandcastle": {
     "en": "The wave washed the sandcastle away.",
-    "ko": "파도가 모래성을 씻어냈습니다."
+    "ko": "파도가 모래성을 쓸어 갔어요."
   },
   "surfboard": {
     "en": "He paddles out on his surfboard.",
-    "ko": "그는 서핑보드 위에서 노를 젓는다."
+    "ko": "그는 서핑보드에 엎드려 손으로 물을 저으며 바다로 나가요."
   },
   "snowman": {
     "en": "The snowman wore a carrot nose.",
@@ -1353,7 +1353,7 @@
   },
   "sled": {
     "en": "The sled flew down the hill.",
-    "ko": "썰매는 언덕 아래로 날아갔습니다."
+    "ko": "썰매가 언덕 아래로 빠르게 내려갔어요."
   },
   "skis": {
     "en": "Wax your skis before the slope.",
@@ -1373,11 +1373,11 @@
   },
   "snorkel": {
     "en": "Breathe through the snorkel near the surface.",
-    "ko": "표면 근처에서 스노클을 통해 숨을 쉬십시오."
+    "ko": "수면 가까이에서 스노클로 숨을 쉬세요."
   },
   "fishing rod": {
     "en": "He cast the fishing rod far.",
-    "ko": "그는 낚싯대를 멀리 던졌습니다."
+    "ko": "그는 낚싯대를 휘둘러 낚싯줄을 멀리 던졌어요."
   },
   "campfire": {
     "en": "We roasted marshmallows over the campfire.",
@@ -1401,7 +1401,7 @@
   },
   "washing machine": {
     "en": "Load the washing machine with darks.",
-    "ko": "세탁기에 어둠을 넣으십시오."
+    "ko": "세탁기에 어두운 색 빨랫감을 넣으세요."
   },
   "refrigerator": {
     "en": "The milk is in the refrigerator.",
@@ -1417,7 +1417,7 @@
   },
   "toaster": {
     "en": "The toast popped up bright and warm.",
-    "ko": "토스트가 밝고 따뜻하게 나왔습니다."
+    "ko": "노릇하고 따뜻한 토스트가 튀어 올랐어요."
   },
   "blender": {
     "en": "Blend the fruit in the blender.",
@@ -1425,7 +1425,7 @@
   },
   "rice cooker": {
     "en": "The rice cooker clicked when done.",
-    "ko": "완료되면 밥솥이 찰칵 소리를 냈습니다."
+    "ko": "밥이 다 되자 밥솥에서 딸깍 소리가 났어요."
   },
   "laundry basket": {
     "en": "Carry the laundry basket downstairs.",
@@ -1433,7 +1433,7 @@
   },
   "clothes iron": {
     "en": "The clothes iron smoothed the shirt.",
-    "ko": "다리미로 셔츠를 매끄럽게 만들었습니다."
+    "ko": "다리미로 셔츠의 주름을 폈어요."
   },
   "ironing board": {
     "en": "Set the ironing board by the window.",
@@ -1445,7 +1445,7 @@
   },
   "spool of thread": {
     "en": "A spool of thread rolled off the table.",
-    "ko": "실 한 뭉치가 테이블에서 굴러 떨어졌습니다."
+    "ko": "실패 하나가 탁자에서 굴러 떨어졌어요."
   },
   "yarn ball": {
     "en": "The kitten chased the yarn ball.",
@@ -1457,7 +1457,7 @@
   },
   "sunglasses": {
     "en": "Sunglasses block the bright glare.",
-    "ko": "선글라스는 밝은 눈부심을 차단합니다."
+    "ko": "선글라스는 눈부신 빛을 막아 줘요."
   },
   "sandals": {
     "en": "Wear sandals on the hot sand.",
@@ -1493,7 +1493,7 @@
   },
   "shopping cart": {
     "en": "The shopping cart had a wobbly wheel.",
-    "ko": "장바구니에 흔들리는 바퀴가 있었습니다."
+    "ko": "쇼핑 카트의 바퀴 하나가 흔들렸어요."
   },
   "cash register": {
     "en": "The cash register chimed twice.",
@@ -1513,11 +1513,11 @@
   },
   "scale": {
     "en": "The scale reads two kilograms.",
-    "ko": "저울은 2킬로그램입니다."
+    "ko": "저울에 2킬로그램이라고 표시돼요."
   },
   "thermometer": {
     "en": "The thermometer shows a fever.",
-    "ko": "온도계에 발열이 표시됩니다."
+    "ko": "체온계를 보니 열이 나요."
   },
   "syringe": {
     "en": "The nurse prepared a tiny syringe.",
@@ -1533,7 +1533,7 @@
   },
   "pill": {
     "en": "Take one pill with water.",
-    "ko": "1알씩 물과 함께 섭취하세요."
+    "ko": "알약 한 알을 물과 함께 드세요."
   },
   "test tube": {
     "en": "Pour the blue liquid into a test tube.",
@@ -1541,7 +1541,7 @@
   },
   "beaker": {
     "en": "The beaker bubbled over the flame.",
-    "ko": "비커가 불꽃 위에서 거품을 냈습니다."
+    "ko": "불 위에 놓인 비커 안에서 액체가 부글부글 끓었어요."
   },
   "microscope": {
     "en": "Peer at the leaf through the microscope.",
@@ -1561,7 +1561,7 @@
   },
   "comet": {
     "en": "The comet streaked across the sky.",
-    "ko": "혜성이 하늘을 가로질러 줄무늬를 이루었습니다."
+    "ko": "혜성이 하늘을 빠르게 가로질렀어요."
   },
   "satellite": {
     "en": "The satellite orbits the earth.",
@@ -1573,7 +1573,7 @@
   },
   "sprout": {
     "en": "A sprout pushed through the soil.",
-    "ko": "흙을 뚫고 나온 새싹."
+    "ko": "새싹이 흙을 뚫고 나왔어요."
   },
   "seed": {
     "en": "Plant one seed per pot.",
@@ -1581,7 +1581,7 @@
   },
   "tree stump": {
     "en": "Count the rings on the tree stump.",
-    "ko": "나무 그루터기에 있는 고리를 세어보세요."
+    "ko": "나무 그루터기의 나이테를 세어 보세요."
   },
   "log": {
     "en": "A log rolled down the pile.",
@@ -1593,11 +1593,11 @@
   },
   "bird nest": {
     "en": "A bird nest hides in the hedge.",
-    "ko": "새 둥지가 울타리에 숨어 있습니다."
+    "ko": "생울타리 속에 새 둥지가 숨어 있어요."
   },
   "honeycomb": {
     "en": "Bees fill each honeycomb cell.",
-    "ko": "꿀벌은 각 벌집 세포를 채웁니다."
+    "ko": "꿀벌이 벌집의 칸칸을 채워요."
   },
   "egg": {
     "en": "Crack the egg on the bowl edge.",
@@ -1629,11 +1629,11 @@
   },
   "water drop": {
     "en": "A water drop slid down the glass.",
-    "ko": "물방울이 유리 아래로 미끄러졌습니다."
+    "ko": "물방울이 유리를 타고 흘러내렸어요."
   },
   "flame": {
     "en": "The flame flickered and died.",
-    "ko": "불꽃이 깜박이며 죽었습니다."
+    "ko": "불꽃이 깜박이다가 꺼졌어요."
   },
   "soap bubbles": {
     "en": "Soap bubbles floated over the yard.",
@@ -1645,7 +1645,7 @@
   },
   "printer": {
     "en": "The printer is out of ink.",
-    "ko": "프린터에 잉크가 부족합니다."
+    "ko": "프린터의 잉크가 다 떨어졌어요."
   },
   "television": {
     "en": "Grandpa watches baseball on television.",
@@ -1661,7 +1661,7 @@
   },
   "power outlet": {
     "en": "Do not poke the power outlet.",
-    "ko": "전원 콘센트를 찌르지 마세요."
+    "ko": "콘센트 구멍을 찌르지 마세요."
   },
   "wi-fi router": {
     "en": "Restart the wi-fi router, please.",
@@ -1693,15 +1693,15 @@
   },
   "saxophone": {
     "en": "The saxophone wailed the solo.",
-    "ko": "색소폰이 솔로를 울부짖었다."
+    "ko": "색소폰이 구슬픈 독주 선율을 울렸어요."
   },
   "flute": {
     "en": "Her flute notes trilled high.",
-    "ko": "그녀의 플루트 음표는 높게 울렸다."
+    "ko": "그녀의 플루트 소리가 높은 음으로 떨리며 울렸어요."
   },
   "cymbals": {
     "en": "Crash the cymbals at the climax.",
-    "ko": "클라이막스에서 심벌즈를 충돌시킵니다."
+    "ko": "절정 부분에서 심벌즈를 힘차게 치세요."
   },
   "harmonica": {
     "en": "He played blues on the harmonica.",
@@ -1709,7 +1709,7 @@
   },
   "accordion": {
     "en": "The accordion bellows opened wide.",
-    "ko": "아코디언 벨로우즈가 활짝 열렸습니다."
+    "ko": "아코디언의 주름통이 활짝 벌어졌어요."
   },
   "music stand": {
     "en": "Set the score on the music stand.",
@@ -1725,19 +1725,19 @@
   },
   "record player": {
     "en": "Vinyl spins on the record player.",
-    "ko": "레코드 플레이어에서 비닐이 회전합니다."
+    "ko": "레코드 플레이어 위에서 LP 음반이 돌아가요."
   },
   "vinyl record": {
     "en": "This vinyl record is from 1970.",
-    "ko": "이 비닐 레코드는 1970년에 나온 것입니다."
+    "ko": "이 LP 음반은 1970년에 나온 거예요."
   },
   "boombox": {
     "en": "The boombox blasted on his shoulder.",
-    "ko": "붐박스가 그의 어깨에서 폭발했다."
+    "ko": "그의 어깨에 올린 휴대용 오디오에서 음악이 크게 울렸어요."
   },
   "kazoo": {
     "en": "Hum into the kazoo, do not blow.",
-    "ko": "카주에 흥얼거리고, 불지 마세요."
+    "ko": "카주에는 바람을 불지 말고 흥얼거리며 소리를 내세요."
   },
   "ukulele": {
     "en": "She strums a tiny ukulele.",
@@ -1745,19 +1745,19 @@
   },
   "cello": {
     "en": "The cello sang a low note.",
-    "ko": "첼로가 낮은 음을 불렀습니다."
+    "ko": "첼로가 낮은 음을 울렸어요."
   },
   "triangle instrument": {
     "en": "Ding the triangle instrument softly.",
-    "ko": "삼각 악기를 부드럽게 땡땡이 치세요."
+    "ko": "트라이앵글을 살짝 쳐서 소리를 내세요."
   },
   "volleyball": {
     "en": "Bump the volleyball up high.",
-    "ko": "배구공을 높이 높이 올려보세요."
+    "ko": "배구공을 두 팔로 받아 높이 올리세요."
   },
   "tennis ball": {
     "en": "The tennis ball bounced over the line.",
-    "ko": "테니스 공이 라인 위로 튕겨 나갔습니다."
+    "ko": "테니스공이 튀어 선을 넘어갔어요."
   },
   "baseball": {
     "en": "The baseball sailed over the fence.",
@@ -1765,15 +1765,15 @@
   },
   "baseball glove": {
     "en": "Break in a new baseball glove.",
-    "ko": "새 야구 글러브를 끼우세요."
+    "ko": "새 야구 글러브를 길들이세요."
   },
   "badminton racket": {
     "en": "String the badminton racket tighter.",
-    "ko": "배드민턴 라켓을 더 단단하게 묶으세요."
+    "ko": "배드민턴 라켓의 줄을 더 팽팽하게 매세요."
   },
   "shuttlecock": {
     "en": "The shuttlecock floated across.",
-    "ko": "셔틀콕이 떠다녔다."
+    "ko": "셔틀콕이 둥실 떠서 건너갔어요."
   },
   "golf club": {
     "en": "Choose the right golf club.",
@@ -1781,15 +1781,15 @@
   },
   "golf ball": {
     "en": "The golf ball rolled into the cup.",
-    "ko": "골프공이 컵 속으로 굴러 들어갔습니다."
+    "ko": "골프공이 홀 안으로 굴러 들어갔어요."
   },
   "hockey stick": {
     "en": "Tape the hockey stick blade.",
-    "ko": "하키 스틱 블레이드에 테이프를 붙입니다."
+    "ko": "하키 스틱의 날 부분에 테이프를 감으세요."
   },
   "hockey puck": {
     "en": "The hockey puck slid between pads.",
-    "ko": "하키퍽이 패드 사이로 미끄러졌습니다."
+    "ko": "하키 퍽이 다리 보호대 사이로 미끄러져 갔어요."
   },
   "dumbbell": {
     "en": "Lift the dumbbell with a straight back.",
@@ -1801,11 +1801,11 @@
   },
   "swim cap": {
     "en": "A swim cap keeps hair dry-ish.",
-    "ko": "수영모는 머리카락을 건조한 상태로 유지합니다."
+    "ko": "수영모는 머리카락이 조금 덜 젖게 해 줘요."
   },
   "soccer goal": {
     "en": "The ball hit the soccer goal post.",
-    "ko": "공이 축구 골대에 맞았습니다."
+    "ko": "공이 축구 골대의 기둥에 맞았어요."
   },
   "basketball hoop": {
     "en": "The basketball hoop is ten feet high.",
@@ -1813,11 +1813,11 @@
   },
   "table tennis paddle": {
     "en": "Grip the table tennis paddle loosely.",
-    "ko": "탁구 패들을 느슨하게 잡으십시오."
+    "ko": "탁구채를 너무 꽉 잡지 마세요."
   },
   "ping pong ball": {
     "en": "The ping pong ball spun off the table.",
-    "ko": "탁구공이 탁구대에서 떨어져 나갔습니다."
+    "ko": "탁구공이 회전하며 탁구대 밖으로 튀어나갔어요."
   },
   "boxing glove": {
     "en": "He laced up each boxing glove.",
@@ -1825,19 +1825,19 @@
   },
   "stopwatch": {
     "en": "Start the stopwatch on my mark.",
-    "ko": "내 표시에 맞춰 스톱워치를 시작하세요."
+    "ko": "내 신호에 맞춰 초시계를 시작하세요."
   },
   "finish flag": {
     "en": "The finish flag waved the winner in.",
-    "ko": "결승 깃발이 승자를 불렀습니다."
+    "ko": "우승자가 들어오자 결승 깃발이 흔들렸어요."
   },
   "pliers": {
     "en": "Bend the wire with pliers.",
-    "ko": "펜치로 와이어를 구부립니다."
+    "ko": "펜치로 철사를 구부리세요."
   },
   "handsaw": {
     "en": "Cut the board with a handsaw.",
-    "ko": "톱으로 보드를 자릅니다."
+    "ko": "손으로 쓰는 톱으로 나무판을 자르세요."
   },
   "electric drill": {
     "en": "The electric drill whirred loudly.",
@@ -1853,11 +1853,11 @@
   },
   "tape measure": {
     "en": "Stretch the tape measure across.",
-    "ko": "줄자를 가로질러 늘립니다."
+    "ko": "줄자를 가로로 쭉 펴세요."
   },
   "paint bucket": {
     "en": "Stir the paint bucket well.",
-    "ko": "페인트 통을 잘 저어주세요."
+    "ko": "페인트 통 안의 페인트를 잘 저으세요."
   },
   "ladder": {
     "en": "Climb the ladder one rung at a time.",
@@ -1865,7 +1865,7 @@
   },
   "work gloves": {
     "en": "Wear work gloves for the splinters.",
-    "ko": "파편에 대해서는 작업용 장갑을 착용하십시오."
+    "ko": "나무 가시에 찔리지 않도록 작업용 장갑을 끼세요."
   },
   "nut and bolt": {
     "en": "Fasten the nut and bolt together.",
@@ -1873,11 +1873,11 @@
   },
   "clamp": {
     "en": "The clamp held the joint tight.",
-    "ko": "클램프는 조인트를 단단히 고정했습니다."
+    "ko": "클램프가 이음매를 단단히 잡아 줬어요."
   },
   "level tool": {
     "en": "Check the shelf with a level tool.",
-    "ko": "수평 도구로 선반을 확인하십시오."
+    "ko": "수평계로 선반이 수평인지 확인하세요."
   },
   "sandpaper": {
     "en": "Smooth the wood with sandpaper.",
@@ -1901,7 +1901,7 @@
   },
   "measuring spoon": {
     "en": "Level the measuring spoon exactly.",
-    "ko": "계량스푼의 수평을 정확하게 맞추세요."
+    "ko": "계량스푼에 담은 재료를 윗면과 평평하게 맞추세요."
   },
   "coffee maker": {
     "en": "The coffee maker gurgled at dawn.",
@@ -1909,7 +1909,7 @@
   },
   "strainer": {
     "en": "Shake the strainer over the sink.",
-    "ko": "싱크대 위에서 여과기를 흔드세요."
+    "ko": "싱크대 위에서 거름망을 흔드세요."
   },
   "pancakes": {
     "en": "Flip the pancakes when they bubble.",
@@ -1917,7 +1917,7 @@
   },
   "waffle": {
     "en": "Syrup pooled in each waffle square.",
-    "ko": "각 와플 사각형에 시럽이 풀려 있습니다."
+    "ko": "와플의 네모난 홈마다 시럽이 고였어요."
   },
   "muffin": {
     "en": "Blueberries hide in the muffin.",
@@ -1925,11 +1925,11 @@
   },
   "bagel": {
     "en": "Toast the bagel until golden.",
-    "ko": "베이글을 황금색이 될 때까지 굽습니다."
+    "ko": "베이글을 노릇해질 때까지 구우세요."
   },
   "cereal bowl": {
     "en": "The cereal bowl clinked with milk.",
-    "ko": "시리얼 그릇에 우유가 부딪히는 소리가 났다."
+    "ko": "우유가 담긴 시리얼 그릇에서 달그락 소리가 났어요."
   },
   "yogurt cup": {
     "en": "Peel the foil off the yogurt cup.",
@@ -1937,7 +1937,7 @@
   },
   "ice pop": {
     "en": "The ice pop dyed our tongues red.",
-    "ko": "아이스팝은 우리의 혀를 빨갛게 물들였습니다."
+    "ko": "막대 아이스크림을 먹고 우리 혀가 빨갛게 물들었어요."
   },
   "dumpling": {
     "en": "Each dumpling holds hot soup.",
@@ -1945,7 +1945,7 @@
   },
   "noodle bowl": {
     "en": "Slurp the noodle bowl loudly.",
-    "ko": "국수 그릇을 크게 후루룩 드세요."
+    "ko": "그릇에 담긴 국수를 크게 후루룩 소리 내며 먹으세요."
   },
   "rice bowl": {
     "en": "Lift the rice bowl close.",
@@ -1957,15 +1957,15 @@
   },
   "cabbage": {
     "en": "The cabbage head weighed a lot.",
-    "ko": "양배추 머리의 무게가 많이 나갔습니다."
+    "ko": "양배추 한 통이 아주 무거웠어요."
   },
   "peas pod": {
     "en": "Pop the peas from the pod.",
-    "ko": "꼬투리에서 완두콩을 꺼냅니다."
+    "ko": "꼬투리에서 완두콩을 꺼내세요."
   },
   "garlic bulb": {
     "en": "Crush one clove from the garlic bulb.",
-    "ko": "마늘 전구에서 한 쪽을 으깨십시오."
+    "ko": "통마늘에서 한 쪽을 떼어 으깨세요."
   },
   "ginger root": {
     "en": "Grate the ginger root finely.",
@@ -1973,7 +1973,7 @@
   },
   "chili pepper": {
     "en": "The chili pepper burns, drink milk.",
-    "ko": "고추가 타서 우유를 마신다."
+    "ko": "고추가 매우니 우유를 마시세요."
   },
   "bell pepper": {
     "en": "A bell pepper can be yellow.",
@@ -1981,7 +1981,7 @@
   },
   "asparagus": {
     "en": "Snap the asparagus at the woody end.",
-    "ko": "아스파라거스의 나무 끝부분을 움켜쥐세요."
+    "ko": "아스파라거스의 딱딱한 밑동을 똑 떼어 내세요."
   },
   "cauliflower": {
     "en": "The cauliflower looks like a tree.",
@@ -1993,11 +1993,11 @@
   },
   "curtain": {
     "en": "Draw the curtain at sunset.",
-    "ko": "해질녘에 커튼을 그립니다."
+    "ko": "해가 질 때 커튼을 치세요."
   },
   "carpet": {
     "en": "The carpet muffles every footstep.",
-    "ko": "카펫은 모든 발걸음을 방해합니다."
+    "ko": "카펫은 발소리를 줄여 줘요."
   },
   "doormat": {
     "en": "Wipe your shoes on the doormat.",
@@ -2005,7 +2005,7 @@
   },
   "cushion": {
     "en": "Sink back into the soft cushion.",
-    "ko": "부드러운 쿠션에 다시 몸을 담그세요."
+    "ko": "부드러운 쿠션에 등을 편하게 기대세요."
   },
   "wardrobe": {
     "en": "The wardrobe door squeaked open.",
@@ -2021,11 +2021,11 @@
   },
   "light switch": {
     "en": "Feel for the light switch in the dark.",
-    "ko": "어둠 속에서 전등 스위치를 느껴보세요."
+    "ko": "어둠 속에서 손으로 더듬어 전등 스위치를 찾으세요."
   },
   "wall shelf": {
     "en": "Trophy rows fill the wall shelf.",
-    "ko": "트로피 줄이 벽 선반을 가득 채웁니다."
+    "ko": "트로피들이 벽 선반에 줄지어 가득 놓여 있어요."
   },
   "doorbell": {
     "en": "The doorbell rang twice.",
@@ -2033,15 +2033,15 @@
   },
   "keychain": {
     "en": "Her keychain jingles with charms.",
-    "ko": "그녀의 열쇠고리는 매력으로 윙윙거립니다."
+    "ko": "열쇠고리에 달린 장식들이 짤랑거려요."
   },
   "tissue box": {
     "en": "Grab one from the tissue box.",
-    "ko": "티슈 상자에서 하나를 꺼냅니다."
+    "ko": "티슈 상자에서 휴지 한 장을 꺼내세요."
   },
   "plunger": {
     "en": "The plunger fixed the clog.",
-    "ko": "플런저가 막힌 부분을 고정했습니다."
+    "ko": "뚫어뻥으로 막힌 곳을 뚫었어요."
   },
   "bath mat": {
     "en": "Step onto the bath mat, not the floor.",
@@ -2053,7 +2053,7 @@
   },
   "lotion bottle": {
     "en": "Pump twice from the lotion bottle.",
-    "ko": "로션 병에서 두 번 펌핑하십시오."
+    "ko": "로션 병의 펌프를 두 번 누르세요."
   },
   "hand sanitizer": {
     "en": "Squirt hand sanitizer after the subway.",
@@ -2065,11 +2065,11 @@
   },
   "spray bottle": {
     "en": "Mist the leaves with the spray bottle.",
-    "ko": "스프레이 병으로 나뭇잎에 안개를 뿌립니다."
+    "ko": "분무기로 잎에 물을 가볍게 뿌리세요."
   },
   "sponge": {
     "en": "The sponge soaked up the spill.",
-    "ko": "스펀지가 유출물을 흡수했습니다."
+    "ko": "스펀지가 쏟아진 액체를 빨아들였어요."
   },
   "dish soap": {
     "en": "One drop of dish soap makes bubbles.",
@@ -2077,7 +2077,7 @@
   },
   "dish rack": {
     "en": "Stack plates in the dish rack.",
-    "ko": "접시걸이에 접시를 쌓아두세요."
+    "ko": "식기 건조대에 접시를 쌓아 두세요."
   },
   "oven mitt": {
     "en": "Grab the pan with an oven mitt.",
@@ -2089,7 +2089,7 @@
   },
   "vegetable peeler": {
     "en": "Strip the carrot with the vegetable peeler.",
-    "ko": "야채 필러로 당근을 벗겨냅니다."
+    "ko": "채소 껍질 벗기는 도구로 당근 껍질을 벗기세요."
   },
   "can opener": {
     "en": "Turn the can opener handle slowly.",
@@ -2097,7 +2097,7 @@
   },
   "ice cube tray": {
     "en": "Fill the ice cube tray to the top.",
-    "ko": "얼음 트레이를 상단까지 채웁니다."
+    "ko": "얼음 틀을 맨 위까지 채우세요."
   },
   "food container": {
     "en": "Pack leftovers in a food container.",
@@ -2125,7 +2125,7 @@
   },
   "sticky notes": {
     "en": "Mark the page with sticky notes.",
-    "ko": "스티커 메모로 페이지를 표시하세요."
+    "ko": "붙임쪽지로 책의 페이지를 표시하세요."
   },
   "index cards": {
     "en": "Quiz me with the index cards.",
@@ -2133,11 +2133,11 @@
   },
   "rubber band": {
     "en": "Snap a rubber band around the roll.",
-    "ko": "롤 주위에 고무 밴드를 끼웁니다."
+    "ko": "말아 놓은 것에 고무줄을 둘러 고정하세요."
   },
   "hole punch": {
     "en": "The hole punch clicked twice.",
-    "ko": "구멍 펀치가 두 번 찰칵 소리가 났습니다."
+    "ko": "구멍 뚫는 펀치에서 딸깍 소리가 두 번 났어요."
   },
   "file box": {
     "en": "Old receipts fill the file box.",
@@ -2145,7 +2145,7 @@
   },
   "bookend": {
     "en": "One bookend keeps the row upright.",
-    "ko": "북엔드 하나가 행을 똑바로 유지합니다."
+    "ko": "책받침 하나가 줄지어 놓인 책들을 똑바로 세워 줘요."
   },
   "easel": {
     "en": "Set the canvas on the easel.",
@@ -2153,11 +2153,11 @@
   },
   "canvas": {
     "en": "Prime the canvas before painting.",
-    "ko": "페인팅하기 전에 캔버스를 프라이밍합니다."
+    "ko": "그림을 그리기 전에 캔버스에 밑칠을 하세요."
   },
   "modeling clay": {
     "en": "Shape a snail from modeling clay.",
-    "ko": "모델링 점토로 달팽이 모양을 만드세요."
+    "ko": "찰흙으로 달팽이 모양을 만드세요."
   },
   "glue gun": {
     "en": "The glue gun heats in a minute.",
@@ -2165,19 +2165,19 @@
   },
   "pom-pom": {
     "en": "A fuzzy pom-pom tops the hat.",
-    "ko": "퍼지 폼폼이 모자 위에 있습니다."
+    "ko": "모자 꼭대기에 보송보송한 털방울이 달려 있어요."
   },
   "bead": {
     "en": "String one bead at a time.",
-    "ko": "한 번에 하나의 구슬을 묶습니다."
+    "ko": "구슬을 하나씩 실에 꿰세요."
   },
   "ribbon roll": {
     "en": "Unspool the ribbon roll and cut.",
-    "ko": "리본 롤을 풀고 잘라냅니다."
+    "ko": "리본 롤을 풀어서 자르세요."
   },
   "sticker sheet": {
     "en": "She shared her sticker sheet.",
-    "ko": "그녀는 스티커 시트를 공유했습니다."
+    "ko": "그녀는 스티커 한 장을 나누어 줬어요."
   },
   "doll": {
     "en": "The doll sleeps in a tiny bed.",
@@ -2205,7 +2205,7 @@
   },
   "jigsaw puzzle": {
     "en": "The jigsaw puzzle has a thousand pieces.",
-    "ko": "직소 퍼즐에는 수천 개의 조각이 있습니다."
+    "ko": "이 조각 퍼즐은 천 조각으로 되어 있어요."
   },
   "toy boat": {
     "en": "The toy boat sailed the bathtub.",
@@ -2217,7 +2217,7 @@
   },
   "bubble wand": {
     "en": "Wave the bubble wand slowly.",
-    "ko": "거품 막대를 천천히 흔듭니다."
+    "ko": "비눗방울 막대를 천천히 흔드세요."
   },
   "caterpillar": {
     "en": "A caterpillar munched the leaf edge.",
@@ -2225,19 +2225,19 @@
   },
   "butterfly net": {
     "en": "Sweep the butterfly net gently.",
-    "ko": "나비 그물을 부드럽게 쓸어냅니다."
+    "ko": "나비채를 살살 휘두르세요."
   },
   "bug jar": {
     "en": "Air holes dot the bug jar lid.",
-    "ko": "벌레병 뚜껑 곳곳에 공기 구멍이 있습니다."
+    "ko": "곤충 관찰 통 뚜껑 곳곳에 공기 구멍이 있어요."
   },
   "shark": {
     "en": "The shark fin cut the surface.",
-    "ko": "상어 지느러미가 표면을 자릅니다."
+    "ko": "상어 지느러미가 수면을 가르며 지나갔어요."
   },
   "lobster": {
     "en": "The lobster waved its big claw.",
-    "ko": "랍스터는 큰 발톱을 흔들었습니다."
+    "ko": "바닷가재가 커다란 집게발을 흔들었어요."
   },
   "jellyfish": {
     "en": "A jellyfish drifted past our feet.",
@@ -2261,11 +2261,11 @@
   },
   "foot": {
     "en": "My foot fell asleep sitting cross-legged.",
-    "ko": "내 발은 책상다리를 하고 앉아 잠이 들었다."
+    "ko": "책상다리로 앉아 있었더니 발이 저렸어요."
   },
   "eye": {
     "en": "Cover one eye and read the chart.",
-    "ko": "한쪽 눈을 가리고 차트를 읽어보세요."
+    "ko": "한쪽 눈을 가리고 시력 검사표를 읽으세요."
   },
   "ear": {
     "en": "Music goes in one ear, stays.",
@@ -2273,11 +2273,11 @@
   },
   "nose": {
     "en": "The nose knows fresh cookies.",
-    "ko": "코는 신선한 쿠키를 알고 있습니다."
+    "ko": "코로 갓 구운 쿠키 냄새를 알아차려요."
   },
   "mouth": {
     "en": "Open your mouth and say ah.",
-    "ko": "입을 벌리고 아라고 말해보세요."
+    "ko": "입을 벌리고 아 소리를 내 보세요."
   },
   "tooth": {
     "en": "One tooth wiggled loose.",
@@ -2285,11 +2285,11 @@
   },
   "tongue": {
     "en": "The tongue tastes the sour lemon.",
-    "ko": "혀에서는 신 레몬 맛이 납니다."
+    "ko": "혀로 레몬의 신맛을 느껴요."
   },
   "hair lock": {
     "en": "A hair lock fell over her eyes.",
-    "ko": "그녀의 눈 위로 머리카락이 떨어졌습니다."
+    "ko": "머리카락 한 가닥이 그녀의 눈 앞으로 흘러내렸어요."
   },
   "brain": {
     "en": "Sleep helps your brain grow.",
@@ -2305,7 +2305,7 @@
   },
   "hay bale": {
     "en": "We sat on one hay bale.",
-    "ko": "우리는 건초 더미 하나에 앉았습니다."
+    "ko": "우리는 건초 한 묶음 위에 앉았어요."
   },
   "windmill": {
     "en": "The windmill creaks in the gusts.",
@@ -2317,7 +2317,7 @@
   },
   "seed packet": {
     "en": "Read the seed packet for depth.",
-    "ko": "깊이에 대해서는 시드 패킷을 읽으십시오."
+    "ko": "얼마나 깊이 심어야 하는지 씨앗 봉투를 읽어 보세요."
   },
   "plant label": {
     "en": "Write the date on the plant label.",
@@ -2325,7 +2325,7 @@
   },
   "bird feeder": {
     "en": "Sparrows mob the bird feeder.",
-    "ko": "참새는 새 모이통을 몹니다."
+    "ko": "참새들이 새 모이통으로 몰려들어요."
   },
   "compost bin": {
     "en": "Toss apple cores in the compost bin.",
@@ -2333,11 +2333,11 @@
   },
   "rain barrel": {
     "en": "The rain barrel caught the storm.",
-    "ko": "빗물통이 폭풍을 잡았습니다."
+    "ko": "폭풍우가 내리자 빗물통에 빗물이 모였어요."
   },
   "pacifier": {
     "en": "The baby dropped the pacifier again.",
-    "ko": "아기가 젖꼭지를 또 떨어뜨렸어요."
+    "ko": "아기가 공갈젖꼭지를 또 떨어뜨렸어요."
   },
   "baby bottle": {
     "en": "Warm the baby bottle in water.",
@@ -2345,31 +2345,31 @@
   },
   "bib": {
     "en": "The bib caught the spilled cereal.",
-    "ko": "턱받이가 흘린 시리얼을 잡았습니다."
+    "ko": "흘린 시리얼이 턱받이 위에 떨어졌어요."
   },
   "rattle": {
     "en": "The rattle stopped the crying.",
-    "ko": "딸랑이가 울음을 그쳤습니다."
+    "ko": "딸랑이 소리에 아기가 울음을 그쳤어요."
   },
   "stroller": {
     "en": "The stroller folded with one hand.",
-    "ko": "유모차는 한 손으로 접혀 있습니다."
+    "ko": "유모차가 한 손으로 접혔어요."
   },
   "crib": {
     "en": "The baby sleeps in the crib.",
-    "ko": "아기는 침대에서 잔다."
+    "ko": "아기는 아기 침대에서 자요."
   },
   "high chair": {
     "en": "Strap her into the high chair.",
-    "ko": "그녀를 높은 의자에 묶으세요."
+    "ko": "아이를 아기 식탁 의자에 앉히고 안전띠를 채우세요."
   },
   "diaper": {
     "en": "The diaper bag is packed.",
-    "ko": "기저귀 가방이 포장되어 있습니다."
+    "ko": "기저귀 가방에 필요한 물건을 다 챙겼어요."
   },
   "stacking rings": {
     "en": "Stacking rings teach sizes.",
-    "ko": "스태킹 링은 크기를 알려줍니다."
+    "ko": "고리 쌓기 놀이로 크기를 배워요."
   },
   "teether": {
     "en": "Chill the teether in the fridge.",
@@ -2381,15 +2381,15 @@
   },
   "dog bone": {
     "en": "Nyla hid a dog bone in the yard.",
-    "ko": "Nyla는 마당에 개뼈를 숨겼습니다."
+    "ko": "나일라는 마당에 강아지용 뼈다귀를 숨겼어요."
   },
   "leash": {
     "en": "Clip the leash before the walk.",
-    "ko": "걷기 전에 목줄을 자르십시오."
+    "ko": "산책 전에 목줄의 고리를 채우세요."
   },
   "pet collar": {
     "en": "A tag jingles on the pet collar.",
-    "ko": "애완동물 목걸이에 꼬리표가 딸랑거리는 소리를 냅니다."
+    "ko": "반려동물 목걸이에 달린 이름표가 딸랑거려요."
   },
   "fishbowl": {
     "en": "Goldfish circles the fishbowl.",
@@ -2401,23 +2401,23 @@
   },
   "scratching post": {
     "en": "The cat sharpened claws on the scratching post.",
-    "ko": "고양이는 긁는 기둥에 발톱을 갈았습니다."
+    "ko": "고양이가 긁기 기둥에 발톱을 갈았어요."
   },
   "pet carrier": {
     "en": "The cat rides in a pet carrier.",
-    "ko": "고양이는 애완동물 캐리어를 타고 다닙니다."
+    "ko": "고양이가 반려동물 이동장에 들어가 이동해요."
   },
   "hamster wheel": {
     "en": "The hamster runs all night on its wheel.",
-    "ko": "햄스터는 밤새도록 바퀴를 타고 달립니다."
+    "ko": "햄스터가 밤새 쳇바퀴 위를 달려요."
   },
   "litter scoop": {
     "en": "Sift the litter with the scoop.",
-    "ko": "국자로 쓰레기를 체로 치십시오."
+    "ko": "고양이 화장실 모래를 전용 삽으로 걸러 내세요."
   },
   "hair clip": {
     "en": "A hair clip held back her bangs.",
-    "ko": "그녀의 앞머리를 고정하는 머리핀."
+    "ko": "머리핀으로 그녀의 앞머리를 뒤로 고정했어요."
   },
   "hair bow": {
     "en": "She tied a big hair bow.",
@@ -2437,15 +2437,15 @@
   },
   "nail clippers": {
     "en": "Trim nails straight across with clippers.",
-    "ko": "가위로 손톱을 일직선으로 다듬습니다."
+    "ko": "손톱깎이로 손톱을 일자로 깎으세요."
   },
   "lip balm": {
     "en": "Lip balm fixes chapped lips.",
-    "ko": "립밤은 갈라진 입술을 고쳐줍니다."
+    "ko": "립밤은 튼 입술을 낫게 해 줘요."
   },
   "sunscreen tube": {
     "en": "Squeeze the sunscreen tube onto your arm.",
-    "ko": "자외선 차단제 튜브를 팔에 꽉 쥐십시오."
+    "ko": "튜브를 눌러 자외선 차단제를 팔에 짜세요."
   },
   "hair roller": {
     "en": "Each hair roller clacked open.",
@@ -2453,7 +2453,7 @@
   },
   "nail polish": {
     "en": "The nail polish dried glossy pink.",
-    "ko": "매니큐어가 건조된 광택 있는 핑크색입니다."
+    "ko": "매니큐어가 마르자 윤기 나는 분홍색이 됐어요."
   },
   "thimble": {
     "en": "A thimble guards the sewing finger.",
@@ -2461,11 +2461,11 @@
   },
   "pin cushion": {
     "en": "Pins bristle on the pin cushion.",
-    "ko": "핀 쿠션에 핀이 뻣뻣해집니다."
+    "ko": "바늘꽂이에 핀들이 빼곡히 꽂혀 있어요."
   },
   "crochet hook": {
     "en": "Loop the yarn with the crochet hook.",
-    "ko": "크로셰 뜨개질 바늘로 실을 감아주세요."
+    "ko": "코바늘로 실을 걸어 고리를 만드세요."
   },
   "knitting needles": {
     "en": "Two knitting needles click fast.",
@@ -2473,31 +2473,31 @@
   },
   "embroidery hoop": {
     "en": "Stretch the cloth in the embroidery hoop.",
-    "ko": "자수틀에 천을 늘려주세요."
+    "ko": "자수틀에 천을 팽팽하게 끼우세요."
   },
   "needle threader": {
     "en": "A needle threader saves sore eyes.",
-    "ko": "실꿰기는 아픈 눈을 구해 줍니다."
+    "ko": "실 꿰기 도구를 쓰면 눈을 덜 피로하게 하며 실을 꿸 수 있어요."
   },
   "felt sheet": {
     "en": "Cut ears from the felt sheet.",
-    "ko": "펠트 시트에서 귀를 자릅니다."
+    "ko": "펠트 천에서 귀 모양을 오리세요."
   },
   "craft punch": {
     "en": "The craft punch stamps tiny stars.",
-    "ko": "공예 펀치는 작은 별을 찍습니다."
+    "ko": "공예용 펀치로 작은 별 모양을 뚫어요."
   },
   "sequin": {
     "en": "One sequin at a time, the dress sparkles.",
-    "ko": "한 번에 하나의 스팽글로 드레스가 반짝입니다."
+    "ko": "스팽글을 하나씩 달자 드레스가 반짝여요."
   },
   "pipe cleaner": {
     "en": "Twist a pipe cleaner into glasses.",
-    "ko": "파이프 클리너를 안경에 비틀어 넣습니다."
+    "ko": "공예용 철사를 구부려 안경 모양을 만드세요."
   },
   "park bench": {
     "en": "Old friends share a park bench.",
-    "ko": "오랜 친구들이 공원 벤치를 공유합니다."
+    "ko": "오랜 친구들이 공원 벤치에 함께 앉아요."
   },
   "picnic table": {
     "en": "Lunch is laid on the picnic table.",
@@ -2517,11 +2517,11 @@
   },
   "walking stick": {
     "en": "A walking stick steadies the climb.",
-    "ko": "지팡이가 등반을 안정시킵니다."
+    "ko": "지팡이를 짚으면 산을 오를 때 몸을 안정적으로 지탱할 수 있어요."
   },
   "camp stove": {
     "en": "Boil water on the camp stove.",
-    "ko": "캠프 스토브에 물을 끓입니다."
+    "ko": "캠핑용 버너로 물을 끓이세요."
   },
   "firewood bundle": {
     "en": "Carry the firewood bundle inside.",
@@ -2529,7 +2529,7 @@
   },
   "tent stake": {
     "en": "Pound each tent stake at an angle.",
-    "ko": "각 텐트 말뚝을 비스듬히 두드립니다."
+    "ko": "텐트 말뚝을 하나씩 비스듬히 박으세요."
   },
   "carabiner": {
     "en": "Clip the keys to a carabiner.",
@@ -2545,7 +2545,7 @@
   },
   "crystal": {
     "en": "The crystal caught the window light.",
-    "ko": "크리스탈이 창문의 빛을 포착했습니다."
+    "ko": "창문으로 들어온 빛이 수정에 반사됐어요."
   },
   "geode": {
     "en": "Crack the geode to see the crystals.",
@@ -2553,7 +2553,7 @@
   },
   "fossil": {
     "en": "A fossil shell hid in the rock.",
-    "ko": "바위 속에 화석 껍질이 숨겨져 있었습니다."
+    "ko": "바위 속에 조개 화석이 숨어 있었어요."
   },
   "icicle": {
     "en": "An icicle hung from the gutter.",
@@ -2565,7 +2565,7 @@
   },
   "weather vane": {
     "en": "The weather vane swung north.",
-    "ko": "풍향계가 북쪽으로 흔들렸습니다."
+    "ko": "풍향계가 북쪽으로 돌아갔어요."
   },
   "fern": {
     "en": "A fern unrolls each spring frond.",
@@ -2573,11 +2573,11 @@
   },
   "aloe plant": {
     "en": "Snap an aloe leaf for the burn.",
-    "ko": "화상을 대비해 알로에 잎을 잘라보세요."
+    "ko": "화상 부위에 쓰려고 알로에 잎을 꺾으세요."
   },
   "vase": {
     "en": "Tulips stand in the glass vase.",
-    "ko": "튤립은 유리 꽃병에 서 있습니다."
+    "ko": "유리 꽃병에 튤립이 꽂혀 있어요."
   },
   "picture frame": {
     "en": "The picture frame hangs slightly crooked.",
@@ -2585,7 +2585,7 @@
   },
   "wall hook": {
     "en": "Hang the towel on the wall hook.",
-    "ko": "벽걸이에 수건을 걸어주세요."
+    "ko": "벽 고리에 수건을 거세요."
   },
   "coat rack": {
     "en": "Coats pile on the coat rack.",
@@ -2601,7 +2601,7 @@
   },
   "door stopper": {
     "en": "A door stopper blocks the slam.",
-    "ko": "도어스토퍼가 슬램을 막아줍니다."
+    "ko": "문 고정 장치는 문이 쾅 닫히는 것을 막아 줘요."
   },
   "curtain rod": {
     "en": "Slide rings along the curtain rod.",
@@ -2621,19 +2621,19 @@
   },
   "party horn": {
     "en": "Blow the party horn at midnight.",
-    "ko": "자정에 파티 경적을 울려보세요."
+    "ko": "자정에 파티 나팔을 부세요."
   },
   "confetti popper": {
     "en": "The confetti popper burst gold.",
-    "ko": "색종이 터지는 금색."
+    "ko": "파티 폭죽에서 금빛 색종이가 터져 나왔어요."
   },
   "party streamer": {
     "en": "Twist each party streamer up.",
-    "ko": "각 파티 깃발을 위로 비틀어 보세요."
+    "ko": "파티 장식 띠를 하나씩 비틀어 올리세요."
   },
   "pinata": {
     "en": "Swing at the pinata blindfolded.",
-    "ko": "눈을 가린 채 피냐타를 휘두르세요."
+    "ko": "눈을 가리고 피냐타를 향해 막대를 휘두르세요."
   },
   "magic wand": {
     "en": "Wave the magic wand twice.",
@@ -2641,15 +2641,15 @@
   },
   "wizard hat": {
     "en": "Stars cover the wizard hat.",
-    "ko": "별은 마법사 모자를 덮습니다."
+    "ko": "마법사 모자에 별무늬가 가득해요."
   },
   "superhero cape": {
     "en": "A towel makes a superhero cape.",
-    "ko": "수건은 슈퍼 히어로 망토를 만듭니다."
+    "ko": "수건으로 슈퍼히어로 망토를 만들 수 있어요."
   },
   "costume mask": {
     "en": "The costume mask hides half the face.",
-    "ko": "의상 마스크는 얼굴의 절반을 가립니다."
+    "ko": "분장용 가면이 얼굴의 절반을 가려요."
   },
   "toy shield": {
     "en": "Block with the toy shield, then strike.",
@@ -2657,7 +2657,7 @@
   },
   "beanie": {
     "en": "Pull the beanie over your ears.",
-    "ko": "비니를 귀 위로 당겨보세요."
+    "ko": "귀를 덮도록 비니를 내려 쓰세요."
   },
   "ear muffs": {
     "en": "Ear muffs beat the winter wind.",
@@ -2673,11 +2673,11 @@
   },
   "overalls": {
     "en": "Paint stains dot the overalls.",
-    "ko": "페인트 얼룩이 작업복에 점을 찍습니다."
+    "ko": "작업복 곳곳에 페인트 얼룩이 있어요."
   },
   "vest": {
     "en": "A puffer vest keeps the core warm.",
-    "ko": "패딩 조끼는 코어를 따뜻하게 유지합니다."
+    "ko": "패딩 조끼는 몸통을 따뜻하게 해 줘요."
   },
   "ballet shoe": {
     "en": "Ribbons cross each ballet shoe.",
@@ -2689,11 +2689,11 @@
   },
   "knee pad": {
     "en": "Strap on a knee pad for volleyball.",
-    "ko": "배구용 무릎 패드에 끈을 매세요."
+    "ko": "배구를 할 때 무릎 보호대를 착용하세요."
   },
   "sleep mask": {
     "en": "A sleep mask blocks the dawn.",
-    "ko": "수면 마스크는 새벽을 차단합니다."
+    "ko": "수면 안대는 새벽빛을 막아 줘요."
   },
   "wheelchair": {
     "en": "The ramp helps the wheelchair pass.",
@@ -2705,7 +2705,7 @@
   },
   "fire hydrant": {
     "en": "The dog leashed to the fire hydrant.",
-    "ko": "개는 소화전에 목줄을 묶었습니다."
+    "ko": "개가 소화전에 목줄로 매여 있었어요."
   },
   "streetlamp": {
     "en": "Moths circle the streetlamp.",
@@ -2717,7 +2717,7 @@
   },
   "bird bath": {
     "en": "Sparrows splash in the bird bath.",
-    "ko": "새 욕조에 참새가 첨벙거립니다."
+    "ko": "새 목욕통에서 참새들이 물을 튀기며 목욕해요."
   },
   "garden statue": {
     "en": "A stone rabbit guards the garden statue spot.",
@@ -2729,15 +2729,15 @@
   },
   "wind chime": {
     "en": "The wind chime tinkles softly.",
-    "ko": "바람 소리가 부드럽게 울립니다."
+    "ko": "풍경이 맑은 소리로 살랑살랑 울려요."
   },
   "door knocker": {
     "en": "The brass door knocker boomed.",
-    "ko": "놋쇠 문고리 소리가 쾅쾅 울렸다."
+    "ko": "황동 문 두드리개가 쿵쿵 울렸어요."
   },
   "clipboard clip": {
     "en": "The clipboard clip held the sheet firm.",
-    "ko": "클립보드 클립이 시트를 단단히 고정했습니다."
+    "ko": "클립보드의 집게가 종이를 단단히 잡아 줬어요."
   },
   "desk lamp": {
     "en": "Angle the desk lamp over the book.",
@@ -2745,7 +2745,7 @@
   },
   "pencil grip": {
     "en": "A soft pencil grip trains fingers.",
-    "ko": "부드러운 연필 그립은 손가락을 훈련시킵니다."
+    "ko": "부드러운 연필 잡기 보조 도구로 올바른 손가락 자세를 익혀요."
   },
   "name tag": {
     "en": "Wear your name tag at the event.",
@@ -2761,31 +2761,31 @@
   },
   "bookmark": {
     "en": "A train ticket works as a bookmark.",
-    "ko": "기차표는 북마크 역할을 합니다."
+    "ko": "기차표를 책갈피로 쓸 수 있어요."
   },
   "desk organizer": {
     "en": "Pens stand in the desk organizer.",
-    "ko": "펜은 책상 정리함에 서 있습니다."
+    "ko": "책상 정리함에 펜들이 꽂혀 있어요."
   },
   "inbox tray": {
     "en": "New mail goes in the inbox tray.",
-    "ko": "새 메일은 받은 편지함 트레이에 들어갑니다."
+    "ko": "새로 온 우편물은 수신함 쟁반에 넣어요."
   },
   "pencil extender": {
     "en": "A pencil extender saves stubs.",
-    "ko": "연필 확장기는 스텁을 절약합니다."
+    "ko": "연필 연장 홀더를 쓰면 몽당연필도 계속 쓸 수 있어요."
   },
   "chalkboard eraser": {
     "en": "Clap the chalkboard eraser outside.",
-    "ko": "칠판 지우개를 바깥쪽으로 쳐보세요."
+    "ko": "밖에서 칠판지우개를 두드려 털어 내세요."
   },
   "whiteboard eraser": {
     "en": "The whiteboard eraser left no dust.",
-    "ko": "화이트보드 지우개에 먼지가 남지 않았습니다."
+    "ko": "화이트보드 지우개로 지우니 가루가 남지 않았어요."
   },
   "dry erase marker": {
     "en": "Cap the dry erase marker tight.",
-    "ko": "건조 지우기 마커를 단단히 닫으십시오."
+    "ko": "보드마커 뚜껑을 꼭 닫으세요."
   },
   "correction tape": {
     "en": "Swipe the correction tape across it.",
@@ -2793,11 +2793,11 @@
   },
   "pencil leads": {
     "en": "Refill the pencil leads, 0.5 size.",
-    "ko": "연필심을 0.5사이즈로 채워주세요."
+    "ko": "0.5밀리미터 샤프심을 채우세요."
   },
   "mechanical pencil": {
     "en": "Click the mechanical pencil twice.",
-    "ko": "샤프 펜슬을 두 번 클릭합니다."
+    "ko": "샤프펜슬의 버튼을 두 번 누르세요."
   },
   "fountain pen": {
     "en": "The fountain pen glides smoothly.",
@@ -2809,11 +2809,11 @@
   },
   "wax seal": {
     "en": "Press a wax seal on the letter.",
-    "ko": "편지에 왁스 봉인을 누릅니다."
+    "ko": "편지에 봉랍 도장을 꾹 찍으세요."
   },
   "letter opener": {
     "en": "Slide the letter opener under the flap.",
-    "ko": "덮개 아래로 편지 오프너를 밀어 넣습니다."
+    "ko": "봉투 덮개 아래로 편지칼을 밀어 넣으세요."
   },
   "coin purse": {
     "en": "Coins clink in the coin purse.",
@@ -2821,7 +2821,7 @@
   },
   "money clip": {
     "en": "A money clip holds flat bills.",
-    "ko": "머니 클립에는 납작한 지폐가 들어 있습니다."
+    "ko": "지폐 집게로 지폐를 납작하게 모아 고정해요."
   },
   "receipt roll": {
     "en": "The printer spits a receipt roll.",
@@ -2833,7 +2833,7 @@
   },
   "coupon": {
     "en": "Clip the coupon for cereal.",
-    "ko": "시리얼 쿠폰을 클립하세요."
+    "ko": "시리얼 할인 쿠폰을 오려 내세요."
   },
   "ticket stub": {
     "en": "Keep the ticket stub as a memory.",
@@ -2845,31 +2845,31 @@
   },
   "receipt": {
     "en": "Keep the receipt for returns.",
-    "ko": "반품 영수증을 보관하세요."
+    "ko": "반품할 때 쓸 수 있도록 영수증을 보관하세요."
   },
   "cash drawer": {
     "en": "The cash drawer shot open.",
-    "ko": "현금 서랍이 열렸습니다."
+    "ko": "현금 서랍이 휙 열렸어요."
   },
   "barcode scanner": {
     "en": "The barcode scanner beeped red.",
-    "ko": "바코드 스캐너에서 빨간색 신호음이 울렸습니다."
+    "ko": "바코드 스캐너에 빨간불이 들어오며 삐 소리가 났어요."
   },
   "soap dispenser": {
     "en": "Pump the soap dispenser twice.",
-    "ko": "비누 디스펜서를 두 번 펌핑합니다."
+    "ko": "물비누 용기의 펌프를 두 번 누르세요."
   },
   "toothbrush holder": {
     "en": "Four slots fill the toothbrush holder.",
-    "ko": "4개의 슬롯이 칫솔 홀더를 채웁니다."
+    "ko": "칫솔꽂이에는 칫솔을 꽂는 칸이 네 개 있어요."
   },
   "bathrobe": {
     "en": "He padded out in a bathrobe.",
-    "ko": "그는 목욕 가운을 입고 패딩을 입었습니다."
+    "ko": "그는 목욕 가운을 입고 사뿐사뿐 걸어 나왔어요."
   },
   "shower head": {
     "en": "The shower head drizzled weakly.",
-    "ko": "샤워 헤드에서 비가 약하게 떨어졌습니다."
+    "ko": "샤워기에서 물이 약하게 흘러나왔어요."
   },
   "shower curtain ring": {
     "en": "One shower curtain ring squeaked.",
@@ -2877,27 +2877,27 @@
   },
   "bath sponge": {
     "en": "Squeeze the bath sponge dry.",
-    "ko": "목욕 스폰지를 짜서 말리십시오."
+    "ko": "목욕 스펀지를 꼭 짜서 물기를 빼세요."
   },
   "loofah": {
     "en": "Hang the loofah to dry.",
-    "ko": "수세미를 걸어 말리세요."
+    "ko": "목욕용 수세미를 걸어 말리세요."
   },
   "cotton swab": {
     "en": "A cotton swab dabs the polish.",
-    "ko": "면봉으로 광택제를 닦아냅니다."
+    "ko": "면봉으로 매니큐어를 톡톡 찍어 발라요."
   },
   "cotton ball": {
     "en": "Press a cotton ball on the spot.",
-    "ko": "그 자리에서 면봉을 눌러보세요."
+    "ko": "그 부위에 솜 뭉치를 대고 누르세요."
   },
   "medicine dropper": {
     "en": "The medicine dropper measured exactly.",
-    "ko": "약 점 적기가 정확하게 측정되었습니다."
+    "ko": "약 스포이트로 정확한 양을 쟀어요."
   },
   "heating pad": {
     "en": "The heating pad soothed her back.",
-    "ko": "온열 패드가 그녀의 등을 달래주었습니다."
+    "ko": "온열 패드가 그녀의 등 통증을 덜어 줬어요."
   },
   "ice pack": {
     "en": "Wrap the ice pack in cloth.",
@@ -2909,23 +2909,23 @@
   },
   "otoscope": {
     "en": "The otoscope lit the ear canal.",
-    "ko": "검이경이 외이도에 불을 붙였습니다."
+    "ko": "이경이 귓속을 환하게 비췄어요."
   },
   "reflex hammer": {
     "en": "The reflex hammer tapped the knee.",
-    "ko": "반사 망치가 무릎을 두드렸다."
+    "ko": "반사 검사 망치로 무릎을 톡 쳤어요."
   },
   "blood pressure cuff": {
     "en": "The blood pressure cuff tightened.",
-    "ko": "혈압 커프가 조여졌습니다."
+    "ko": "혈압 측정용 팔띠가 조여졌어요."
   },
   "medical mask": {
     "en": "A medical mask loops both ears.",
-    "ko": "의료용 마스크는 양쪽 귀를 감쌉니다."
+    "ko": "의료용 마스크의 끈을 양쪽 귀에 걸어요."
   },
   "pill box": {
     "en": "Sunday through Saturday, the pill box clicks.",
-    "ko": "일요일부터 토요일까지 알약 상자가 딸깍 소리를 냅니다."
+    "ko": "일요일부터 토요일까지 요일별 약통이 딸깍딸깍 열리고 닫혀요."
   },
   "eye patch": {
     "en": "The pirate wore an eye patch.",
@@ -2933,11 +2933,11 @@
   },
   "cast bandage": {
     "en": "Friends signed the cast bandage.",
-    "ko": "친구들은 캐스트 붕대에 서명했습니다."
+    "ko": "친구들이 깁스 붕대에 이름을 써 줬어요."
   },
   "kitchen timer": {
     "en": "The kitchen timer dinged at twenty.",
-    "ko": "주방 타이머가 20시에 울렸다."
+    "ko": "20분이 되자 주방 타이머가 울렸어요."
   },
   "egg timer": {
     "en": "An egg timer measures three minutes.",
@@ -2945,27 +2945,27 @@
   },
   "mixing bowl": {
     "en": "Whisk batter in the mixing bowl.",
-    "ko": "믹싱볼에 반죽을 넣고 휘핑해주세요."
+    "ko": "믹싱 볼에서 거품기로 반죽을 저으세요."
   },
   "salad spinner": {
     "en": "Spin the salad, water flies out.",
-    "ko": "샐러드를 돌리면 물이 날아갑니다."
+    "ko": "채소 탈수기를 돌리면 물기가 빠져나와요."
   },
   "potato masher": {
     "en": "Press the potato masher down.",
-    "ko": "감자 으깨는 기계를 아래로 누릅니다."
+    "ko": "감자 으깨개를 아래로 누르세요."
   },
   "pizza cutter": {
     "en": "Roll the pizza cutter through.",
-    "ko": "피자 커터를 굴립니다."
+    "ko": "피자 커터를 굴려 피자를 자르세요."
   },
   "pastry brush": {
     "en": "Brush butter with the pastry brush.",
-    "ko": "페이스트리 브러시로 버터를 바르세요."
+    "ko": "제과용 솔로 버터를 바르세요."
   },
   "cookie cutter": {
     "en": "A star cookie cutter, please.",
-    "ko": "스타 쿠키 커터 주세요."
+    "ko": "별 모양 쿠키 틀을 주세요."
   },
   "muffin tray": {
     "en": "Grease the muffin tray first.",
@@ -2977,7 +2977,7 @@
   },
   "pie dish": {
     "en": "Crimp the crust to the pie dish.",
-    "ko": "크러스트를 파이 접시에 압착합니다."
+    "ko": "파이 틀 가장자리에 반죽을 눌러 주름을 잡으세요."
   },
   "colander": {
     "en": "Drain pasta in the colander.",
@@ -2985,15 +2985,15 @@
   },
   "garlic press": {
     "en": "Squeeze cloves through the garlic press.",
-    "ko": "마늘 프레스를 통해 정향을 짜냅니다."
+    "ko": "마늘 으깨기에 마늘 쪽을 넣고 눌러 짜세요."
   },
   "tea infuser": {
     "en": "Loose leaves go in the tea infuser.",
-    "ko": "느슨한 잎은 차 주입기에 들어갑니다."
+    "ko": "차 거름망에 찻잎을 넣어요."
   },
   "sugar bowl": {
     "en": "Two spoons from the sugar bowl.",
-    "ko": "설탕 그릇에서 두 숟가락."
+    "ko": "설탕통에서 설탕 두 숟가락을 떠요."
   },
   "butter dish": {
     "en": "The butter dish lid clinked.",
@@ -3009,15 +3009,15 @@
   },
   "placemat": {
     "en": "A woven placemat per chair.",
-    "ko": "의자당 직조 플레이스매트 1개."
+    "ko": "의자 앞마다 짜임 무늬 식탁 매트를 하나씩 놓아요."
   },
   "coaster": {
     "en": "Use a coaster, no rings.",
-    "ko": "코스터를 사용하세요. 반지는 없습니다."
+    "ko": "컵 자국이 남지 않도록 컵 받침을 쓰세요."
   },
   "shoe scraper mat": {
     "en": "Scrape mud on the shoe scraper mat.",
-    "ko": "신발 스크레이퍼 매트의 진흙을 긁어냅니다."
+    "ko": "신발 흙털이 매트에 신발을 문질러 진흙을 털어 내세요."
   },
   "shoehorn": {
     "en": "A shoehorn slides the heel in.",
@@ -3037,15 +3037,15 @@
   },
   "clothesline": {
     "en": "Sheets snap on the clothesline.",
-    "ko": "시트가 빨랫줄에 걸립니다."
+    "ko": "빨랫줄에 널린 침대 시트가 바람에 펄럭여요."
   },
   "laundry scoop": {
     "en": "One laundry scoop per load.",
-    "ko": "1회 세탁물 스쿠프 1개."
+    "ko": "빨래 한 번에 세제 계량 스푼으로 한 숟가락을 써요."
   },
   "fabric softener bottle": {
     "en": "The fabric softener bottle glugged.",
-    "ko": "섬유유연제 병이 막혔습니다."
+    "ko": "섬유 유연제 병에서 꿀럭꿀럭 소리가 났어요."
   },
   "cleaning cloth": {
     "en": "Dust the shelf with a cleaning cloth.",
@@ -3053,7 +3053,7 @@
   },
   "window squeegee": {
     "en": "Draw the window squeegee down.",
-    "ko": "창 스퀴지를 아래로 당깁니다."
+    "ko": "유리 닦개를 아래로 쭉 당기세요."
   },
   "dust brush": {
     "en": "Sweep the sill with the dust brush.",
@@ -3065,11 +3065,11 @@
   },
   "garden shears": {
     "en": "Trim the hedge with garden shears.",
-    "ko": "정원 가위로 울타리를 다듬습니다."
+    "ko": "정원 가위로 생울타리를 다듬으세요."
   },
   "pruning snips": {
     "en": "Snip dead blooms with the pruning snips.",
-    "ko": "가지치기로 죽은 꽃을 잘라냅니다."
+    "ko": "전정가위로 시든 꽃을 잘라 내세요."
   },
   "garden gloves": {
     "en": "Garden gloves keep thorns off.",
@@ -3077,7 +3077,7 @@
   },
   "plant saucer": {
     "en": "Water pooled in the plant saucer.",
-    "ko": "식물 접시에 물이 고여 있습니다."
+    "ko": "화분 받침에 물이 고였어요."
   },
   "terrarium": {
     "en": "A tiny fern grows in the terrarium.",
@@ -3089,23 +3089,23 @@
   },
   "garden kneeler": {
     "en": "Pad your knees on the garden kneeler.",
-    "ko": "가든 니슬러 위에 무릎을 얹어보세요."
+    "ko": "정원용 무릎 받침에 무릎을 대세요."
   },
   "leaf bag": {
     "en": "Stuff the leaf bag to the top.",
-    "ko": "잎 주머니를 맨 위에 채우십시오."
+    "ko": "낙엽 자루를 맨 위까지 채우세요."
   },
   "watering spike": {
     "en": "A watering spike drips slowly.",
-    "ko": "급수 스파이크가 천천히 떨어집니다."
+    "ko": "자동 급수 꽂이에서 물이 천천히 떨어져요."
   },
   "sprinkler head": {
     "en": "The sprinkler head hissed awake.",
-    "ko": "스프링클러 헤드가 쉭쉭 깨어났습니다."
+    "ko": "스프링클러의 분사구가 쉭 소리를 내며 작동하기 시작했어요."
   },
   "mail slot": {
     "en": "The postman pushed letters through the mail slot.",
-    "ko": "우체부는 우편함을 통해 편지를 밀어 넣었습니다."
+    "ko": "우편 배달원이 우편 투입구로 편지를 밀어 넣었어요."
   },
   "house number tile": {
     "en": "One house number tile hung crooked.",
@@ -3113,7 +3113,7 @@
   },
   "privacy screen": {
     "en": "Bamboo forms a privacy screen.",
-    "ko": "Bamboo는 개인 정보 보호 화면을 형성합니다."
+    "ko": "대나무로 시선을 가리는 가림막을 만들어요."
   },
   "door chain": {
     "en": "Latch the door chain at night.",
@@ -3129,7 +3129,7 @@
   },
   "rubber foot": {
     "en": "A rubber foot stops the wobble.",
-    "ko": "고무발이 흔들림을 막아줍니다."
+    "ko": "고무 받침이 흔들림을 막아 줘요."
   },
   "felt pad": {
     "en": "Stick a felt pad under each chair leg.",
@@ -3141,11 +3141,11 @@
   },
   "strike plate": {
     "en": "The latch missed the strike plate.",
-    "ko": "걸쇠가 스트라이크 플레이트를 놓쳤습니다."
+    "ko": "문 걸쇠가 걸쇠 받이판에 제대로 맞지 않았어요."
   },
   "flush pull": {
     "en": "Lift the flush pull recessed in the door.",
-    "ko": "도어에 움푹 들어간 플러시 풀을 들어 올립니다."
+    "ko": "문에 움푹 들어간 매립형 손잡이를 들어 올리세요."
   },
   "sliding latch": {
     "en": "Slide the latch to lock it.",
@@ -3153,7 +3153,7 @@
   },
   "hasp latch": {
     "en": "Padlock the hasp latch shut.",
-    "ko": "걸쇠 걸쇠를 자물쇠로 잠그십시오."
+    "ko": "잠금 걸쇠를 닫고 자물쇠를 채우세요."
   },
   "deadbolt lock": {
     "en": "Turn the deadbolt lock twice.",
@@ -3161,7 +3161,7 @@
   },
   "keyhole plate": {
     "en": "The keyhole plate shone brass.",
-    "ko": "열쇠 구멍 판은 황동으로 빛났습니다."
+    "ko": "황동 열쇠 구멍 덮개가 반짝였어요."
   },
   "gate latch": {
     "en": "The gate latch rattled loose.",
@@ -3169,23 +3169,23 @@
   },
   "corner brace": {
     "en": "Screw a corner brace on each joint.",
-    "ko": "각 조인트의 모서리 버팀대를 나사로 고정하십시오."
+    "ko": "이음매마다 모서리 보강대를 나사로 고정하세요."
   },
   "shelf bracket": {
     "en": "Each shelf bracket holds fifty kilos.",
-    "ko": "각 선반 브래킷에는 50kg이 들어갑니다."
+    "ko": "선반 받침대 하나가 50킬로그램을 지탱해요."
   },
   "wall anchor": {
     "en": "A wall anchor grips the drywall.",
-    "ko": "벽 앵커가 건식벽체를 고정합니다."
+    "ko": "벽 고정 앵커가 석고보드 벽에 단단히 박혀 있어요."
   },
   "hex key": {
     "en": "Allen bolts need a hex key.",
-    "ko": "Allen 볼트에는 육각 키가 필요합니다."
+    "ko": "육각 구멍 볼트에는 육각 렌치가 필요해요."
   },
   "socket wrench": {
     "en": "The socket wrench ratchets fast.",
-    "ko": "소켓 렌치가 빠르게 래칫됩니다."
+    "ko": "소켓 렌치가 딸깍딸깍 빠르게 돌아가요."
   },
   "pipe wrench": {
     "en": "Grip the pipe with a pipe wrench.",
@@ -3193,23 +3193,23 @@
   },
   "putty knife": {
     "en": "Scrape smooth with the putty knife.",
-    "ko": "퍼티칼로 매끈하게 긁어냅니다."
+    "ko": "퍼티용 주걱으로 긁어 표면을 매끈하게 하세요."
   },
   "utility knife": {
     "en": "Snap a new blade in the utility knife.",
-    "ko": "만능칼에 새 칼날을 끼우세요."
+    "ko": "커터 칼에 새 칼날을 딸깍 끼우세요."
   },
   "tool belt": {
     "en": "Hammer loops dangle from the tool belt.",
-    "ko": "해머 루프가 공구 벨트에 매달려 있습니다."
+    "ko": "공구 벨트에 망치를 거는 고리가 매달려 있어요."
   },
   "wood plane": {
     "en": "Curl shavings with the wood plane.",
-    "ko": "나무 대패로 부스러기를 말립니다."
+    "ko": "대패로 나무를 밀어 돌돌 말린 대팻밥을 만드세요."
   },
   "chisel": {
     "en": "Tap the chisel with a mallet.",
-    "ko": "망치로 끌을 두드립니다."
+    "ko": "나무망치로 끌을 톡톡 두드리세요."
   },
   "brick": {
     "en": "Lay one brick at a time.",
@@ -3217,23 +3217,23 @@
   },
   "cement trowel": {
     "en": "Sweep the cement trowel across.",
-    "ko": "시멘트 흙손을 가로질러 쓸어냅니다."
+    "ko": "시멘트 흙손을 가로로 쓸어 펴세요."
   },
   "caulk gun": {
     "en": "Squeeze the caulk gun steadily.",
-    "ko": "코크건을 꾸준히 꽉 쥐십시오."
+    "ko": "실리콘 건을 일정하게 눌러 짜세요."
   },
   "wide paintbrush": {
     "en": "A wide paintbrush covers walls fast.",
-    "ko": "넓은 붓은 벽을 빠르게 덮습니다."
+    "ko": "넓은 붓으로 벽을 빠르게 칠할 수 있어요."
   },
   "drop cloth": {
     "en": "Spread the drop cloth first.",
-    "ko": "먼저 천을 깔아주세요."
+    "ko": "먼저 페인트받이 천을 까세요."
   },
   "tile spacer": {
     "en": "A tile spacer keeps lines even.",
-    "ko": "타일 스페이서는 선을 균일하게 유지합니다."
+    "ko": "타일 간격재는 타일 사이 간격을 일정하게 유지해요."
   },
   "ceramic tile": {
     "en": "Each ceramic tile clicked in place.",
@@ -3245,7 +3245,7 @@
   },
   "sanding block": {
     "en": "Rub the sanding block with the grain.",
-    "ko": "샌딩 블록을 결로 문지릅니다."
+    "ko": "사포 블록으로 나뭇결을 따라 문지르세요."
   },
   "extension cord": {
     "en": "Uncoil the extension cord fully.",
@@ -3253,11 +3253,11 @@
   },
   "power strip": {
     "en": "The power strip flashed red.",
-    "ko": "전원 스트립이 빨간색으로 깜박였습니다."
+    "ko": "멀티탭의 빨간불이 깜박였어요."
   },
   "night light": {
     "en": "A night light glows in the hall.",
-    "ko": "홀에는 야간 조명이 빛납니다."
+    "ko": "복도에서 작은 수면등이 빛나요."
   },
   "lamp shade": {
     "en": "The lamp shade softens the glare.",
@@ -3269,7 +3269,7 @@
   },
   "air purifier": {
     "en": "The air purifier blinked its clean signal.",
-    "ko": "공기청정기가 청정신호를 깜빡거렸습니다."
+    "ko": "공기 청정기가 공기가 깨끗하다는 표시를 깜박였어요."
   },
   "humidifier": {
     "en": "Fill the humidifier before sleep.",
@@ -3277,23 +3277,23 @@
   },
   "dehumidifier": {
     "en": "The dehumidifier filled in a day.",
-    "ko": "제습기는 하루만에 채워졌습니다."
+    "ko": "제습기의 물통이 하루 만에 가득 찼어요."
   },
   "space heater": {
     "en": "The space heater toasts toes.",
-    "ko": "공간 히터가 발가락을 토스트합니다."
+    "ko": "소형 난방기가 발가락을 따뜻하게 데워 줘요."
   },
   "air conditioner": {
     "en": "The air conditioner dripped in summer.",
-    "ko": "여름에 에어컨이 떨어졌습니다."
+    "ko": "여름에 에어컨에서 물이 떨어졌어요."
   },
   "thermostat": {
     "en": "Nudge the thermostat one degree.",
-    "ko": "온도 조절 장치를 1도 정도 살짝 움직입니다."
+    "ko": "온도 조절기의 설정을 1도만 바꾸세요."
   },
   "smoke detector": {
     "en": "The smoke detector chirped for a battery.",
-    "ko": "연기 감지기가 배터리를 찾는 소리를 냈습니다."
+    "ko": "연기 감지기가 배터리를 바꾸라는 소리를 냈어요."
   },
   "carbon monoxide detector": {
     "en": "A carbon monoxide detector beeps twice.",
@@ -3305,11 +3305,11 @@
   },
   "motion sensor": {
     "en": "The motion sensor flooded the yard.",
-    "ko": "모션 센서가 마당을 가득 채웠습니다."
+    "ko": "움직임 감지 센서가 작동해 마당을 환하게 밝혔어요."
   },
   "garage remote": {
     "en": "The garage remote lost its code.",
-    "ko": "차고 리모컨의 코드가 분실되었습니다."
+    "ko": "차고 문 리모컨에 저장된 코드가 지워졌어요."
   },
   "fan remote": {
     "en": "Where is the fan remote?",
@@ -3317,27 +3317,27 @@
   },
   "window lock": {
     "en": "Flip the window lock shut.",
-    "ko": "창문 잠금 장치를 뒤집어 닫습니다."
+    "ko": "창문 잠금쇠를 젖혀 잠그세요."
   },
   "curtain tieback": {
     "en": "Hook the curtain tieback.",
-    "ko": "커튼 타이백을 걸어주세요."
+    "ko": "커튼 고정 끈을 고리에 거세요."
   },
   "drawer divider": {
     "en": "A drawer divider tames socks.",
-    "ko": "서랍 칸막이로 양말을 길들일 수 있습니다."
+    "ko": "서랍 칸막이를 쓰면 양말을 가지런히 정리할 수 있어요."
   },
   "closet rod": {
     "en": "The closet rod sagged with coats.",
-    "ko": "옷장 막대가 코트로 인해 늘어졌습니다."
+    "ko": "코트 무게 때문에 옷장 봉이 처졌어요."
   },
   "shoe rack": {
     "en": "The shoe rack stacks three rows.",
-    "ko": "신발장은 3열로 쌓입니다."
+    "ko": "신발 정리대에 신발을 세 줄로 쌓아 놓아요."
   },
   "umbrella stand": {
     "en": "Dripping umbrellas fill the stand.",
-    "ko": "떨어지는 우산이 스탠드를 가득 채운다."
+    "ko": "물이 뚝뚝 떨어지는 우산들이 우산꽂이에 가득해요."
   },
   "magazine rack": {
     "en": "The magazine rack overflowed.",
@@ -3345,7 +3345,7 @@
   },
   "remote holder": {
     "en": "The remote holder sits arm's length away.",
-    "ko": "원격 홀더는 팔 길이만큼 떨어져 있습니다."
+    "ko": "리모컨 꽂이는 손을 뻗으면 닿는 거리에 있어요."
   },
   "cable clip": {
     "en": "A cable clip pins the wire down.",
@@ -3353,7 +3353,7 @@
   },
   "cord wrap": {
     "en": "Roll the cord around the cord wrap.",
-    "ko": "코드 랩 주위로 코드를 감습니다."
+    "ko": "전선 정리 도구에 전선을 감으세요."
   },
   "phone stand": {
     "en": "Prop the phone on the stand.",
@@ -3361,11 +3361,11 @@
   },
   "tablet stand": {
     "en": "The tablet stand tilts for recipes.",
-    "ko": "태블릿 스탠드는 레시피를 위해 기울어집니다."
+    "ko": "요리법을 보기 좋게 태블릿 거치대의 각도를 기울여요."
   },
   "laptop stand": {
     "en": "A laptop stand lifts the screen.",
-    "ko": "노트북 스탠드가 화면을 들어 올립니다."
+    "ko": "노트북 거치대가 화면을 높여 줘요."
   },
   "mouse pad": {
     "en": "The mouse glides on the pad.",
@@ -3401,23 +3401,23 @@
   },
   "drawing tablet": {
     "en": "She inks on a drawing tablet.",
-    "ko": "그녀는 드로잉 태블릿에 잉크를 칠합니다."
+    "ko": "그녀는 드로잉 태블릿으로 그림의 선을 따요."
   },
   "label maker": {
     "en": "The label maker prints crisp tags.",
-    "ko": "라벨 메이커는 선명한 태그를 인쇄합니다."
+    "ko": "라벨 프린터가 글자가 선명한 이름표를 뽑아 줘요."
   },
   "desk blotter": {
     "en": "A leather desk blotter anchors the desk.",
-    "ko": "가죽 책상 흡착지가 책상을 고정합니다."
+    "ko": "가죽 데스크 매트가 책상 위를 묵직하게 잡아 줘요."
   },
   "file sorter": {
     "en": "Sort mail in the file sorter.",
-    "ko": "파일 분류기에서 메일을 분류하세요."
+    "ko": "서류 정리함에서 우편물을 분류하세요."
   },
   "paperweight": {
     "en": "A glass paperweight holds the maps.",
-    "ko": "유리 문진에 지도가 들어있습니다."
+    "ko": "유리 문진이 지도들을 눌러 고정해 줘요."
   },
   "desk nameplate": {
     "en": "The desk nameplate reads Manager.",
@@ -3425,7 +3425,7 @@
   },
   "envelope moistener": {
     "en": "An envelope moistener wets the glue.",
-    "ko": "봉투용 보습제가 접착제를 적십니다."
+    "ko": "봉투 접착면 적심 도구로 풀을 적셔요."
   },
   "stamp pad": {
     "en": "Press the stamp on the pad.",
@@ -3433,27 +3433,27 @@
   },
   "paper cutter": {
     "en": "Guillotine the stack with the paper cutter.",
-    "ko": "종이 절단기로 더미를 단두대로 묶습니다."
+    "ko": "종이 재단기로 종이 더미를 잘라 내세요."
   },
   "laminator": {
     "en": "The laminator warmed up in a minute.",
-    "ko": "라미네이터는 1분 안에 예열되었습니다."
+    "ko": "코팅기가 1분 만에 예열됐어요."
   },
   "laminating sheet": {
     "en": "Slide the page into a laminating sheet.",
-    "ko": "페이지를 라미네이팅 시트에 밀어 넣습니다."
+    "ko": "코팅지 사이에 종이를 끼우세요."
   },
   "binding comb": {
     "en": "Thread the binding comb through.",
-    "ko": "바인딩 빗을 통과시키세요."
+    "ko": "플라스틱 제본 링을 구멍에 끼우세요."
   },
   "badge reel": {
     "en": "The badge reel zips back.",
-    "ko": "배지 릴의 지퍼가 뒤로 젖혀집니다."
+    "ko": "릴형 명찰 줄이 빠르게 되감겨요."
   },
   "lanyard": {
     "en": "A lanyard swings the badge.",
-    "ko": "끈이 배지를 휘두릅니다."
+    "ko": "목걸이 줄에 달린 명찰이 흔들려요."
   },
   "id card holder": {
     "en": "The id card holder cracked at the corner.",
@@ -3461,71 +3461,71 @@
   },
   "clear folder": {
     "en": "Slip the print into a clear folder.",
-    "ko": "인쇄물을 깨끗한 폴더에 넣습니다."
+    "ko": "인쇄물을 투명 파일에 넣으세요."
   },
   "accordion file": {
     "en": "The accordion file fans open.",
-    "ko": "아코디언 파일 팬이 열립니다."
+    "ko": "아코디언식 서류철이 부채처럼 펼쳐져요."
   },
   "document tube": {
     "en": "Roll blueprints into the document tube.",
-    "ko": "청사진을 문서 튜브에 넣습니다."
+    "ko": "설계도를 말아서 도면 보관 통에 넣으세요."
   },
   "poster roll": {
     "en": "The poster roll is rubber-banded.",
-    "ko": "포스터 롤은 고무줄로 되어 있습니다."
+    "ko": "말아 놓은 포스터가 고무줄로 묶여 있어요."
   },
   "craft cutting mat": {
     "en": "Score on the craft cutting mat.",
-    "ko": "공예용 커팅 매트에 점수를 매기세요."
+    "ko": "공예용 커팅 매트 위에서 칼집을 내세요."
   },
   "foam sheet": {
     "en": "Cut wings from the foam sheet.",
-    "ko": "폼 시트에서 날개를 잘라냅니다."
+    "ko": "폼 시트에서 날개 모양을 오리세요."
   },
   "craft stick": {
     "en": "Glue each craft stick rung.",
-    "ko": "각 공예 막대 렁을 붙입니다."
+    "ko": "공예용 막대로 만든 사다리의 가로대를 하나씩 붙이세요."
   },
   "wooden dowel": {
     "en": "Drill through the wooden dowel.",
-    "ko": "나무 다웰을 뚫습니다."
+    "ko": "드릴로 나무 봉을 관통하는 구멍을 뚫으세요."
   },
   "felt board": {
     "en": "Shapes stick to the felt board.",
-    "ko": "모양이 펠트판에 달라붙습니다."
+    "ko": "도형 조각들이 펠트판에 붙어요."
   },
   "mini canvas stand": {
     "en": "The mini canvas stand displays an easel card.",
-    "ko": "미니 캔버스 스탠드에는 이젤 카드가 표시됩니다."
+    "ko": "미니 캔버스 받침대에 세워 놓는 카드가 전시돼 있어요."
   },
   "paint water cup": {
     "en": "Rinse brushes in the paint water cup.",
-    "ko": "페인트 물컵에 있는 브러시를 헹굽니다."
+    "ko": "물감용 물통에서 붓을 헹구세요."
   },
   "brush rest": {
     "en": "Lay wet bristles on the brush rest.",
-    "ko": "브러시 받침대에 젖은 강모를 놓습니다."
+    "ko": "젖은 붓털 부분을 붓 받침 위에 올려놓으세요."
   },
   "clay tool": {
     "en": "Score the clay with a clay tool.",
-    "ko": "점토 도구로 점토에 점수를 매깁니다."
+    "ko": "점토 도구로 점토에 칼집을 내세요."
   },
   "stencil sheet": {
     "en": "Trace stars through the stencil sheet.",
-    "ko": "스텐실 시트를 통해 별을 추적합니다."
+    "ko": "스텐실의 구멍을 따라 별 모양을 그리세요."
   },
   "hole reinforcement": {
     "en": "Stick a hole reinforcement on the tear.",
-    "ko": "찢어진 부분에 구멍 보강재를 붙입니다."
+    "ko": "찢어진 구멍에 구멍 보강 스티커를 붙이세요."
   },
   "paper fastener": {
     "en": "A paper fastener makes arms swing.",
-    "ko": "종이 고정 장치로 인해 팔이 흔들리게 됩니다."
+    "ko": "종이 고정 핀을 쓰면 종이 인형의 팔을 움직일 수 있어요."
   },
   "split ring": {
     "en": "Thread keys onto a split ring.",
-    "ko": "분할 링에 키를 끼웁니다."
+    "ko": "갈라진 열쇠고리에 열쇠를 끼우세요."
   },
   "snap hook": {
     "en": "The snap hook clips to the bag.",
@@ -3549,11 +3549,11 @@
   },
   "seaweed": {
     "en": "Seaweed wraps the rice roll.",
-    "ko": "김이 쌀롤을 감쌉니다."
+    "ko": "김으로 밥말이를 감싸요."
   },
   "chestnut": {
     "en": "Roast chestnuts pop in the fire.",
-    "ko": "구운 밤이 불에 튀겨집니다."
+    "ko": "불에 굽는 밤이 톡톡 소리를 내며 튀어요."
   },
   "river": {
     "en": "The river bends around the hill.",
@@ -3561,7 +3561,7 @@
   },
   "room": {
     "en": "My room faces the sunrise.",
-    "ko": "내 방은 일출을 바라보고 있습니다."
+    "ko": "내 방은 해가 뜨는 쪽을 향해 있어요."
   },
   "award": {
     "en": "She won an award for painting.",
@@ -3569,6 +3569,6 @@
   },
   "soup": {
     "en": "Grandma ladles hot soup.",
-    "ko": "할머니는 뜨거운 국을 국자로 떠 드십니다."
+    "ko": "할머니가 국자로 뜨거운 수프를 떠요."
   }
 }

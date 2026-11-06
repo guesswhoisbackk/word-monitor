@@ -40,12 +40,6 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         for result in pool.map(translate, [missing[i:i+15] for i in range(0, len(missing), 15)]):
             saved.update(result)
-    fixes = {
-        "pencil": "나는 연필로 필기를 해요.", "eraser": "지우개로 잘못 쓴 글자를 지웠어요.",
-        "ruler": "자로 선을 그리세요.", "crayon box": "그녀는 크레용을 크레용 상자에 보관해요.",
-        "glue stick": "풀로 종이를 붙이세요."
-    }
-    for word, text in fixes.items(): saved[word] = {"en": examples[word], "ko": text}
     saved = {word: saved[word] for word in examples}
     for item in saved.values():
         item["ko"] = item["ko"].replace("\u200b", "")
