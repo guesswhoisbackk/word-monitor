@@ -9,7 +9,9 @@ struct RainPeriods {
   int morning = -1, noon = -1, evening = -1, remaining = -1;
   void consider(int hour, int probability, int currentHour) {
     if (hour < 0 || hour > 23 || probability < 0 || probability > 100) return;
-    int* period = hour >= 17 ? &evening : hour >= 11 ? &noon : hour >= 6 ? &morning : nullptr;
+    int* period = hour >= 17 && hour <= 22 ? &evening
+                : hour >= 11 && hour <= 16 ? &noon
+                : hour >= 8 && hour <= 10 ? &morning : nullptr;
     if (period && probability > *period) *period = probability;
     if (currentHour >= 0 && currentHour <= 23 && hour >= currentHour && probability > remaining)
       remaining = probability;
