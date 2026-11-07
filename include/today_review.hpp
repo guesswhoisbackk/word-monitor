@@ -4,6 +4,22 @@ namespace wordmon {
 inline bool nightScreenOff(int localHour) {
   return localHour >= 0 && localHour < 24 && (localHour >= 21 || localHour < 7);
 }
+class NightWake {
+ public:
+  bool screenOff(bool night, uint32_t now) {
+    if (!night || uint32_t(now - lastTouch_) >= 30000) awake_ = false;
+    return night && !awake_;
+  }
+  bool acceptTouch(bool off, bool pressed, uint32_t now) {
+    if (!pressed) { swallow_ = false; return false; }
+    if (off) { awake_ = true; swallow_ = true; }
+    if (awake_) lastTouch_ = now;
+    return !off && !swallow_;
+  }
+ private:
+  uint32_t lastTouch_ = 0;
+  bool awake_ = false, swallow_ = false;
+};
 // Derive the last successful grade time from the stable v2 scheduling fields.
 // This also includes today's existing records without migrating/writing history.
 inline uint32_t reviewedAt(const ReviewRecord& record) {

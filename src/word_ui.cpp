@@ -486,7 +486,7 @@ void WordUi::refresh() {
   const bool timeValid = now > 1700000000;
   struct tm local {};
   if (timeValid) localtime_r(&now, &local);
-  const bool off = timeValid && nightScreenOff(local.tm_hour);
+  const bool off = nightWake_.screenOff(timeValid && nightScreenOff(local.tm_hour), millis());
   if (off != screenOff_) {
     screenOff_ = off;
     lv_indev_reset(lvInput_, nullptr);
@@ -800,7 +800,7 @@ void WordUi::flushDisplay(lv_display_t* display, const lv_area_t* area,
 
 void WordUi::readTouch(lv_indev_t* input, lv_indev_data_t* data) {
   auto* self = static_cast<WordUi*>(lv_indev_get_user_data(input));
-  if (self->screenOff_ || !self->touch_.touched()) {
+  if (!self->nightWake_.acceptTouch(self->screenOff_, self->touch_.touched(), millis())) {
     data->state = LV_INDEV_STATE_RELEASED;
     return;
   }

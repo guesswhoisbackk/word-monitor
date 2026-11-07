@@ -115,6 +115,7 @@ class WordUi {
   bool weatherRefreshRequested_ = false;
   bool capture_ = false;
   bool screenOff_ = false;
+  NightWake nightWake_;
   lv_obj_t* progressLabel_ = nullptr;
   lv_obj_t* weatherTemperature_ = nullptr;
   lv_obj_t* weatherDetail_ = nullptr;

@@ -26,6 +26,19 @@ int main() {
   assert(!nightScreenOff(7) && !nightScreenOff(20));
   assert(nightScreenOff(21) && nightScreenOff(23));
   assert(!nightScreenOff(24));
+  NightWake wake;
+  assert(wake.screenOff(true, 100));
+  assert(!wake.acceptTouch(true, true, 100));
+  assert(!wake.screenOff(true, 101));
+  assert(!wake.acceptTouch(false, true, 200)); // Held wake touch is still swallowed.
+  assert(!wake.acceptTouch(false, false, 250));
+  assert(wake.acceptTouch(false, true, 500));
+  assert(!wake.screenOff(true, 30499));
+  assert(wake.screenOff(true, 30500));
+  assert(!wake.acceptTouch(true, true, UINT32_MAX - 10));
+  assert(!wake.screenOff(true, 20));
+  assert(!wake.screenOff(false, 21));
+  assert(wake.screenOff(true, 22));
   HomeDeck home(indices);
   home.consider(7, nullptr, now, true);
   home.consider(8, nullptr, now, false);
