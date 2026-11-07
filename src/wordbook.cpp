@@ -262,8 +262,9 @@ void Wordbook::rebuildPlan() {
     if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
   const uint16_t previousDue=plan_.dueCount;
-  plan_=plan; planDay_=todayDay(); plannedStudyRevision_=study_.revision();
-  planCheckAt_=plan_.nextDue;
+  planUsable_ = file && index == wordCount_;
+  plan_=planUsable_ ? plan : StudyPlan{}; planDay_=studyDay(now); plannedStudyRevision_=study_.revision();
+  planCheckAt_=planUsable_ ? plan_.nextDue : now + 3;
   assetsDirty_=true;
   if(previousDue!=plan_.dueCount) ++revision_;
 }
@@ -490,6 +491,7 @@ bool Wordbook::nextReview(const StudyStore& study, bool reviewOnly) {
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   if (!wordCount_ || now < 1700000000 || settings_.wordbookUrl.isEmpty()) return false;
   rebuildPlan();
+  if (!planUsable_) return false;
   const int32_t day=todayDay();
   const int32_t best=plan_.bestForSession(study.allowsNew(now,settings_.dailyNewLimit),reviewOnly);
   if(best<0) return false;

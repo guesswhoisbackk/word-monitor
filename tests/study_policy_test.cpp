@@ -74,5 +74,11 @@ int main() {
   assert(freshOnly.bestForSession(true, true) == -1);
   assert(freshOnly.bestForSession(true, false) == 0);
   assert(freshOnly.bestForSession(false, false) == -1);
+  assert(homeStudyAction(false, 4, true, true, true) == HomeStudyAction::Wait);
+  assert(homeStudyAction(true, 4, true, true, true) == HomeStudyAction::Review);
+  assert(homeStudyAction(true, 0, true, true, false) == HomeStudyAction::Learn);
+  assert(homeStudyAction(true, 0, false, true, true) == HomeStudyAction::Replay);
+  assert(homeStudyAction(true, 0, true, false, false) == HomeStudyAction::Done);
+  assert(homeStudyAction(true, 0, false, true, false) == HomeStudyAction::Done);
   puts("study policy: all tests passed");
 }

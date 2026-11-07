@@ -24,7 +24,10 @@ class WordUi {
   void setWeather(const WeatherReading& reading, bool busy) { weather_ = reading; weatherBusy_ = busy; }
   void showSettings();
   void closeSettings();
-  void setDueCount(uint16_t count) { dueCount_=count; }
+  void setStudyPlan(const StudyPlan& plan, bool ready) {
+    dueCount_ = plan.dueCount; planFresh_ = plan.hasFresh();
+    planReplay_ = plan.canReplayToday(); planReady_ = ready;
+  }
   void serviceAudio(bool canStart);
   bool takeWeatherRefreshRequest() {
     const bool requested = weatherRefreshRequested_;
@@ -68,6 +71,7 @@ class WordUi {
   bool manualReview_ = false;
   String selectionWord_;
   uint16_t dueCount_ = 0;
+  bool planFresh_ = false, planReplay_ = false, planReady_ = false;
   CydDisplay display_;
   SPIClass touchSpi_{VSPI};
   XPT2046_Touchscreen touch_{kTouchCs, kTouchIrq};
@@ -133,7 +137,9 @@ class WordUi {
   WordbookState wordbookState_ = WordbookState::Disabled;
   uint16_t wordbookCount_ = 0;
 
-  bool sessionActive_ = false, reviewOnly_ = false, sessionComplete_ = false;
+  bool sessionActive_ = false, reviewOnly_ = false;
+  HomeStudyAction homeAction_ = HomeStudyAction::Wait;
+  uint32_t homeNoticeUntil_ = 0;
   lv_obj_t* homePanel_ = nullptr;
   lv_obj_t* homeStatus_ = nullptr;
   lv_obj_t* startLabel_ = nullptr;

@@ -47,6 +47,10 @@ class Wordbook {
   bool busy() const { return busy_; }
   void networkRestored() { retries_.reset(); if (!everSynced_) forceSync_ = true; }
   uint16_t dueCount() const { return plan_.dueCount; }
+  const StudyPlan& studyPlan() const { return plan_; }
+  bool studyPlanReady(int32_t day) const {
+    return planUsable_ && planDay_ == day && plannedStudyRevision_ == study_.revision();
+  }
   uint8_t cachedAssets() const;
   uint8_t plannedAssets() const { return assetCount_; }
 
@@ -129,6 +133,7 @@ class Wordbook {
   uint8_t assetCount_ = 0;
   String cardArtName_, cardArtPath_;
   StudyPlan plan_;
+  bool planUsable_ = false;
   uint32_t plannedStudyRevision_ = UINT32_MAX, planCheckAt_ = 0;
   int32_t planDay_ = -1;
   AssetRetries retries_;

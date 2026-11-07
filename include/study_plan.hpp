@@ -1,7 +1,16 @@
 #pragma once
 #include "study_policy.hpp"
+#include "today_review.hpp"
 #include <cstddef>
 namespace wordmon {
+enum class HomeStudyAction { Wait, Review, Learn, Replay, Done };
+inline HomeStudyAction homeStudyAction(bool ready, uint16_t due, bool allowNew,
+                                       bool hasFresh, bool canReplay) {
+  if (!ready) return HomeStudyAction::Wait;
+  if (due) return HomeStudyAction::Review;
+  if (allowNew && hasFresh) return HomeStudyAction::Learn;
+  return canReplay ? HomeStudyAction::Replay : HomeStudyAction::Done;
+}
 class StudyPlan {
  public:
   static constexpr uint16_t none = UINT16_MAX;
@@ -9,6 +18,7 @@ class StudyPlan {
   uint32_t nextDue = UINT32_MAX;
   void consider(uint16_t index, const ReviewRecord* record, uint32_t now) {
     if (record) {
+      if (reviewedToday(*record, now)) reviewedToday_ = true;
       if (!reviewDue(*record, now)) { if (record->due > now && record->due < nextDue) nextDue = record->due; return; }
       ++dueCount;
       size_t at = 0;
@@ -22,6 +32,8 @@ class StudyPlan {
   }
   int32_t best(bool allowNew) const { return dueSize_ ? due_[0].index : allowNew && newSize_ ? fresh_[0] : -1; }
   int32_t bestForSession(bool allowNew, bool reviewOnly) const { return best(allowNew && !reviewOnly); }
+  bool hasFresh() const { return newSize_ != 0; }
+  bool canReplayToday() const { return reviewedToday_; }
   uint16_t prefetch(size_t at) const {
     if (at < dueSize_) return due_[at].index;
     at -= dueSize_;
@@ -31,5 +43,6 @@ class StudyPlan {
   struct Due { uint16_t index; uint32_t time; } due_[5]{};
   uint16_t fresh_[5]{};
   size_t dueSize_ = 0, newSize_ = 0;
+  bool reviewedToday_ = false;
 };
 }

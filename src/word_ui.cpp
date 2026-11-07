@@ -169,6 +169,8 @@ void WordUi::loop() {
     // USB-only loading preview; does not grade or request another card.
     if (command == 'd') { reviewLoading_ = true; refresh(); }
     if (command == 'u') { reviewLoading_ = false; refresh(); }
+    if (command == 'H' && homeVisible() && !screenOff_)
+      lv_obj_send_event(lv_obj_get_parent(startLabel_), LV_EVENT_CLICKED, nullptr);
     // Open a scheduled review for screen diagnostics; no answer is submitted.
     if (command == 'R' && !settingsOverlay_ && !quizOverlay_ && !todayMode_ && !sessionActive_)
       beginStudy(true);
@@ -360,13 +362,20 @@ void WordUi::createLayout() {
       auto* button = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
       const auto action = reinterpret_cast<uintptr_t>(lv_obj_get_user_data(button));
       if (action == 2) self->showLearningMenu();
-      else self->beginStudy(action == 1);
+      else if (self->homeAction_ == HomeStudyAction::Replay) {
+        self->studyMessage_ = "오늘 단어를 준비하고 있어요";
+        self->todayRequest_ = 1;
+        self->refresh();
+      } else if (self->homeAction_ == HomeStudyAction::Review ||
+                 self->homeAction_ == HomeStudyAction::Learn) self->beginStudy(false);
     }, LV_EVENT_CLICKED, this);
     return label;
   };
-  startLabel_ = homeButton("공부 시작", 5, 24, 97, 31, 0);
-  homeButton("복습만", 108, 24, 56, 31, 1);
-  homeButton("더 보기", 170, 24, 49, 31, 2);
+  startLabel_ = homeButton("준비 중", 5, 24, 151, 31, 0);
+  homeButton("더 보기", 163, 24, 56, 31, 2);
+  auto* start = lv_obj_get_parent(startLabel_);
+  lv_obj_set_style_bg_color(start, lv_color_hex(kBorder), LV_STATE_DISABLED);
+  lv_obj_set_style_text_color(startLabel_, lv_color_hex(kMuted), 0);
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &font_ui_12, kMuted,
                            LV_TEXT_ALIGN_CENTER);
@@ -512,7 +521,6 @@ void WordUi::refresh() {
       hintVisible_ = false;
       graded_ = false;
       studyMessage_ = "";
-      sessionComplete_ = false;
       ReviewChoice choice;
       const bool allowNew = study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit);
       for (size_t i = 0; i < kSampleWordCount; ++i)
@@ -587,11 +595,14 @@ void WordUi::refresh() {
   const bool front = !meaningVisible_;
   const ReviewRecord* progress = study_.find(word);
   uint16_t due = dueCount_;
+  bool hasFresh = planFresh_;
   if (!externalCard_) {
+    hasFresh = false;
     due = 0;
     for (const auto& sample : kSampleWords) {
       const auto* record = study_.find(sample.word);
       if (record && reviewDue(*record, static_cast<uint32_t>(now))) ++due;
+      if (!record) hasFresh = true;
     }
   }
   const bool showArt = art && (!front || !progress || todayMode_ || !sessionActive_);
@@ -631,23 +642,19 @@ void WordUi::refresh() {
   const bool waiting = progress && !reviewDue(*progress, static_cast<uint32_t>(now));
   const bool eligible = study_.ready() && (progress ? !waiting :
       study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
-  // A learner can rate recall directly or tap to check the answer first.
-  const bool canGrade = sessionActive_ && !reviewLoading_ && !graded_ && timeValid && eligible && !progress && !reviewOnly_;
+  // Show the answer before asking a child to rate a new word.
+  const bool canGrade = meaningVisible_ && sessionActive_ && !reviewLoading_ && !graded_ && timeValid && eligible && !progress && !reviewOnly_;
   for (lv_obj_t* button : {againButton_, goodButton_}) {
     if (canGrade) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
   }
   if (reviewLoading_) lv_obj_add_state(nextButton_, LV_STATE_DISABLED);
   else lv_obj_remove_state(nextButton_, LV_STATE_DISABLED);
-  const char* message = reviewLoading_ ? "LOADING..." : !timeValid ? "CONNECT WI-FI TO SAVE REVIEWS" :
-      !study_.ready() ? "STORAGE ERROR - CANNOT SAVE" :
+  const char* message = reviewLoading_ ? "다음 단어를 준비하고 있어요" :
+      !timeValid ? "시간을 확인하고 있어요" :
+      !study_.ready() ? "학습 기록을 열 수 없어요" :
       !studyMessage_.isEmpty() ? studyMessage_.c_str() :
-      "";
-  char progressText[100];
-  if(!*message) {
-    snprintf(progressText,sizeof(progressText),"새 단어 %u/%u · 복습 %u개",study_.newToday(static_cast<uint32_t>(now)),settings_.dailyNewLimit,due);
-    message=progressText;
-  }
+      front ? "카드를 눌러 뜻을 보세요" : "기억나면 알아요 · 아니면 다시";
   setLabelTextIfChanged(studyLabel_, message);
   if(audioFeedback_) setLabelTextIfChanged(studyLabel_,speakRequested_?"발음 준비 중":audio_.message());
 
@@ -677,14 +684,46 @@ void WordUi::refresh() {
   if (home) lv_obj_remove_flag(homePanel_, LV_OBJ_FLAG_HIDDEN);
   else lv_obj_add_flag(homePanel_, LV_OBJ_FLAG_HIDDEN);
   if (home) {
-    char caption[100];
-    snprintf(caption, sizeof(caption), "새 단어 %u/%u · 복습 %u개",
-             study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit, due);
-    setLabelTextIfChanged(homeStatus_, !timeValid ? "시간을 확인하고 있어요" :
-        !study_.ready() ? "학습 기록을 열 수 없어요" :
-        !studyMessage_.isEmpty() ? studyMessage_.c_str() :
-        sessionComplete_ ? "오늘 공부 끝!" : caption);
-    setLabelTextIfChanged(startLabel_, sessionComplete_ ? "다시 시작" : "공부 시작");
+    const uint32_t timestamp = static_cast<uint32_t>(now);
+    const unsigned count = study_.newToday(timestamp);
+    const unsigned limit = settings_.dailyNewLimit;
+    homeAction_ = homeStudyAction(timeValid && study_.ready() && (!externalCard_ || planReady_),
+                                 due, study_.allowsNew(timestamp, settings_.dailyNewLimit),
+                                 hasFresh, externalCard_ && planReplay_);
+    char caption[96];
+    const char* label = "준비 중";
+    switch (homeAction_) {
+      case HomeStudyAction::Wait:
+        snprintf(caption, sizeof(caption), "%s", !timeValid ? "시간을 확인하고 있어요" :
+                 !study_.ready() ? "학습 기록을 열 수 없어요" : "단어장을 준비하고 있어요");
+        break;
+      case HomeStudyAction::Review:
+        label = "복습 시작";
+        snprintf(caption, sizeof(caption), "복습 %u개 먼저 · 새 %u/%u", due, count, limit);
+        break;
+      case HomeStudyAction::Learn:
+        label = "새 단어 공부";
+        snprintf(caption, sizeof(caption), "새 단어 %u/%u · 복습 없음", count, limit);
+        break;
+      case HomeStudyAction::Replay:
+        label = "오늘 단어 다시 보기";
+        snprintf(caption, sizeof(caption), "오늘 분량 끝 · 새 %u/%u", count, limit);
+        break;
+      case HomeStudyAction::Done:
+        label = "오늘 완료";
+        snprintf(caption, sizeof(caption), "오늘 분량 끝 · 새 %u/%u", count, limit);
+        break;
+    }
+    const bool disabled = homeAction_ == HomeStudyAction::Wait || homeAction_ == HomeStudyAction::Done;
+    auto* start = lv_obj_get_parent(startLabel_);
+    if (disabled) lv_obj_add_state(start, LV_STATE_DISABLED);
+    else lv_obj_remove_state(start, LV_STATE_DISABLED);
+    setLabelColorIfChanged(startLabel_, disabled ? kMuted : kBackground);
+    const bool notice = todayRequest_ || (homeNoticeUntil_ &&
+        static_cast<int32_t>(homeNoticeUntil_ - millis()) > 0);
+    setLabelTextIfChanged(homeStatus_, homeAction_ != HomeStudyAction::Wait && notice && !studyMessage_.isEmpty()
+                                     ? studyMessage_.c_str() : caption);
+    setLabelTextIfChanged(startLabel_, label);
   }
 
   if (front) lv_obj_clear_flag(wordLabel_, LV_OBJ_FLAG_HIDDEN);
@@ -808,14 +847,14 @@ void WordUi::studyEvent(lv_event_t* event) {
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
-    if (self->graded_ || self->reviewOnly_ || record) return;
+    if (!self->meaningVisible_ || self->graded_ || self->reviewOnly_ || record) return;
     const bool good = target == self->goodButton_;
     self->reviewLoading_ = true;
     self->refresh();
     lv_refr_now(self->lvDisplay_);
     if (!self->study_.grade(self->shownWord_.c_str(), now, good, self->settings_.dailyNewLimit)) {
       self->reviewLoading_ = false;
-      self->studyMessage_ = "SAVE FAILED / HISTORY FULL";
+      self->studyMessage_ = "저장 실패 · 다시 눌러요";
     } else {
       self->graded_ = true;
       self->manualReview_=false;
@@ -836,8 +875,7 @@ void WordUi::studyEvent(lv_event_t* event) {
   } else if (target == self->nextButton_) {
     self->speakRequested_=false; self->audio_.cancel();
     self->sessionActive_ = false;
-    self->sessionComplete_ = true;
-    self->studyMessage_ = "여기까지 잘했어요!";
+    self->studyMessage_ = "";
   }
 
   self->refresh();
@@ -852,7 +890,6 @@ void WordUi::beginStudy(bool reviewOnly) {
   audioFeedback_ = false;
   speakRequested_ = false;
   sessionActive_ = true;
-  sessionComplete_ = false;
   reviewOnly_ = reviewOnly;
   reviewRequested_ = true;
   reviewLoading_ = true;
@@ -894,7 +931,9 @@ void WordUi::setTodayState(bool active,uint16_t position,uint16_t count,bool res
   refresh();
 }
 void WordUi::todayUnavailable(bool missedOnly) {
-  studyMessage_=missedOnly?"틀린 단어가 없어요":"오늘 학습한 단어가 없어요"; reviewLoading_=false; refresh();
+  studyMessage_=missedOnly?"틀린 단어가 없어요":"오늘 학습한 단어가 없어요";
+  homeNoticeUntil_ = millis() + 3500;
+  reviewLoading_=false; refresh();
 }
 
 void WordUi::closeSettings() {
@@ -925,6 +964,7 @@ void WordUi::reviewFinished(bool found) {
       if (!quiz_.startReview(shownWord_.c_str(), meaning, now, esp_random())) {
         sessionActive_ = false;
         studyMessage_ = "복습 문제를 준비하지 못했어요";
+        homeNoticeUntil_ = millis() + 3500;
         refresh();
         return;
       }
@@ -938,8 +978,8 @@ void WordUi::reviewFinished(bool found) {
     studyMessage_ = "";
   } else {
     sessionActive_ = false;
-    sessionComplete_ = true;
-    studyMessage_ = reviewOnly_ ? "지금 복습할 단어가 없어요" : "오늘 공부 끝!";
+    studyMessage_ = reviewOnly_ ? "지금 복습할 단어가 없어요" : "";
+    homeNoticeUntil_ = millis() + 3500;
 
   }
   if(found && manualReview_ && selectionWord_==shownWord_) studyMessage_="현재 단어를 먼저 평가해 주세요";
@@ -969,9 +1009,9 @@ void WordUi::showLearningMenu() {
   char points[40]; snprintf(points,sizeof(points),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
   makeLabel(quizOverlay_,points,12,43,216,&font_ui_24,kGreen);
   makeLabel(quizOverlay_,"정답 +10점 · 틀려도 괜찮아요",12,77,216,&font_kr_13,kMuted);
-  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","그림 보고 맞히기","오늘 단어 다시 보기","틀린 단어 다시 보기","돌아가기"};
-  for(int i=0;i<6;++i) {
-    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,99+i*36);lv_obj_set_size(button,216,32);
+  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","그림 보고 맞히기","오늘 단어 다시 보기","틀린 단어 다시 보기","복습만","돌아가기"};
+  for(int i=0;i<7;++i) {
+    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,96+i*31);lv_obj_set_size(button,216,29);
     lv_obj_set_style_bg_color(button,lv_color_hex(i==0?kGreen:kBorder),0);
     auto* label=lv_label_create(button);lv_label_set_text(label,labels[i]);
     lv_obj_set_style_text_font(label,&font_kr_16,0);lv_obj_set_style_text_color(label,lv_color_hex(i==0?kBackground:kText),0);lv_obj_center(label);
@@ -982,6 +1022,7 @@ void WordUi::showLearningMenu() {
       if(index==0 || index==1) self->startQuiz(index==0);
       else if(index==2) self->startQuiz(false,false,true);
       else if(index==3 || index==4) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=index==4?5:1;}
+      else if(index==5) { self->closeQuiz(); self->beginStudy(true); }
       else self->closeQuiz();
     },LV_EVENT_CLICKED,this);
   }

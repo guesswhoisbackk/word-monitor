@@ -219,6 +219,6 @@ void loop() {
     if (!wordbook.busy()) weather.loop(true);
     wordbook.loop(!weather.busy());
   }
-  wordUi.setDueCount(wordbook.dueCount());
+  wordUi.setStudyPlan(wordbook.studyPlan(), wordbook.studyPlanReady(wordmon::studyDay(static_cast<uint32_t>(time(nullptr)))));
   delay(5);
 }
