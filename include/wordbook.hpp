@@ -6,6 +6,7 @@
 #include "models.hpp"
 #include "study_store.hpp"
 #include "study_plan.hpp"
+#include "today_review.hpp"
 #include "cache_policy.hpp"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -57,6 +58,7 @@ class Wordbook {
   // Bumped whenever state or card content changes; the app pushes it to the UI.
   uint32_t revision() const { return revision_; }
   bool nextReview(const StudyStore& study, bool reviewOnly = false);
+  void updateHome(bool enabled, bool advance, bool hold);
   void setQuizPreview(const char* word);
   bool beginToday(bool missedOnly = false);
   void endToday(bool dayChanged = false);
@@ -105,7 +107,13 @@ class Wordbook {
   uint32_t todayMoves_ = 0, todayTransitions_ = 0, todayExitMs_ = 0;
   const char* todayExitReason_ = "none";
   bool todayMode_ = false;
+  // Home rotation and explicit replay never own the index list together.
   uint16_t todayIndices_[kMaxStudyWords]{};
+  HomeDeck homeDeck_{todayIndices_};
+  bool homeMode_ = false, homeDirty_ = true;
+  int32_t homeDay_ = -1;
+  uint32_t homeStudyRevision_ = 0;
+  uint16_t homePosition_ = 0;
   uint16_t todayCount_ = 0, todayPosition_ = 0, activeIndex_ = 0, savedIndex_ = 0;
   int32_t todayDay_ = -1;
   String cardAudio_;
@@ -113,7 +121,7 @@ class Wordbook {
   lv_image_dsc_t artDsc_{};
   uint16_t* artPixels_ = nullptr;
 
-  struct Asset { char name[41] = {}; char path[40] = {}; bool voice = false; bool ready = false; } assets_[12];
+  struct Asset { char name[41] = {}; char path[40] = {}; bool voice = false; bool ready = false; } assets_[17];
   struct Job { uint8_t type = 0; String url; String path; } job_;
   struct Result { bool ok = false; uint16_t count = 0; };
   QueueHandle_t results_ = nullptr;

@@ -228,6 +228,7 @@ void Wordbook::poll() {
       wordCount_=result.count; everSynced_=true; lastSyncOkMs_=millis(); state_=WordbookState::Ok;
       Serial.printf("[wb] manifest synced: %u words\n",wordCount_);
       plannedStudyRevision_=UINT32_MAX;
+      homeDirty_=true;
       int32_t active=-1;
       if(cardValid_) {
         File file=LittleFS.open(kWordbookManifestPath,"r");String line;uint16_t index=0;
@@ -267,7 +268,8 @@ void Wordbook::rebuildPlan() {
   if(previousDue!=plan_.dueCount) ++revision_;
 }
 void Wordbook::appendAsset(const String& name,bool voice) {
-  if(assetCount_>=12 || (voice?!validAudioName(name.c_str()):!validArtName(name))) return;
+  if(assetCount_ >= sizeof(assets_) / sizeof(assets_[0]) ||
+      (voice ? !validAudioName(name.c_str()) : !validArtName(name))) return;
   const String path=assetPathFromUrl(assetUrl(settings_.wordbookUrl,name),voice);
   for(uint8_t i=0;i<assetCount_;++i) if(path==assets_[i].path) return;
   auto& asset=assets_[assetCount_++];
@@ -281,8 +283,19 @@ void Wordbook::rebuildAssets() {
   appendAsset(cardArtName_,false); appendAsset(cardAudio_,true);
   File file=LittleFS.open(kWordbookManifestPath,"r");String line;uint16_t index=0;
   while(file && readEntry(file,line)==1 && index<wordCount_) {
-    bool wanted=false;for(size_t i=0;i<5;++i) if((todayMode_ ? todayIndices_[(todayPosition_+i+1)%todayCount_] : plan_.prefetch(i))==index) wanted=true;
-    if(wanted) { JsonDocument doc; if(!deserializeJson(doc,line)) {appendAsset(doc["a"]|"",false);appendAsset(doc["s"]|"",true);} }
+    bool studyWanted=false, homeWanted=false;
+    for(uint16_t i=0;i<5;++i) {
+      const uint16_t candidate = todayMode_ ? todayIndices_[(todayPosition_+i+1)%todayCount_] : plan_.prefetch(i);
+      if (candidate == index) studyWanted = true;
+      if (homeMode_ && !homeDirty_ && homeDeck_.index(homePosition_+i+1) == index) homeWanted = true;
+    }
+    if(studyWanted || homeWanted) {
+      JsonDocument doc;
+      if(!deserializeJson(doc,line)) {
+        appendAsset(doc["a"]|"",false);
+        if(studyWanted) appendAsset(doc["s"]|"",true);
+      }
+    }
     ++index;
     if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
@@ -399,6 +412,7 @@ void Wordbook::setQuizPreview(const char* word) {
 bool Wordbook::beginToday(bool missedOnly) {
   const uint32_t now=static_cast<uint32_t>(time(nullptr));
   if(todayMode_ || studyDay(now)<0 || !wordCount_) return false;
+  homeMode_ = false; homeDirty_ = true; assetsDirty_ = true;
   todayCount_=0;
   File file=LittleFS.open(kWordbookManifestPath,"r"); String line; uint16_t index=0;
   while(file && readEntry(file,line)==1 && index<wordCount_) {
@@ -428,6 +442,48 @@ void Wordbook::stepToday(int direction) {
   ++todayMoves_;
   todayPosition_=static_cast<uint16_t>((int(todayPosition_)+int(todayCount_)+(direction<0?-1:1))%todayCount_);
   selectCard(todayDay_,todayIndices_[todayPosition_]);
+}
+
+void Wordbook::updateHome(bool enabled, bool advance, bool hold) {
+  if (!enabled || todayMode_ || !wordCount_ || settings_.wordbookUrl.isEmpty()) {
+    if (homeMode_) { homeMode_ = false; homeDirty_ = true; assetsDirty_ = true; }
+    return;
+  }
+  const uint32_t now = static_cast<uint32_t>(time(nullptr));
+  const int32_t day = studyDay(now);
+  if (day < 0 || quizPreview_ || !readyForToday()) return;
+  if (!homeMode_ || homeDirty_ || homeDay_ != day || homeStudyRevision_ != study_.revision()) {
+    File file = LittleFS.open(kWordbookManifestPath, "r");
+    if (!file) return;
+    homeDeck_.reset();
+    String line;
+    for (uint16_t i = 0; i < wordCount_ && readEntry(file, line) == 1; ++i) {
+      JsonDocument doc;
+      if (!deserializeJson(doc, line)) {
+        const char* word = doc["w"] | "";
+        homeDeck_.consider(i, study_.find(word), now, validArtName(doc["a"] | ""));
+      }
+      if ((i & 31) == 0) delay(1);
+    }
+    file.close();
+    homeMode_ = true; homeDirty_ = false; homeDay_ = day;
+    homeStudyRevision_ = study_.revision(); homePosition_ = 0;
+    assetsDirty_ = true;
+    if (hold) {
+      // A refreshed manifest can reorder indices while the answer is open.
+      // Re-anchor the prefetch window without replacing the held card.
+      if (homeDeck_.count()) homePosition_ = homeDeck_.count() - 1;
+      for (uint16_t i = 0; i < homeDeck_.count(); ++i)
+        if (homeDeck_.index(i) == activeIndex_) { homePosition_ = i; break; }
+      return;
+    }
+  } else if (!hold && advance && homeDeck_.count() &&
+             (homeDeck_.count() > 1 || activeIndex_ != homeDeck_.index(homePosition_))) {
+    homePosition_ = (homePosition_ + 1) % homeDeck_.count();
+  } else return;
+  const uint16_t index = homeDeck_.index(homePosition_);
+  if (index != UINT16_MAX && (!cardValid_ || activeIndex_ != index || cardDay_ != day))
+    selectCard(day, index);
 }
 
 bool Wordbook::nextReview(const StudyStore& study, bool reviewOnly) {

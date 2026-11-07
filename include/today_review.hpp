@@ -15,17 +15,38 @@ inline bool reviewedToday(const ReviewRecord& record, uint32_t now) {
 inline bool missedToday(const ReviewRecord& record, uint32_t now) {
   return record.stage == 0 && reviewedToday(record, now);
 }
+class HomeDeck {
+ public:
+  explicit HomeDeck(uint16_t (&indices)[kMaxStudyWords]) : today_(indices) {}
+  void reset() { todayCount_ = freshCount_ = 0; }
+  void consider(uint16_t index, const ReviewRecord* record, uint32_t now, bool illustrated) {
+    if (record && reviewedToday(*record, now) && todayCount_ < kMaxStudyWords)
+      today_[todayCount_++] = index;
+    else if (!record && illustrated && freshCount_ < 5)
+      fresh_[freshCount_++] = index;
+  }
+  uint16_t count() const { return todayCount_ ? todayCount_ : freshCount_; }
+  uint16_t index(uint16_t at) const {
+    return count() ? (todayCount_ ? today_ : fresh_)[at % count()] : UINT16_MAX;
+  }
+ private:
+  uint16_t* today_;
+  uint16_t fresh_[5]{};
+  uint16_t todayCount_ = 0, freshCount_ = 0;
+};
 class TodayPlayback {
  public:
+  explicit TodayPlayback(uint32_t interval = 12000) : interval_(interval) {}
   bool paused = false;
   void reset(uint32_t now) { changedAt_ = now; }
   void toggle(uint32_t now) { paused = !paused; reset(now); }
   bool tick(uint32_t now, bool blocked) {
     if(blocked) { reset(now); return false; }
-    if(paused || uint32_t(now-changedAt_) < 12000) return false;
+    if(paused || uint32_t(now-changedAt_) < interval_) return false;
     reset(now); return true;
   }
  private:
+  uint32_t interval_;
   uint32_t changedAt_ = 0;
 };
 }

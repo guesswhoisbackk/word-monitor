@@ -41,6 +41,10 @@ class WordUi {
   bool takeReviewRequest();
   void reviewFinished(bool found);
   bool reviewOnly() const { return reviewOnly_; }
+  bool homeSelected() const { return !sessionActive_ && !todayMode_; }
+  bool homeVisible() const { return homeSelected() && !quizOverlay_ && !settingsOverlay_; }
+  bool homeHeld() const { return !homeVisible() || meaningVisible_; }
+  bool takeHomeStep() { return homePlayback_.tick(millis(), !homeVisible() || meaningVisible_); }
 
  private:
   AppSettings& settings_;
@@ -94,6 +98,7 @@ class WordUi {
   uint16_t todayPosition_ = 0, todayCount_ = 0;
   uint8_t todayRequest_ = 0;
   TodayPlayback playback_;
+  TodayPlayback homePlayback_{10000};
   lv_obj_t* weatherCard_ = nullptr;
   lv_obj_t* wordCard_ = nullptr;
   lv_obj_t* sentencePanel_ = nullptr;

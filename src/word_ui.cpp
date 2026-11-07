@@ -542,6 +542,7 @@ void WordUi::refresh() {
   }
   const bool wordChanged = shownWord_ != word;
   if (wordChanged) {
+    homePlayback_.reset(millis());
     audio_.cancel();
     speakRequested_=false;
     audioFeedback_ = false;
@@ -582,7 +583,7 @@ void WordUi::refresh() {
       if (record && reviewDue(*record, static_cast<uint32_t>(now))) ++due;
     }
   }
-  const bool showArt = art && (!front || !progress || todayMode_);
+  const bool showArt = art && (!front || !progress || todayMode_ || !sessionActive_);
   if (showArt && currentArt_ != art) {
     currentArt_ = art;
     lv_image_set_src(artImage_, art);
@@ -767,6 +768,7 @@ void WordUi::cardEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   Serial.println(F("[ui] card tap"));
   self->audioFeedback_ = false;
+  self->homePlayback_.reset(millis());
   if(self->todayMode_) {
     if(!self->meaningVisible_) self->meaningVisible_=true;
     else self->playback_.toggle(millis());
@@ -834,6 +836,7 @@ void WordUi::studyEvent(lv_event_t* event) {
 void WordUi::beginStudy(bool reviewOnly) {
   if (time(nullptr) < 1700000000 || !study_.ready()) return;
   todayRequest_ = 0;
+  meaningVisible_ = false;
   audio_.cancel();
   audioFeedback_ = false;
   speakRequested_ = false;

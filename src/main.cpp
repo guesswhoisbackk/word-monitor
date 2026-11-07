@@ -209,6 +209,7 @@ void loop() {
     pushedWordbookRevision = wordbook.revision();
     wordUi.reviewFinished(found);
   }
+  wordbook.updateHome(wordUi.homeSelected(), wordUi.takeHomeStep(), wordUi.homeHeld());
   if (wordbook.revision() != pushedWordbookRevision) {
     pushedWordbookRevision = wordbook.revision();
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
