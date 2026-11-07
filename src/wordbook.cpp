@@ -271,6 +271,7 @@ void Wordbook::rebuildPlan() {
   if(previousDue!=plan_.dueCount) ++revision_;
 }
 void Wordbook::appendAsset(const String& name,bool voice) {
+  if (voice && !kPronunciationEnabled) return;
   if(assetCount_ >= sizeof(assets_) / sizeof(assets_[0]) ||
       (voice ? !validAudioName(name.c_str()) : !validArtName(name))) return;
   const String path=assetPathFromUrl(assetUrl(settings_.wordbookUrl,name),voice);

@@ -334,6 +334,7 @@ void WordUi::createLayout() {
   speakButton_ = button("SPEAK", 130, 3, 62);
   lv_obj_set_height(speakButton_, 28);
   speakLabel_ = lv_obj_get_child(speakButton_, 0);
+  if (!kPronunciationEnabled) lv_obj_add_flag(speakButton_, LV_OBJ_FLAG_HIDDEN);
 
   lv_obj_set_style_bg_color(goodButton_, lv_color_hex(kGreen), 0);
   lv_obj_set_style_text_color(goodButton_, lv_color_hex(kBackground), 0);
@@ -671,7 +672,7 @@ void WordUi::refresh() {
   else lv_obj_add_flag(revealHint_, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_y(wordLabel_, std::max(0, ((home ? 76 : 98) - lv_obj_get_height(wordLabel_)) / 2));
   for (auto* obj : {againButton_, goodButton_, nextButton_, studyLabel_, speakButton_}) {
-    if (home) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    if (home || (obj == speakButton_ && !kPronunciationEnabled)) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
   }
   if (home) lv_obj_remove_flag(homePanel_, LV_OBJ_FLAG_HIDDEN);
@@ -937,6 +938,7 @@ void WordUi::closeSettings() {
   if(settingsOverlay_) {lv_obj_delete(settingsOverlay_);settingsOverlay_=nullptr;}
 }
 void WordUi::serviceAudio(bool canStart) {
+  if (!kPronunciationEnabled) return;
   if(quizOverlay_) {
     const bool hosted = externalCard_ && !strcmp(externalCard_->word, quiz_.word());
     const bool sample = quiz_.reviewing() && !externalCard_ && shownWord_ == quiz_.word();
@@ -1055,6 +1057,7 @@ void WordUi::quizNext() {
 }
 
 void WordUi::quizSpeak() {
+  if (!kPronunciationEnabled) return;
   if(!quiz_.active() || !quiz_.answered() || quiz_.finished()) return;
   if(audio_.busy() || quizSpeakRequested_) {audio_.cancel();quizSpeakRequested_=false;}
   else quizSpeakRequested_=true;
@@ -1118,8 +1121,10 @@ void WordUi::renderQuiz() {
       lv_obj_set_pos(picture,(240-art->header.w)/2,137);
     } else if (externalCard_ || !quiz_.reviewing()) label("그림을 불러오는 중",12,162,216,38,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
     label(quiz_.meaning(),12,227,216,27,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
-    auto* speak=button("발음 듣기",58,251,124,24,kBorder);
-    lv_obj_add_event_cb(speak,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizSpeak();},LV_EVENT_CLICKED,this);
+    if (kPronunciationEnabled) {
+      auto* speak=button("발음 듣기",58,251,124,24,kBorder);
+      lv_obj_add_event_cb(speak,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizSpeak();},LV_EVENT_CLICKED,this);
+    }
     auto* next=button(!quiz_.reviewing() && quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제",8,277,224,35,kBorder);
     lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
     return;
