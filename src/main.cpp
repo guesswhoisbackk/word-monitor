@@ -201,7 +201,7 @@ void loop() {
     if(todayRequest==3) wordbook.stepToday(-1);
     if(todayRequest==4) wordbook.stepToday(1);
   }
-  wordbook.setQuizPreview(quiz.active() && !quiz.finished()?quiz.word():nullptr);
+  wordbook.setQuizPreview(quiz.active() && !quiz.reviewing() && !quiz.finished()?quiz.word():nullptr);
   wordUi.setTodayState(wordbook.todayMode(),wordbook.todayPosition(),wordbook.todayCount(),todayRequest==3 || todayRequest==4);
   if (!wordbook.todayMode() && wordUi.takeReviewRequest()) {
     const bool found = wordbook.nextReview(study, wordUi.reviewOnly());

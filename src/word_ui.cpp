@@ -169,6 +169,9 @@ void WordUi::loop() {
     // USB-only loading preview; does not grade or request another card.
     if (command == 'd') { reviewLoading_ = true; refresh(); }
     if (command == 'u') { reviewLoading_ = false; refresh(); }
+    // Open a scheduled review for screen diagnostics; no answer is submitted.
+    if (command == 'R' && !settingsOverlay_ && !quizOverlay_ && !todayMode_ && !sessionActive_)
+      beginStudy(true);
     if ((command == 'n' || command == 't') && !quizOverlay_) todayRequest_=todayMode_?2:1;
     if (command == 'q') startQuiz(true);
     if (command == 'I') startQuiz(false,true,true);
@@ -337,7 +340,7 @@ void WordUi::createLayout() {
 
   lv_obj_set_style_bg_color(goodButton_, lv_color_hex(kGreen), 0);
   lv_obj_set_style_text_color(goodButton_, lv_color_hex(kBackground), 0);
-  homePanel_ = makeCard(screen, 8, 158, 224, 156);
+  homePanel_ = makeCard(screen, 8, 257, 224, 59);
   homeStatus_ = makeLabel(homePanel_, "", 5, 6, 212, &font_kr_13, kMuted, LV_TEXT_ALIGN_CENTER);
   auto homeButton = [&](const char* text, int x, int y, int w, int h, unsigned action) {
     auto* obj = lv_button_create(homePanel_);
@@ -346,7 +349,7 @@ void WordUi::createLayout() {
     lv_obj_set_style_bg_color(obj, lv_color_hex(action == 0 ? kGreen : kBorder), 0);
     auto* label = lv_label_create(obj);
     lv_label_set_text(label, text);
-    lv_obj_set_style_text_font(label, action == 0 ? &font_kr_16 : &font_kr_13, 0);
+    lv_obj_set_style_text_font(label, &font_kr_13, 0);
     lv_obj_set_style_text_color(label, lv_color_hex(action == 0 ? kBackground : kText), 0);
     lv_obj_center(label);
     lv_obj_set_user_data(obj, reinterpret_cast<void*>(static_cast<uintptr_t>(action)));
@@ -355,15 +358,13 @@ void WordUi::createLayout() {
       auto* button = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
       const auto action = reinterpret_cast<uintptr_t>(lv_obj_get_user_data(button));
       if (action == 2) self->showLearningMenu();
-      else if (action == 3) { self->todayRequest_ = self->sessionComplete_ ? 5 : 1; }
       else self->beginStudy(action == 1);
     }, LV_EVENT_CLICKED, this);
     return label;
   };
-  startLabel_ = homeButton("오늘 공부 시작", 8, 29, 206, 48, 0);
-  homeButton("복습만", 8, 84, 99, 30, 1);
-  homeButton("퀴즈", 115, 84, 99, 30, 2);
-  replayLabel_ = homeButton("오늘 단어 다시 보기", 8, 120, 206, 29, 3);
+  startLabel_ = homeButton("공부 시작", 5, 24, 97, 31, 0);
+  homeButton("복습만", 108, 24, 56, 31, 1);
+  homeButton("더 보기", 170, 24, 49, 31, 2);
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &font_ui_12, kMuted,
                            LV_TEXT_ALIGN_CENTER);
@@ -396,6 +397,7 @@ void WordUi::showSettings() {
 
 void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
                              uint16_t wordCount) {
+  const bool changed = card && shownWord_ != card->word;
   externalCard_ = card;
   // The wordbook reuses the same image descriptor and pixel buffer.
   currentArt_ = nullptr;
@@ -403,6 +405,12 @@ void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
   wordbookState_ = state;
   wordbookCount_ = wordCount;
   refresh();
+  if (changed && sessionActive_ && !todayMode_ && !quizOverlay_ && !reviewLoading_) {
+    // A manifest replacement can swap the active word. Select again under
+    // the session's policy so a due word opens a quiz instead of a dead card.
+    reviewRequested_ = reviewLoading_ = true;
+    refresh();
+  }
   if(quizOverlay_ && quiz_.active() && (quiz_.answered() || quiz_.pictureMode()) && !quiz_.finished()) renderQuiz();
 }
 
@@ -478,6 +486,7 @@ void WordUi::refresh() {
     const int32_t day = studyDay(static_cast<uint32_t>(now));
     if (sampleDay_ != day) {
       if (sampleDay_ >= 0) {
+        if (quiz_.reviewing()) closeQuiz();
         sessionActive_ = false;
         reviewRequested_ = false;
         reviewLoading_ = false;
@@ -609,7 +618,7 @@ void WordUi::refresh() {
   const bool eligible = study_.ready() && (progress ? !waiting :
       study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
   // A learner can rate recall directly or tap to check the answer first.
-  const bool canGrade = sessionActive_ && !reviewLoading_ && !graded_ && timeValid && eligible && (!reviewOnly_ || progress);
+  const bool canGrade = sessionActive_ && !reviewLoading_ && !graded_ && timeValid && eligible && !progress && !reviewOnly_;
   for (lv_obj_t* button : {againButton_, goodButton_}) {
     if (canGrade) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
@@ -644,7 +653,7 @@ void WordUi::refresh() {
   }
 
   const bool home = !sessionActive_ && !todayMode_;
-  for (auto* obj : {wordCard_, againButton_, goodButton_, nextButton_, studyLabel_, speakButton_}) {
+  for (auto* obj : {againButton_, goodButton_, nextButton_, studyLabel_, speakButton_}) {
     if (home) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
   }
@@ -658,10 +667,7 @@ void WordUi::refresh() {
         !study_.ready() ? "학습 기록을 열 수 없어요" :
         !studyMessage_.isEmpty() ? studyMessage_.c_str() :
         sessionComplete_ ? "오늘 공부 끝!" : caption);
-    setLabelTextIfChanged(startLabel_, sessionComplete_ ? "공부 다시 시작" : "오늘 공부 시작");
-    setLabelTextIfChanged(replayLabel_, sessionComplete_ ? "틀린 단어 다시 보기" : "오늘 단어 다시 보기");
-    if (externalCard_) lv_obj_remove_flag(lv_obj_get_parent(replayLabel_), LV_OBJ_FLAG_HIDDEN);
-    else lv_obj_add_flag(lv_obj_get_parent(replayLabel_), LV_OBJ_FLAG_HIDDEN);
+    setLabelTextIfChanged(startLabel_, sessionComplete_ ? "다시 시작" : "공부 시작");
   }
 
   if (front) lv_obj_clear_flag(wordLabel_, LV_OBJ_FLAG_HIDDEN);
@@ -784,7 +790,7 @@ void WordUi::studyEvent(lv_event_t* event) {
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
-    if (self->graded_ || (self->reviewOnly_ && !record) || (record && !reviewDue(*record, now))) return;
+    if (self->graded_ || self->reviewOnly_ || record) return;
     const bool good = target == self->goodButton_;
     self->reviewLoading_ = true;
     self->refresh();
@@ -848,7 +854,7 @@ bool WordUi::takeReviewRequest() {
     choice.consider(static_cast<uint16_t>(i), allowNew, record, now);
   }
   const int32_t best = choice.index();
-  if (best >= 0) sampleIndex_ = best;
+  if (best >= 0) { sampleIndex_ = best; refresh(); }
   reviewFinished(best >= 0);
   return false;
 }
@@ -877,9 +883,11 @@ void WordUi::closeSettings() {
 }
 void WordUi::serviceAudio(bool canStart) {
   if(quizOverlay_) {
-    if(quizSpeakRequested_ && canStart && !audio_.busy() && quiz_.answered() && externalCard_ && !strcmp(externalCard_->word,quiz_.word())) {
+    const bool hosted = externalCard_ && !strcmp(externalCard_->word, quiz_.word());
+    const bool sample = quiz_.reviewing() && !externalCard_ && shownWord_ == quiz_.word();
+    if(quizSpeakRequested_ && canStart && !audio_.busy() && quiz_.answered() && (hosted || sample)) {
       quizSpeakRequested_=false;
-      audio_.start(quiz_.word(),externalCard_->audio,settings_.wordbookUrl,settings_.audioVolume);
+      audio_.start(quiz_.word(),hosted ? externalCard_->audio : "",settings_.wordbookUrl,settings_.audioVolume);
     }
     return;
   }
@@ -890,6 +898,21 @@ void WordUi::serviceAudio(bool canStart) {
 void WordUi::reviewFinished(bool found) {
   reviewLoading_ = false;
   if (found) {
+    const char* meaning = externalCard_ ? externalCard_->meaning :
+        kSampleWords[sampleIndex_ >= 0 ? sampleIndex_ : 0].meaning;
+    const uint32_t now = static_cast<uint32_t>(time(nullptr));
+    const auto* record = study_.find(shownWord_.c_str());
+    if (record && reviewDue(*record, now)) {
+      if (!quiz_.startReview(shownWord_.c_str(), meaning, now, esp_random())) {
+        sessionActive_ = false;
+        studyMessage_ = "복습 문제를 준비하지 못했어요";
+        refresh();
+        return;
+      }
+      quizOverlay_ = makeCard(lv_screen_active(), 0, 0, 240, 320);
+      lv_obj_set_style_radius(quizOverlay_, 0, 0);
+      renderQuiz();
+    }
     meaningVisible_ = false;
     graded_ = false;
     hintVisible_ = false;
@@ -907,6 +930,11 @@ void WordUi::reviewFinished(bool found) {
 
 
 void WordUi::closeQuiz() {
+  if (quiz_.reviewing()) {
+    sessionActive_ = false;
+    reviewRequested_ = false;
+    reviewLoading_ = false;
+  }
   audio_.cancel(); quizSpeakRequested_=false;
   quiz_.stop();
   if(quizOverlay_) { lv_obj_delete(quizOverlay_); quizOverlay_=nullptr; }
@@ -922,9 +950,9 @@ void WordUi::showLearningMenu() {
   char points[40]; snprintf(points,sizeof(points),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
   makeLabel(quizOverlay_,points,12,43,216,&font_ui_24,kGreen);
   makeLabel(quizOverlay_,"정답 +10점 · 틀려도 괜찮아요",12,77,216,&font_kr_13,kMuted);
-  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","그림 보고 맞히기","오늘 단어 다시 보기","돌아가기"};
-  for(int i=0;i<5;++i) {
-    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,103+i*42);lv_obj_set_size(button,216,37);
+  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","그림 보고 맞히기","오늘 단어 다시 보기","틀린 단어 다시 보기","돌아가기"};
+  for(int i=0;i<6;++i) {
+    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,99+i*36);lv_obj_set_size(button,216,32);
     lv_obj_set_style_bg_color(button,lv_color_hex(i==0?kGreen:kBorder),0);
     auto* label=lv_label_create(button);lv_label_set_text(label,labels[i]);
     lv_obj_set_style_text_font(label,&font_kr_16,0);lv_obj_set_style_text_color(label,lv_color_hex(i==0?kBackground:kText),0);lv_obj_center(label);
@@ -934,7 +962,7 @@ void WordUi::showLearningMenu() {
       const uint32_t index=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(lv_obj_get_user_data(static_cast<lv_obj_t*>(lv_event_get_current_target(e)))))-1;
       if(index==0 || index==1) self->startQuiz(index==0);
       else if(index==2) self->startQuiz(false,false,true);
-      else if(index==3) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=1;}
+      else if(index==3 || index==4) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=index==4?5:1;}
       else self->closeQuiz();
     },LV_EVENT_CLICKED,this);
   }
@@ -952,13 +980,20 @@ void WordUi::startQuiz(bool learnedOnly,bool practice,bool pictureMode) {
 void WordUi::quizAnswer(uint8_t choice) {
   if(!quizOverlay_ || !quiz_.active() || quiz_.finished() || quiz_.answered()) return;
   if(quiz_.pictureMode() && (!externalCard_ || !externalCard_->art || strcmp(externalCard_->word,quiz_.word()))) return;
-  quiz_.answer(choice);quizAnsweredAt_=millis();renderQuiz();
+  quiz_.answer(choice, static_cast<uint32_t>(time(nullptr)));quizAnsweredAt_=millis();renderQuiz();
 }
 
 void WordUi::quizNext() {
   if(!quizOverlay_ || !quiz_.active() || uint32_t(millis()-quizAnsweredAt_)<500) return;
   if(quiz_.finished()) {startQuiz(quiz_.learnedOnly(),quiz_.practice(),quiz_.pictureMode());return;}
   if(!quiz_.answered() && quiz_.selected()>=0) {quizAnswer(static_cast<uint8_t>(quiz_.selected()));return;}
+  if (quiz_.reviewing() && quiz_.answered()) {
+    closeQuiz();
+    sessionActive_ = true;
+    reviewRequested_ = reviewLoading_ = true;
+    refresh();
+    return;
+  }
   audio_.cancel(); quizSpeakRequested_=false;
   if(quiz_.next()) renderQuiz();
 }
@@ -1011,21 +1046,25 @@ void WordUi::renderQuiz() {
     return;
   }
   snprintf(text,sizeof(text),"%u / %u",quiz_.position()+1,quiz_.count());
-  label(text,10,12,70,22,&font_ui_18,kText);
+  label(quiz_.reviewing()?"복습 퀴즈":text,10,12,100,22,&font_kr_16,kText);
   snprintf(text,sizeof(text),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
-  label(quiz_.practice()?"체험":text,82,14,94,22,&font_kr_13,kGreen,LV_TEXT_ALIGN_RIGHT);
+  if (!quiz_.reviewing()) label(quiz_.practice()?"체험":text,82,14,94,22,&font_kr_13,kGreen,LV_TEXT_ALIGN_RIGHT);
   if(quiz_.answered()) {
     const bool correct=quiz_.selected()==quiz_.correctChoice();
-    label(correct?"정답이에요! +10점":"이 그림과 뜻을 기억해 보세요",8,49,224,25,&font_kr_13,kGreen,LV_TEXT_ALIGN_CENTER);
+    label(quiz_.reviewing()?(correct?"정답이에요!":"10분 뒤 다시 복습해요"):(correct?"정답이에요! +10점":"이 그림과 뜻을 기억해 보세요"),8,49,224,25,&font_kr_13,kGreen,LV_TEXT_ALIGN_CENTER);
     label(quiz_.word(),12,81,216,52,&font_ui_18,kText,LV_TEXT_ALIGN_CENTER);
-    if(externalCard_ && externalCard_->art && !strcmp(externalCard_->word,quiz_.word())) {
-      auto* picture=lv_image_create(quizOverlay_);lv_image_set_src(picture,externalCard_->art);
-      lv_obj_set_pos(picture,(240-externalCard_->art->header.w)/2,137);
-    } else label("그림을 불러오는 중",12,162,216,38,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+    const lv_image_dsc_t* art = externalCard_ && !strcmp(externalCard_->word, quiz_.word()) ? externalCard_->art : nullptr;
+    if (quiz_.reviewing() && !externalCard_) {
+      for (const auto& sample : kSampleWords) if (!strcmp(sample.word, quiz_.word())) art = sample.art;
+    }
+    if (art) {
+      auto* picture=lv_image_create(quizOverlay_);lv_image_set_src(picture,art);
+      lv_obj_set_pos(picture,(240-art->header.w)/2,137);
+    } else if (externalCard_ || !quiz_.reviewing()) label("그림을 불러오는 중",12,162,216,38,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
     label(quiz_.meaning(),12,227,216,27,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
     auto* speak=button("발음 듣기",58,251,124,24,kBorder);
     lv_obj_add_event_cb(speak,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizSpeak();},LV_EVENT_CLICKED,this);
-    auto* next=button(quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제",8,277,224,35,kBorder);
+    auto* next=button(!quiz_.reviewing() && quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제",8,277,224,35,kBorder);
     lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
     return;
   }
@@ -1064,7 +1103,7 @@ void WordUi::renderQuiz() {
   if(quiz_.selected()>=0) {
     auto* next=button(quiz_.answered()?(quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제"):"다시 저장",8,277,224,35,kBorder);
     lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
-  } else label(quiz_.learnedOnly()?"배운 단어 · 정답마다 +10점":"전체 단어 · 정답마다 +10점",8,287,224,22,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+  } else if (!quiz_.reviewing()) label(quiz_.learnedOnly()?"배운 단어 · 정답마다 +10점":"전체 단어 · 정답마다 +10점",8,287,224,22,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
 }
 
 }  // namespace wordmon

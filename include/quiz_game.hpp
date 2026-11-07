@@ -1,5 +1,6 @@
 #pragma once
 #include "study_store.hpp"
+#include <string>
 
 namespace wordmon {
 struct QuizTotals {
@@ -17,13 +18,15 @@ class QuizStore {
   bool ready_ = false;
 };
 
-// Quiz scoring never calls StudyStore::grade: spaced-review history is unchanged.
+// Standalone quizzes award points; scheduled review quizzes update only history.
 class QuizGame {
  public:
   explicit QuizGame(StudyStore& study) : study_(study) {}
   void begin() { store_.begin(); }
   bool start(bool learnedOnly, uint32_t seed, bool practice = false, bool pictureMode = false);
-  bool answer(uint8_t choice);
+  bool startReview(const char* word, const char* meaning, uint32_t now, uint32_t seed);
+  bool reviewing() const { return active_ && reviewMode_; }
+  bool answer(uint8_t choice, uint32_t now = 0);
   bool next();
   bool retryWrong();
   bool pictureMode() const { return pictureMode_; }
@@ -47,6 +50,8 @@ class QuizGame {
   const QuizTotals& totals() const { return store_.totals(); }
   bool storageReady() const { return store_.ready(); }
  private:
+  bool reviewMode_ = false;
+  std::string reviewWord_, reviewMeaning_;
   bool prepare();
   uint32_t randomBelow(uint32_t bound);
   StudyStore& study_;

@@ -130,7 +130,6 @@ class WordUi {
   lv_obj_t* homePanel_ = nullptr;
   lv_obj_t* homeStatus_ = nullptr;
   lv_obj_t* startLabel_ = nullptr;
-  lv_obj_t* replayLabel_ = nullptr;
   void beginStudy(bool reviewOnly);
   void createLayout();
   void refresh();

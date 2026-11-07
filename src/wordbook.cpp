@@ -253,7 +253,10 @@ void Wordbook::rebuildPlan() {
   File file=LittleFS.open(kWordbookManifestPath,"r"); String line; uint16_t index=0;
   while(file && readEntry(file,line)==1 && index<wordCount_) {
     JsonDocument doc;
-    if(!deserializeJson(doc,line)) plan.consider(index,study_.find(doc["w"]|""),now);
+    if(!deserializeJson(doc,line)) {
+      const char* word = doc["w"] | "";
+      if (*correctedMeaning(word, doc["m"] | "")) plan.consider(index, study_.find(word), now);
+    }
     ++index;
     if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }

@@ -89,6 +89,24 @@ int main() {
   assert(missed.empty() && game.roundCorrect()==3 && !game.wrongCount() && !game.retryWrong());
   assert(*LittleFS.files["/quiz-v1.bin"]==pointsFile);
   assert(*LittleFS.files["/study-v2.bin"]==history);
+  // Scheduled review grades the current learned word, not the points game.
+  const uint32_t due = now + 86400;
+  assert(!game.startReview("pencil", "연필", now, 2));
+  assert(!game.startReview("unknown", "처음", due, 2));
+  assert(game.startReview("pencil", "연필", due, 2));
+  assert(!strcmp(game.word(), "pencil"));
+  assert(!strcmp(game.choice(game.correctChoice()), "연필"));
+  const uint8_t wrong = (game.correctChoice() + 1) % 6;
+  File::failWrite = true;
+  assert(!game.answer(wrong, due) && !game.answered());
+  File::failWrite = false;
+  assert(!game.answer(game.correctChoice(), due));
+  assert(game.answer(wrong, due) && !game.answer(wrong, due));
+  assert(study.find("pencil")->stage == 0 && study.find("pencil")->due == due + 600);
+  assert(game.startReview("eraser", "지우개", due, 3));
+  assert(game.answer(game.correctChoice(), due));
+  assert(study.find("eraser")->stage == 2 && study.find("eraser")->due == due + 3 * 86400);
+  assert(*LittleFS.files["/quiz-v1.bin"] == pointsFile);
   // An incomplete temporary transaction never replaces committed points.
   LittleFS.files["/quiz-v1.tmp"]=std::make_shared<std::vector<unsigned char>>(size_t(3),static_cast<unsigned char>(0));
   QuizStore interrupted; interrupted.begin();
