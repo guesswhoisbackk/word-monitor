@@ -186,7 +186,6 @@ void WordUi::loop() {
     if (command == 'v' && quizOverlay_) quizNext();
     if (command == 'j' && todayMode_) lv_obj_send_event(goodButton_, LV_EVENT_CLICKED, nullptr);
     if (command == 'k' && todayMode_) lv_obj_send_event(againButton_, LV_EVENT_CLICKED, nullptr);
-    if (command == 'p' && todayMode_) { playback_.toggle(millis()); refresh(); }
     if (command == 'b' && settingsOverlay_) { lv_obj_delete(settingsOverlay_); settingsOverlay_ = nullptr; }
     if (command == '!') {
       capture_ = true;
@@ -197,7 +196,6 @@ void WordUi::loop() {
     }
   }
   lv_timer_handler();
-  if(todayMode_ && !todayRequest_ && playback_.tick(millis(),screenOff_ || settingsOverlay_ || quizOverlay_ || audio_.busy() || speakRequested_)) todayRequest_=4;
   const uint32_t now = millis();
   if (now - lastRefresh_ >= 500) {
     lastRefresh_ = now;
@@ -223,11 +221,6 @@ void WordUi::createLayout() {
   lv_obj_t* gear = lv_label_create(setup); lv_label_set_text(gear, LV_SYMBOL_SETTINGS); lv_obj_center(gear);
   lv_obj_add_event_cb(setup, [](lv_event_t* e) { static_cast<WordUi*>(lv_event_get_user_data(e))->showSettings(); }, LV_EVENT_CLICKED, this);
   progressLabel_ = makeLabel(screen, "새0/5", 80, 12, 44, &font_kr_13, kGreen, LV_TEXT_ALIGN_RIGHT);
-  lv_obj_add_flag(progressLabel_, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_add_event_cb(progressLabel_, [](lv_event_t* e) {
-    auto* self=static_cast<WordUi*>(lv_event_get_user_data(e));
-    if(self->todayMode_) { self->playback_.toggle(millis()); self->refresh(); }
-  }, LV_EVENT_CLICKED, this);
   lv_obj_t* weatherCard = weatherCard_ = makeCard(screen, 8, 38, 224, 112);
   lv_obj_add_flag(weatherCard, LV_OBJ_FLAG_CLICKABLE);
   lv_obj_add_event_cb(weatherCard, [](lv_event_t* event) {
@@ -345,7 +338,7 @@ void WordUi::createLayout() {
   lv_obj_set_style_bg_color(goodButton_, lv_color_hex(kGreen), 0);
   lv_obj_set_style_text_color(goodButton_, lv_color_hex(kBackground), 0);
   homePanel_ = makeCard(screen, 8, 257, 224, 59);
-  homeStatus_ = makeLabel(homePanel_, "", 5, 6, 212, &font_kr_13, kMuted, LV_TEXT_ALIGN_CENTER);
+  homeStatus_ = makeLabel(homePanel_, "", 5, 3, 212, &font_kr_13, kMuted, LV_TEXT_ALIGN_CENTER);
   auto homeButton = [&](const char* text, int x, int y, int w, int h, unsigned action) {
     auto* obj = lv_button_create(homePanel_);
     lv_obj_set_pos(obj, x, y);
@@ -659,11 +652,11 @@ void WordUi::refresh() {
   if(audioFeedback_) setLabelTextIfChanged(studyLabel_,speakRequested_?"발음 준비 중":audio_.message());
 
   if(todayMode_) {
-    setLabelTextIfChanged(progressLabel_,playback_.paused?"멈춤":"자동");
+    setLabelTextIfChanged(progressLabel_,"다시");
     for(auto* button:{againButton_,goodButton_,nextButton_}) lv_obj_remove_state(button,LV_STATE_DISABLED);
     char caption[100];
-    snprintf(caption,sizeof(caption),"오늘 복습 %u/%u · %s",todayPosition_+1,todayCount_,
-             playback_.paused?"멈춤":meaningVisible_?"다시 터치하면 멈춤":"터치해 뜻 확인");
+    snprintf(caption,sizeof(caption),"다시 보기 %u/%u · %s",todayPosition_+1,todayCount_,
+             meaningVisible_?"다음을 눌러요":"눌러서 뜻 보기");
     setLabelTextIfChanged(studyLabel_,caption);
     const char* example=externalCard_?externalCard_->example:"";
     const char* translation=externalCard_?externalCard_->translation:"";
@@ -687,6 +680,7 @@ void WordUi::refresh() {
     const uint32_t timestamp = static_cast<uint32_t>(now);
     const unsigned count = study_.newToday(timestamp);
     const unsigned limit = settings_.dailyNewLimit;
+    const auto previousAction = homeAction_;
     homeAction_ = homeStudyAction(timeValid && study_.ready() && (!externalCard_ || planReady_),
                                  due, study_.allowsNew(timestamp, settings_.dailyNewLimit),
                                  hasFresh, externalCard_ && planReplay_);
@@ -706,19 +700,27 @@ void WordUi::refresh() {
         snprintf(caption, sizeof(caption), "새 단어 %u/%u · 복습 없음", count, limit);
         break;
       case HomeStudyAction::Replay:
-        label = "오늘 단어 다시 보기";
-        snprintf(caption, sizeof(caption), "오늘 분량 끝 · 새 %u/%u", count, limit);
+        label = "원하면 다시 보기";
+        snprintf(caption, sizeof(caption), "오늘 공부 끝! · 새 %u/%u", count, limit);
         break;
       case HomeStudyAction::Done:
         label = "오늘 완료";
-        snprintf(caption, sizeof(caption), "오늘 분량 끝 · 새 %u/%u", count, limit);
+        snprintf(caption, sizeof(caption), "오늘 공부 끝! · 새 %u/%u", count, limit);
         break;
     }
     const bool disabled = homeAction_ == HomeStudyAction::Wait || homeAction_ == HomeStudyAction::Done;
     auto* start = lv_obj_get_parent(startLabel_);
     if (disabled) lv_obj_add_state(start, LV_STATE_DISABLED);
     else lv_obj_remove_state(start, LV_STATE_DISABLED);
-    setLabelColorIfChanged(startLabel_, disabled ? kMuted : kBackground);
+    const bool complete = homeAction_ == HomeStudyAction::Replay || homeAction_ == HomeStudyAction::Done;
+    if (homeAction_ != previousAction) {
+      const lv_font_t* font = complete ? &font_kr_16 : &font_kr_13;
+      lv_obj_set_style_text_font(homeStatus_, font, 0);
+      lv_obj_set_height(homeStatus_, font->line_height + 4);
+      lv_obj_set_style_bg_color(start, lv_color_hex(complete ? kBorder : kGreen), 0);
+    }
+    setLabelColorIfChanged(homeStatus_, complete ? kGreen : kMuted);
+    setLabelColorIfChanged(startLabel_, disabled ? kMuted : complete ? kText : kBackground);
     const bool notice = todayRequest_ || (homeNoticeUntil_ &&
         static_cast<int32_t>(homeNoticeUntil_ - millis()) > 0);
     setLabelTextIfChanged(homeStatus_, homeAction_ != HomeStudyAction::Wait && notice && !studyMessage_.isEmpty()
@@ -819,11 +821,7 @@ void WordUi::cardEvent(lv_event_t* event) {
   Serial.println(F("[ui] card tap"));
   self->audioFeedback_ = false;
   self->homePlayback_.reset(millis());
-  if(self->todayMode_) {
-    if(!self->meaningVisible_) self->meaningVisible_=true;
-    else self->playback_.toggle(millis());
-    self->playback_.reset(millis());
-  } else self->meaningVisible_ = !self->meaningVisible_;
+  self->meaningVisible_ = !self->meaningVisible_;
   self->refresh();
 }
 
@@ -920,9 +918,8 @@ void WordUi::setTodayState(bool active,uint16_t position,uint16_t count,bool res
   todayMode_=active; todayPosition_=position; todayCount_=count;
   meaningVisible_=false; audioFeedback_=false; speakRequested_=false;
   studyMessage_=""; reviewLoading_=false;
-  playback_.reset(millis());
   if(active) { lv_obj_add_flag(weatherCard_,LV_OBJ_FLAG_HIDDEN); lv_obj_remove_flag(sentencePanel_,LV_OBJ_FLAG_HIDDEN); }
-  else { lv_obj_remove_flag(weatherCard_,LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(sentencePanel_,LV_OBJ_FLAG_HIDDEN); playback_.paused=false; }
+  else { lv_obj_remove_flag(weatherCard_,LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(sentencePanel_,LV_OBJ_FLAG_HIDDEN); }
   lv_obj_set_y(wordCard_,active?42:158);
   lv_label_set_text(lv_obj_get_child(againButton_,0),active?"이전":"다시");
   lv_label_set_text(lv_obj_get_child(goodButton_,0),active?"다음":"알아요");
@@ -997,7 +994,6 @@ void WordUi::closeQuiz() {
   audio_.cancel(); quizSpeakRequested_=false;
   quiz_.stop();
   if(quizOverlay_) { lv_obj_delete(quizOverlay_); quizOverlay_=nullptr; }
-  playback_.reset(millis());
 }
 
 void WordUi::showLearningMenu() {

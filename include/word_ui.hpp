@@ -101,7 +101,6 @@ class WordUi {
   bool todayMode_ = false;
   uint16_t todayPosition_ = 0, todayCount_ = 0;
   uint8_t todayRequest_ = 0;
-  TodayPlayback playback_;
   TodayPlayback homePlayback_{10000};
   lv_obj_t* weatherCard_ = nullptr;
   lv_obj_t* wordCard_ = nullptr;
