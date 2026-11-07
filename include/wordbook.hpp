@@ -56,9 +56,9 @@ class Wordbook {
   uint16_t wordCount() const { return wordCount_; }
   // Bumped whenever state or card content changes; the app pushes it to the UI.
   uint32_t revision() const { return revision_; }
-  bool nextReview(const StudyStore& study);
+  bool nextReview(const StudyStore& study, bool reviewOnly = false);
   void setQuizPreview(const char* word);
-  bool beginToday();
+  bool beginToday(bool missedOnly = false);
   void endToday(bool dayChanged = false);
   void stepToday(int direction);
   uint32_t todayMoves() const { return todayMoves_; }

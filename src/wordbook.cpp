@@ -393,7 +393,7 @@ void Wordbook::setQuizPreview(const char* word) {
   // A custom deck may not contain this built-in quiz word. Never show another word's picture.
 }
 
-bool Wordbook::beginToday() {
+bool Wordbook::beginToday(bool missedOnly) {
   const uint32_t now=static_cast<uint32_t>(time(nullptr));
   if(todayMode_ || studyDay(now)<0 || !wordCount_) return false;
   todayCount_=0;
@@ -402,7 +402,7 @@ bool Wordbook::beginToday() {
     JsonDocument doc;
     if(!deserializeJson(doc,line)) {
       const auto* record=study_.find(doc["w"]|"");
-      if(record && reviewedToday(*record,now)) todayIndices_[todayCount_++]=index;
+      if(record && (missedOnly ? missedToday(*record,now) : reviewedToday(*record,now))) todayIndices_[todayCount_++]=index;
     }
     ++index;
     if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
@@ -427,15 +427,16 @@ void Wordbook::stepToday(int direction) {
   selectCard(todayDay_,todayIndices_[todayPosition_]);
 }
 
-bool Wordbook::nextReview(const StudyStore& study) {
+bool Wordbook::nextReview(const StudyStore& study, bool reviewOnly) {
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   if (!wordCount_ || now < 1700000000 || settings_.wordbookUrl.isEmpty()) return false;
   rebuildPlan();
   const int32_t day=todayDay();
-  const int32_t best=plan_.best(study.allowsNew(now,settings_.dailyNewLimit));
+  const int32_t best=plan_.bestForSession(study.allowsNew(now,settings_.dailyNewLimit),reviewOnly);
   if(best<0) return false;
+  const uint32_t before = revision_;
   selectCard(day, best);
-  return cardValid_;
+  return cardValid_ && revision_ != before;
 }
 
 bool Wordbook::fetchToFile(const String& url, const String& path,

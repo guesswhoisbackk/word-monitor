@@ -322,14 +322,14 @@ void WordUi::createLayout() {
     lv_obj_add_event_cb(obj, studyEvent, LV_EVENT_CLICKED, this);
     return obj;
   };
-  againButton_ = button("AGAIN", 8, 274, 70);
-  goodButton_ = button("GOT IT", 85, 274, 70);
-  nextButton_ = button("더 배우기", 162, 274, 70);
-  lv_obj_set_style_text_font(lv_obj_get_child(nextButton_,0), &font_kr_13,0);
+  againButton_ = button("다시", 8, 274, 70);
+  goodButton_ = button("알아요", 85, 274, 70);
+  nextButton_ = button("마치기", 162, 274, 70);
+  for (auto* obj : {againButton_, goodButton_, nextButton_})
+    lv_obj_set_style_text_font(lv_obj_get_child(obj,0), &font_kr_13, 0);
   hintButton_ = button("HINT", 176, 3, 56);
   lv_obj_set_height(hintButton_, 28);
-  // Art is always on the front face now; the hint reveal button stays hidden
-  // (kept wired so a future hide-art study mode can re-enable it).
+  // Review art is revealed together with the answer by tapping the card.
   lv_obj_add_flag(hintButton_, LV_OBJ_FLAG_HIDDEN);
   speakButton_ = button("SPEAK", 130, 3, 62);
   lv_obj_set_height(speakButton_, 28);
@@ -337,6 +337,33 @@ void WordUi::createLayout() {
 
   lv_obj_set_style_bg_color(goodButton_, lv_color_hex(kGreen), 0);
   lv_obj_set_style_text_color(goodButton_, lv_color_hex(kBackground), 0);
+  homePanel_ = makeCard(screen, 8, 158, 224, 156);
+  homeStatus_ = makeLabel(homePanel_, "", 5, 6, 212, &font_kr_13, kMuted, LV_TEXT_ALIGN_CENTER);
+  auto homeButton = [&](const char* text, int x, int y, int w, int h, unsigned action) {
+    auto* obj = lv_button_create(homePanel_);
+    lv_obj_set_pos(obj, x, y);
+    lv_obj_set_size(obj, w, h);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(action == 0 ? kGreen : kBorder), 0);
+    auto* label = lv_label_create(obj);
+    lv_label_set_text(label, text);
+    lv_obj_set_style_text_font(label, action == 0 ? &font_kr_16 : &font_kr_13, 0);
+    lv_obj_set_style_text_color(label, lv_color_hex(action == 0 ? kBackground : kText), 0);
+    lv_obj_center(label);
+    lv_obj_set_user_data(obj, reinterpret_cast<void*>(static_cast<uintptr_t>(action)));
+    lv_obj_add_event_cb(obj, [](lv_event_t* event) {
+      auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
+      auto* button = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
+      const auto action = reinterpret_cast<uintptr_t>(lv_obj_get_user_data(button));
+      if (action == 2) self->showLearningMenu();
+      else if (action == 3) { self->todayRequest_ = self->sessionComplete_ ? 5 : 1; }
+      else self->beginStudy(action == 1);
+    }, LV_EVENT_CLICKED, this);
+    return label;
+  };
+  startLabel_ = homeButton("오늘 공부 시작", 8, 29, 206, 48, 0);
+  homeButton("복습만", 8, 84, 99, 30, 1);
+  homeButton("퀴즈", 115, 84, 99, 30, 2);
+  replayLabel_ = homeButton("오늘 단어 다시 보기", 8, 120, 206, 29, 3);
   footerLabel_ = makeLabel(screen, "Starting...", 8, 302, 224,
                            &font_ui_12, kMuted,
                            LV_TEXT_ALIGN_CENTER);
@@ -450,12 +477,20 @@ void WordUi::refresh() {
     localtime_r(&now, &local);
     const int32_t day = studyDay(static_cast<uint32_t>(now));
     if (sampleDay_ != day) {
+      if (sampleDay_ >= 0) {
+        sessionActive_ = false;
+        reviewRequested_ = false;
+        reviewLoading_ = false;
+        speakRequested_ = false;
+        audio_.cancel();
+      }
       sampleDay_ = day;
       sampleIndex_ = -1;
       meaningVisible_ = false;
       hintVisible_ = false;
       graded_ = false;
       studyMessage_ = "";
+      sessionComplete_ = false;
       ReviewChoice choice;
       const bool allowNew = study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit);
       for (size_t i = 0; i < kSampleWordCount; ++i)
@@ -503,7 +538,7 @@ void WordUi::refresh() {
     meaningVisible_ = false;
     hintVisible_ = false;
     graded_ = false;
-    studyMessage_ = "";
+    if (sessionActive_ || todayMode_) studyMessage_ = "";
     currentArt_ = nullptr;
     lv_obj_scroll_to_y(answerPanel_, 0, LV_ANIM_OFF);
   }
@@ -525,10 +560,18 @@ void WordUi::refresh() {
   }
   setLabelTextIfChanged(speakLabel_, audio_.busy() || speakRequested_ ? "STOP" : "SPEAK");
 
-  // The illustrated wordbook is used as picture cards: art shows on the
-  // left side at all times. Tapping replaces the word with only its Korean meaning on the right.
+  // New words show art immediately; learned words invite recall first.
   const bool front = !meaningVisible_;
-  const bool showArt = art != nullptr;
+  const ReviewRecord* progress = study_.find(word);
+  uint16_t due = dueCount_;
+  if (!externalCard_) {
+    due = 0;
+    for (const auto& sample : kSampleWords) {
+      const auto* record = study_.find(sample.word);
+      if (record && reviewDue(*record, static_cast<uint32_t>(now))) ++due;
+    }
+  }
+  const bool showArt = art && (!front || !progress || todayMode_);
   if (showArt && currentArt_ != art) {
     currentArt_ = art;
     lv_image_set_src(artImage_, art);
@@ -562,13 +605,11 @@ void WordUi::refresh() {
     lv_obj_add_flag(letterLabel_, LV_OBJ_FLAG_HIDDEN);
   }
 
-  const ReviewRecord* progress = study_.find(word);
   const bool waiting = progress && !reviewDue(*progress, static_cast<uint32_t>(now));
   const bool eligible = study_.ready() && (progress ? !waiting :
       study_.allowsNew(static_cast<uint32_t>(now), settings_.dailyNewLimit));
-  // Grading works from either face (picture decks get rated on sight); the
-  // reveal is still one tap away for checking the meaning/example.
-  const bool canGrade = !reviewLoading_ && !graded_ && timeValid && eligible;
+  // A learner can rate recall directly or tap to check the answer first.
+  const bool canGrade = sessionActive_ && !reviewLoading_ && !graded_ && timeValid && eligible && (!reviewOnly_ || progress);
   for (lv_obj_t* button : {againButton_, goodButton_}) {
     if (canGrade) lv_obj_remove_state(button, LV_STATE_DISABLED);
     else lv_obj_add_state(button, LV_STATE_DISABLED);
@@ -581,7 +622,7 @@ void WordUi::refresh() {
       "";
   char progressText[100];
   if(!*message) {
-    snprintf(progressText,sizeof(progressText),"새 단어 %u/%u · 복습 %u개",study_.newToday(static_cast<uint32_t>(now)),settings_.dailyNewLimit,dueCount_);
+    snprintf(progressText,sizeof(progressText),"새 단어 %u/%u · 복습 %u개",study_.newToday(static_cast<uint32_t>(now)),settings_.dailyNewLimit,due);
     message=progressText;
   }
   setLabelTextIfChanged(studyLabel_, message);
@@ -600,6 +641,27 @@ void WordUi::refresh() {
     setLabelTextIfChanged(translationLabel_,*translation?translation:"이 예문의 해석이 없어요");
     if(meaningVisible_) lv_obj_remove_flag(translationLabel_,LV_OBJ_FLAG_HIDDEN);
     else lv_obj_add_flag(translationLabel_,LV_OBJ_FLAG_HIDDEN);
+  }
+
+  const bool home = !sessionActive_ && !todayMode_;
+  for (auto* obj : {wordCard_, againButton_, goodButton_, nextButton_, studyLabel_, speakButton_}) {
+    if (home) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
+  }
+  if (home) lv_obj_remove_flag(homePanel_, LV_OBJ_FLAG_HIDDEN);
+  else lv_obj_add_flag(homePanel_, LV_OBJ_FLAG_HIDDEN);
+  if (home) {
+    char caption[100];
+    snprintf(caption, sizeof(caption), "새 단어 %u/%u · 복습 %u개",
+             study_.newToday(static_cast<uint32_t>(now)), settings_.dailyNewLimit, due);
+    setLabelTextIfChanged(homeStatus_, !timeValid ? "시간을 확인하고 있어요" :
+        !study_.ready() ? "학습 기록을 열 수 없어요" :
+        !studyMessage_.isEmpty() ? studyMessage_.c_str() :
+        sessionComplete_ ? "오늘 공부 끝!" : caption);
+    setLabelTextIfChanged(startLabel_, sessionComplete_ ? "공부 다시 시작" : "오늘 공부 시작");
+    setLabelTextIfChanged(replayLabel_, sessionComplete_ ? "틀린 단어 다시 보기" : "오늘 단어 다시 보기");
+    if (externalCard_) lv_obj_remove_flag(lv_obj_get_parent(replayLabel_), LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(lv_obj_get_parent(replayLabel_), LV_OBJ_FLAG_HIDDEN);
   }
 
   if (front) lv_obj_clear_flag(wordLabel_, LV_OBJ_FLAG_HIDDEN);
@@ -705,7 +767,7 @@ void WordUi::cardEvent(lv_event_t* event) {
 void WordUi::studyEvent(lv_event_t* event) {
   auto* self = static_cast<WordUi*>(lv_event_get_user_data(event));
   lv_obj_t* target = static_cast<lv_obj_t*>(lv_event_get_current_target(event));
-  if (self->reviewLoading_ || self->quizOverlay_) return;
+  if (self->reviewLoading_ || self->quizOverlay_ || (!self->sessionActive_ && !self->todayMode_)) return;
   self->audioFeedback_ = false;
   if(self->todayMode_ && target!=self->speakButton_) {
     // Only the registered navigation buttons may change replay state.
@@ -722,7 +784,7 @@ void WordUi::studyEvent(lv_event_t* event) {
   } else if (target == self->againButton_ || target == self->goodButton_) {
     const uint32_t now = static_cast<uint32_t>(time(nullptr));
     const ReviewRecord* record = self->study_.find(self->shownWord_.c_str());
-    if (self->graded_ || (record && !reviewDue(*record, now))) return;
+    if (self->graded_ || (self->reviewOnly_ && !record) || (record && !reviewDue(*record, now))) return;
     const bool good = target == self->goodButton_;
     self->reviewLoading_ = true;
     self->refresh();
@@ -749,11 +811,29 @@ void WordUi::studyEvent(lv_event_t* event) {
     self->studyMessage_ = "HINT USED? CHOOSE AGAIN";
   } else if (target == self->nextButton_) {
     self->speakRequested_=false; self->audio_.cancel();
-    self->showLearningMenu();
+    self->sessionActive_ = false;
+    self->sessionComplete_ = true;
+    self->studyMessage_ = "여기까지 잘했어요!";
   }
 
   self->refresh();
   if (self->reviewLoading_) lv_refr_now(self->lvDisplay_);
+}
+
+void WordUi::beginStudy(bool reviewOnly) {
+  if (time(nullptr) < 1700000000 || !study_.ready()) return;
+  todayRequest_ = 0;
+  audio_.cancel();
+  audioFeedback_ = false;
+  speakRequested_ = false;
+  sessionActive_ = true;
+  sessionComplete_ = false;
+  reviewOnly_ = reviewOnly;
+  reviewRequested_ = true;
+  reviewLoading_ = true;
+  studyMessage_ = "";
+  setLabelTextIfChanged(lv_obj_get_child(nextButton_,0), "마치기");
+  refresh();
 }
 
 bool WordUi::takeReviewRequest() {
@@ -762,7 +842,7 @@ bool WordUi::takeReviewRequest() {
   if (externalCard_) return true;
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   ReviewChoice choice;
-  const bool allowNew = study_.allowsNew(now, settings_.dailyNewLimit);
+  const bool allowNew = !reviewOnly_ && study_.allowsNew(now, settings_.dailyNewLimit);
   for (size_t i = 0; i < kSampleWordCount; ++i) {
     const ReviewRecord* record = study_.find(kSampleWords[i].word);
     choice.consider(static_cast<uint16_t>(i), allowNew, record, now);
@@ -782,15 +862,14 @@ void WordUi::setTodayState(bool active,uint16_t position,uint16_t count,bool res
   if(active) { lv_obj_add_flag(weatherCard_,LV_OBJ_FLAG_HIDDEN); lv_obj_remove_flag(sentencePanel_,LV_OBJ_FLAG_HIDDEN); }
   else { lv_obj_remove_flag(weatherCard_,LV_OBJ_FLAG_HIDDEN); lv_obj_add_flag(sentencePanel_,LV_OBJ_FLAG_HIDDEN); playback_.paused=false; }
   lv_obj_set_y(wordCard_,active?42:158);
-  lv_label_set_text(lv_obj_get_child(againButton_,0),active?"이전":"AGAIN");
-  lv_label_set_text(lv_obj_get_child(goodButton_,0),active?"다음":"GOT IT");
-  lv_label_set_text(lv_obj_get_child(nextButton_,0),active?"나가기":"더 배우기");
-  for(auto* button:{againButton_,goodButton_}) lv_obj_set_style_text_font(lv_obj_get_child(button,0),active?&font_kr_13:&font_ui_12,0);
+  lv_label_set_text(lv_obj_get_child(againButton_,0),active?"이전":"다시");
+  lv_label_set_text(lv_obj_get_child(goodButton_,0),active?"다음":"알아요");
+  lv_label_set_text(lv_obj_get_child(nextButton_,0),active?"나가기":"마치기");
   lv_obj_scroll_to_y(sentencePanel_,0,LV_ANIM_OFF);
   refresh();
 }
-void WordUi::todayUnavailable() {
-  studyMessage_="오늘 학습한 단어가 없어요"; reviewLoading_=false; refresh();
+void WordUi::todayUnavailable(bool missedOnly) {
+  studyMessage_=missedOnly?"틀린 단어가 없어요":"오늘 학습한 단어가 없어요"; reviewLoading_=false; refresh();
 }
 
 void WordUi::closeSettings() {
@@ -816,7 +895,10 @@ void WordUi::reviewFinished(bool found) {
     hintVisible_ = false;
     studyMessage_ = "";
   } else {
-    studyMessage_ = "오늘 학습을 마쳤어요";
+    sessionActive_ = false;
+    sessionComplete_ = true;
+    studyMessage_ = reviewOnly_ ? "지금 복습할 단어가 없어요" : "오늘 공부 끝!";
+
   }
   if(found && manualReview_ && selectionWord_==shownWord_) studyMessage_="현재 단어를 먼저 평가해 주세요";
   manualReview_=false;

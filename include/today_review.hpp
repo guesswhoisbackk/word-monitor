@@ -12,6 +12,9 @@ inline bool reviewedToday(const ReviewRecord& record, uint32_t now) {
   const uint32_t at = reviewedAt(record);
   return at <= now && studyDay(now) >= 0 && studyDay(at) == studyDay(now);
 }
+inline bool missedToday(const ReviewRecord& record, uint32_t now) {
+  return record.stage == 0 && reviewedToday(record, now);
+}
 class TodayPlayback {
  public:
   bool paused = false;

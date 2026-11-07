@@ -21,6 +21,7 @@ class StudyPlan {
     } else if (newSize_ < 5) fresh_[newSize_++] = index;
   }
   int32_t best(bool allowNew) const { return dueSize_ ? due_[0].index : allowNew && newSize_ ? fresh_[0] : -1; }
+  int32_t bestForSession(bool allowNew, bool reviewOnly) const { return best(allowNew && !reviewOnly); }
   uint16_t prefetch(size_t at) const {
     if (at < dueSize_) return due_[at].index;
     at -= dueSize_;

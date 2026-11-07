@@ -196,15 +196,15 @@ void loop() {
   const uint8_t todayRequest=wordUi.takeTodayRequest(wordbook.readyForToday());
   if(todayRequest) {
     audio.cancel();
-    if(todayRequest==1 && !wordbook.beginToday()) wordUi.todayUnavailable();
+    if((todayRequest==1 || todayRequest==5) && !wordbook.beginToday(todayRequest==5)) wordUi.todayUnavailable(todayRequest==5);
     if(todayRequest==2) wordbook.endToday();
     if(todayRequest==3) wordbook.stepToday(-1);
     if(todayRequest==4) wordbook.stepToday(1);
   }
   wordbook.setQuizPreview(quiz.active() && !quiz.finished()?quiz.word():nullptr);
-  wordUi.setTodayState(wordbook.todayMode(),wordbook.todayPosition(),wordbook.todayCount(),todayRequest>=3);
-  if (wordUi.takeReviewRequest() && !wordbook.todayMode()) {
-    const bool found = wordbook.nextReview(study);
+  wordUi.setTodayState(wordbook.todayMode(),wordbook.todayPosition(),wordbook.todayCount(),todayRequest==3 || todayRequest==4);
+  if (!wordbook.todayMode() && wordUi.takeReviewRequest()) {
+    const bool found = wordbook.nextReview(study, wordUi.reviewOnly());
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
     pushedWordbookRevision = wordbook.revision();
     wordUi.reviewFinished(found);

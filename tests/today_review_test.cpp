@@ -10,6 +10,8 @@ int main() {
     static constexpr uint32_t interval[]={600,86400,3*86400,7*86400,14*86400,30*86400};
     ReviewRecord record;record.stage=static_cast<uint8_t>(stage);record.due=now+interval[stage];
     assert(reviewedAt(record)==now && reviewedToday(record,now));
+    assert(missedToday(record,now) == (stage == 0));
+    assert(!missedToday(record,now+86400));
     assert(!reviewedToday(record,now+86400));
     assert(!reviewedToday(record,now-1));
   }

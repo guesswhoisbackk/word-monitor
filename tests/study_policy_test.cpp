@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdio>
 #include "study_policy.hpp"
+#include "study_plan.hpp"
 
 int main() {
   using namespace wordmon;
@@ -62,5 +63,16 @@ int main() {
   assert(syncAllowed(43201000, true, true, 1000, 1000));
   assert(!syncAllowed(43202000, true, true, 43201000, 1000));
   assert(!syncAllowed(10, true, false, UINT32_MAX - 20, 0));
+  StudyPlan daily;
+  ReviewRecord dueCard{};
+  dueCard.due = 1799999999;
+  daily.consider(0, nullptr, 1800000000);
+  daily.consider(1, &dueCard, 1800000000);
+  assert(daily.bestForSession(true, true) == 1);
+  StudyPlan freshOnly;
+  freshOnly.consider(0, nullptr, 1800000000);
+  assert(freshOnly.bestForSession(true, true) == -1);
+  assert(freshOnly.bestForSession(true, false) == 0);
+  assert(freshOnly.bestForSession(false, false) == -1);
   puts("study policy: all tests passed");
 }

@@ -37,9 +37,10 @@ class WordUi {
                        uint16_t wordCount);
   uint8_t takeTodayRequest(bool ready) { if(!ready) return 0; const uint8_t request=todayRequest_; todayRequest_=0; return request; }
   void setTodayState(bool active, uint16_t position, uint16_t count, bool reset = false);
-  void todayUnavailable();
+  void todayUnavailable(bool missedOnly = false);
   bool takeReviewRequest();
   void reviewFinished(bool found);
+  bool reviewOnly() const { return reviewOnly_; }
 
  private:
   AppSettings& settings_;
@@ -125,6 +126,12 @@ class WordUi {
   WordbookState wordbookState_ = WordbookState::Disabled;
   uint16_t wordbookCount_ = 0;
 
+  bool sessionActive_ = false, reviewOnly_ = false, sessionComplete_ = false;
+  lv_obj_t* homePanel_ = nullptr;
+  lv_obj_t* homeStatus_ = nullptr;
+  lv_obj_t* startLabel_ = nullptr;
+  lv_obj_t* replayLabel_ = nullptr;
+  void beginStudy(bool reviewOnly);
   void createLayout();
   void refresh();
   const char* wordbookSuffix() const;
