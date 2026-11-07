@@ -258,6 +258,8 @@ void WordUi::createLayout() {
                          kText, LV_TEXT_ALIGN_CENTER);
   lv_label_set_long_mode(wordLabel_, LV_LABEL_LONG_DOT);
   lv_obj_set_style_text_line_space(wordLabel_, 2, 0);
+  revealHint_ = makeLabel(card, "눌러서 뜻 보기", 128, 77, 92, &font_kr_13,
+                          kMuted, LV_TEXT_ALIGN_CENTER);
   // Flashcard front face: illustration art, or a big first letter when the
   // word has no art yet. The meaning/example rows are back-face content.
   artImage_ = lv_image_create(card);
@@ -653,6 +655,9 @@ void WordUi::refresh() {
   }
 
   const bool home = !sessionActive_ && !todayMode_;
+  if (home && front) lv_obj_remove_flag(revealHint_, LV_OBJ_FLAG_HIDDEN);
+  else lv_obj_add_flag(revealHint_, LV_OBJ_FLAG_HIDDEN);
+  lv_obj_set_y(wordLabel_, std::max(0, ((home ? 76 : 98) - lv_obj_get_height(wordLabel_)) / 2));
   for (auto* obj : {againButton_, goodButton_, nextButton_, studyLabel_, speakButton_}) {
     if (home) lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     else lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
