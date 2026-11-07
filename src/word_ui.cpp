@@ -373,6 +373,7 @@ void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
   wordbookState_ = state;
   wordbookCount_ = wordCount;
   refresh();
+  if(quizOverlay_ && quiz_.active() && quiz_.answered() && !quiz_.finished()) renderQuiz();
 }
 
 void WordUi::refresh() {
@@ -907,6 +908,19 @@ void WordUi::renderQuiz() {
   label(text,10,12,70,22,&font_ui_18,kText);
   snprintf(text,sizeof(text),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
   label(quiz_.practice()?"체험":text,82,14,94,22,&font_kr_13,kGreen,LV_TEXT_ALIGN_RIGHT);
+  if(quiz_.answered()) {
+    const bool correct=quiz_.selected()==quiz_.correctChoice();
+    label(correct?"정답이에요! +10점":"이 그림과 뜻을 기억해 보세요",8,49,224,25,&font_kr_13,kGreen,LV_TEXT_ALIGN_CENTER);
+    label(quiz_.word(),12,81,216,52,&font_ui_18,kText,LV_TEXT_ALIGN_CENTER);
+    if(externalCard_ && externalCard_->art && !strcmp(externalCard_->word,quiz_.word())) {
+      auto* picture=lv_image_create(quizOverlay_);lv_image_set_src(picture,externalCard_->art);
+      lv_obj_set_pos(picture,(240-externalCard_->art->header.w)/2,137);
+    } else label("그림을 불러오는 중",12,162,216,38,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+    label(quiz_.choice(quiz_.correctChoice()),12,236,216,34,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
+    auto* next=button(quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제",8,277,224,35,kBorder);
+    lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
+    return;
+  }
   auto* word=label(quiz_.word(),12,49,216,65,&font_ui_24,kText,LV_TEXT_ALIGN_CENTER);
   if(strlen(quiz_.word())>20) lv_obj_set_style_text_font(word,&font_ui_18,0);
   const char* prompt="알맞은 뜻을 고르세요";

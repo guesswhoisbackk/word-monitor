@@ -57,6 +57,7 @@ class Wordbook {
   // Bumped whenever state or card content changes; the app pushes it to the UI.
   uint32_t revision() const { return revision_; }
   bool nextReview(const StudyStore& study);
+  void setQuizPreview(const char* word);
   bool beginToday();
   void endToday(bool dayChanged = false);
   void stepToday(int direction);
@@ -93,6 +94,10 @@ class Wordbook {
   bool cardValid_ = false;
   int32_t cardDay_ = -1;
 
+  uint32_t quizPreviewRetryAt_ = 0;
+  String quizPreviewWord_;
+  bool quizPreview_ = false;
+  uint16_t quizSavedIndex_ = 0;
   String cardWord_;
   String cardMeaning_;
   String cardExample_;

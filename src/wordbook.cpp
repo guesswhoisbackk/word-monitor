@@ -160,13 +160,13 @@ void Wordbook::loop(bool allowNetwork) {
   poll();
   if (settings_.wordbookUrl.isEmpty()) return;
   const int32_t day = todayDay();
-  if(todayMode_ && day >= 0 && todayDay_ != day) endToday(true);
-  if (wordCount_ && (!cardValid_ || (day >= 0 && cardDay_ != day))) selectCard(day);
+  if(!quizPreview_ && todayMode_ && day >= 0 && todayDay_ != day) endToday(true);
+  if (!quizPreview_ && wordCount_ && (!cardValid_ || (day >= 0 && cardDay_ != day))) selectCard(day);
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   if (now >= 1700000000 && (planDay_ != day || plannedStudyRevision_ != study_.revision() || now >= planCheckAt_)) rebuildPlan();
   if (assetsDirty_) rebuildAssets();
   if (!allowNetwork || busy_ || !results_ || WiFi.status() != WL_CONNECTED) return;
-  const bool manifestDue = !todayMode_ && (forceSync_ || syncDue(millis(), day));
+  const bool manifestDue = !quizPreview_ && !todayMode_ && (forceSync_ || syncDue(millis(), day));
   if (!wordCount_ && manifestDue) { startJob(1); return; }
   // No speculative pencil download while the clock is still synchronizing.
   if (now < 1700000000) { if (manifestDue) startJob(1); return; }
@@ -255,6 +255,7 @@ void Wordbook::rebuildPlan() {
     JsonDocument doc;
     if(!deserializeJson(doc,line)) plan.consider(index,study_.find(doc["w"]|""),now);
     ++index;
+    if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
   const uint16_t previousDue=plan_.dueCount;
   plan_=plan; planDay_=todayDay(); plannedStudyRevision_=study_.revision();
@@ -280,6 +281,7 @@ void Wordbook::rebuildAssets() {
     bool wanted=false;for(size_t i=0;i<5;++i) if((todayMode_ ? todayIndices_[(todayPosition_+i+1)%todayCount_] : plan_.prefetch(i))==index) wanted=true;
     if(wanted) { JsonDocument doc; if(!deserializeJson(doc,line)) {appendAsset(doc["a"]|"",false);appendAsset(doc["s"]|"",true);} }
     ++index;
+    if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
   assetsDirty_=false;
   if(!busy_) pruneCache();
@@ -365,6 +367,32 @@ void Wordbook::selectCard(int32_t yday, int32_t requestedIndex) {
   ++revision_;
 }
 
+void Wordbook::setQuizPreview(const char* word) {
+  if(!word || !*word) {
+    if(!quizPreview_) return;
+    quizPreview_=false; quizPreviewWord_="";
+    selectCard(todayDay(),quizSavedIndex_<wordCount_?quizSavedIndex_:0);
+    return;
+  }
+  if((busy_ && job_.type==1) || !wordCount_ || quizPreviewWord_==word) return;
+  if(!quizPreview_) { quizSavedIndex_=activeIndex_; quizPreview_=true; }
+  if(quizPreviewRetryAt_ && int32_t(millis()-quizPreviewRetryAt_)<0) return;
+  quizPreviewRetryAt_=millis()+3000;
+  File file=LittleFS.open(kWordbookManifestPath,"r");String line;uint16_t index=0;
+  while(file && index<wordCount_ && readEntry(file,line)==1) {
+    JsonDocument doc;
+    if(!deserializeJson(doc,line) && strcmp(doc["w"]|"",word)==0) {
+      file.close(); selectCard(todayDay(),index);
+      if(cardWord_==word) {quizPreviewWord_=word;quizPreviewRetryAt_=0;}
+      return;
+    }
+    ++index;
+    if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
+  }
+  Serial.printf("[quiz] picture lookup retry word=%s scanned=%u\n",word,index);
+  // A custom deck may not contain this built-in quiz word. Never show another word's picture.
+}
+
 bool Wordbook::beginToday() {
   const uint32_t now=static_cast<uint32_t>(time(nullptr));
   if(todayMode_ || studyDay(now)<0 || !wordCount_) return false;
@@ -377,6 +405,7 @@ bool Wordbook::beginToday() {
       if(record && reviewedToday(*record,now)) todayIndices_[todayCount_++]=index;
     }
     ++index;
+    if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
   if(!todayCount_) return false;
   savedIndex_=activeIndex_; todayPosition_=0; todayDay_=studyDay(now); todayMode_=true;
@@ -511,6 +540,7 @@ bool Wordbook::readManifestLine(uint16_t index, String& out) {
 
   for (uint16_t current = 0; current <= index; ++current) {
     if (readEntry(file, out) != 1) return false;
+    if((current & 31)==0) delay(1);
   }
   return true;
 }
