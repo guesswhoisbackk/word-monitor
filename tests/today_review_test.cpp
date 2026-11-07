@@ -21,6 +21,11 @@ int main() {
   ReviewRecord record;record.due=midnight-1+600;
   assert(reviewedToday(record,midnight-1) && !reviewedToday(record,midnight));
   uint16_t indices[kMaxStudyWords]{};
+  assert(!nightScreenOff(-1));
+  assert(nightScreenOff(0) && nightScreenOff(6));
+  assert(!nightScreenOff(7) && !nightScreenOff(20));
+  assert(nightScreenOff(21) && nightScreenOff(23));
+  assert(!nightScreenOff(24));
   HomeDeck home(indices);
   home.consider(7, nullptr, now, true);
   home.consider(8, nullptr, now, false);

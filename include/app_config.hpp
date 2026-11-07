@@ -5,7 +5,7 @@
 namespace wordmon {
 
 constexpr char kAppName[] = "WordMon Studio";
-constexpr char kVersion[] = "0.16.0";
+constexpr char kVersion[] = "0.16.1";
 constexpr char kPreferencesNamespace[] = "wordmon";
 constexpr char kPreferencesKey[] = "config";
 constexpr uint16_t kScreenWidth = 240;

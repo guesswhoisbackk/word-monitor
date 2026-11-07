@@ -43,8 +43,8 @@ class WordUi {
   bool reviewOnly() const { return reviewOnly_; }
   bool homeSelected() const { return !sessionActive_ && !todayMode_; }
   bool homeVisible() const { return homeSelected() && !quizOverlay_ && !settingsOverlay_; }
-  bool homeHeld() const { return !homeVisible() || meaningVisible_; }
-  bool takeHomeStep() { return homePlayback_.tick(millis(), !homeVisible() || meaningVisible_); }
+  bool homeHeld() const { return screenOff_ || !homeVisible() || meaningVisible_; }
+  bool takeHomeStep() { return homePlayback_.tick(millis(), homeHeld()); }
 
  private:
   AppSettings& settings_;
@@ -108,6 +108,7 @@ class WordUi {
   bool weatherBusy_ = false;
   bool weatherRefreshRequested_ = false;
   bool capture_ = false;
+  bool screenOff_ = false;
   lv_obj_t* progressLabel_ = nullptr;
   lv_obj_t* weatherTemperature_ = nullptr;
   lv_obj_t* weatherDetail_ = nullptr;

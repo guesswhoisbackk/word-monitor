@@ -1,6 +1,9 @@
 #pragma once
 #include "study_policy.hpp"
 namespace wordmon {
+inline bool nightScreenOff(int localHour) {
+  return localHour >= 0 && localHour < 24 && (localHour >= 21 || localHour < 7);
+}
 // Derive the last successful grade time from the stable v2 scheduling fields.
 // This also includes today's existing records without migrating/writing history.
 inline uint32_t reviewedAt(const ReviewRecord& record) {

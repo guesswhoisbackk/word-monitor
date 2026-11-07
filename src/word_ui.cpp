@@ -195,7 +195,7 @@ void WordUi::loop() {
     }
   }
   lv_timer_handler();
-  if(todayMode_ && !todayRequest_ && playback_.tick(millis(),settingsOverlay_ || quizOverlay_ || audio_.busy() || speakRequested_)) todayRequest_=4;
+  if(todayMode_ && !todayRequest_ && playback_.tick(millis(),screenOff_ || settingsOverlay_ || quizOverlay_ || audio_.busy() || speakRequested_)) todayRequest_=4;
   const uint32_t now = millis();
   if (now - lastRefresh_ >= 500) {
     lastRefresh_ = now;
@@ -482,9 +482,20 @@ void WordUi::refresh() {
   const time_t now = time(nullptr);
   const bool timeValid = now > 1700000000;
   struct tm local {};
+  if (timeValid) localtime_r(&now, &local);
+  const bool off = timeValid && nightScreenOff(local.tm_hour);
+  if (off != screenOff_) {
+    screenOff_ = off;
+    lv_indev_reset(lvInput_, nullptr);
+    display_.setBrightness(off ? 0 : settings_.brightness);
+    if (off) {
+      speakRequested_ = quizSpeakRequested_ = false;
+      audio_.cancel();
+    }
+    Serial.printf("[ui] scheduled screen %s\n", off ? "off" : "on");
+  }
   size_t index = 0;
   if (timeValid) {
-    localtime_r(&now, &local);
     const int32_t day = studyDay(static_cast<uint32_t>(now));
     if (sampleDay_ != day) {
       if (sampleDay_ >= 0) {
@@ -747,7 +758,7 @@ void WordUi::flushDisplay(lv_display_t* display, const lv_area_t* area,
 
 void WordUi::readTouch(lv_indev_t* input, lv_indev_data_t* data) {
   auto* self = static_cast<WordUi*>(lv_indev_get_user_data(input));
-  if (!self->touch_.touched()) {
+  if (self->screenOff_ || !self->touch_.touched()) {
     data->state = LV_INDEV_STATE_RELEASED;
     return;
   }
