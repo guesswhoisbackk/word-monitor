@@ -122,6 +122,8 @@ void Wordbook::begin() {
     ++revision_;
     return;
   }
+  startupDeck_ = assetKey(settings_.wordbookUrl.c_str());
+  resume_.begin();
   // A fresh format has no /wb; downloads write into it, so create it up front.
   if (!LittleFS.exists(kWordbookDir) && !LittleFS.mkdir(kWordbookDir)) {
     Serial.println(F("[wb] could not create cache directory"));
@@ -410,26 +412,32 @@ void Wordbook::setQuizPreview(const char* word) {
   // A custom deck may not contain this built-in quiz word. Never show another word's picture.
 }
 
-bool Wordbook::beginToday(bool missedOnly) {
+bool Wordbook::beginToday(bool missedOnly, uint64_t resumeWord) {
   const uint32_t now=static_cast<uint32_t>(time(nullptr));
   if(todayMode_ || studyDay(now)<0 || !wordCount_) return false;
   homeMode_ = false; homeDirty_ = true; assetsDirty_ = true;
   todayCount_=0;
+  uint16_t position = 0;
   File file=LittleFS.open(kWordbookManifestPath,"r"); String line; uint16_t index=0;
   while(file && readEntry(file,line)==1 && index<wordCount_) {
     JsonDocument doc;
     if(!deserializeJson(doc,line)) {
-      const auto* record=study_.find(doc["w"]|"");
-      if(record && (missedOnly ? missedToday(*record,now) : reviewedToday(*record,now))) todayIndices_[todayCount_++]=index;
+      const char* word = doc["w"] | "";
+      const auto* record=study_.find(word);
+      if(record && (missedOnly ? missedToday(*record,now) : reviewedToday(*record,now))) {
+        if (resumeWord && assetKey(word) == resumeWord) position = todayCount_;
+        todayIndices_[todayCount_++]=index;
+      }
     }
     ++index;
     if((index & 31)==0) delay(1); // Let the idle task feed the watchdog during long flash scans.
   }
   if(!todayCount_) return false;
-  savedIndex_=activeIndex_; todayPosition_=0; todayDay_=studyDay(now); todayMode_=true;
+  savedIndex_=activeIndex_; todayPosition_=position; todayDay_=studyDay(now); todayMode_=true;
+  missedReplay_ = missedOnly;
   todayMoves_=0; ++todayTransitions_;
   Serial.printf("[today] enter count=%u day=%ld uptime=%lu\n",todayCount_,long(todayDay_),millis());
-  selectCard(todayDay_,todayIndices_[0]); return true;
+  selectCard(todayDay_,todayIndices_[todayPosition_]); return true;
 }
 void Wordbook::endToday(bool dayChanged) {
   if(!todayMode_) return;
@@ -445,6 +453,31 @@ void Wordbook::stepToday(int direction) {
   selectCard(todayDay_,todayIndices_[todayPosition_]);
 }
 
+bool Wordbook::takeResume(ResumeMark& mark) {
+  const int32_t day = todayDay();
+  if (!resumePending_ || day < 0 || !wordCount_ || !readyForToday()) return false;
+  resumePending_ = false;
+  mark = resume_.mark();
+  return mark.matches(assetKey(settings_.wordbookUrl.c_str()), day);
+}
+
+void Wordbook::rememberPosition(ResumeMode mode) {
+  if (!wordCount_ || !cardValid_ || quizPreview_ || (mode == ResumeMode::Home && !homeMode_)) return;
+  const int32_t day = todayDay();
+  if (day < 0 || day != cardDay_) return;
+  if (todayMode_) mode = missedReplay_ ? ResumeMode::Missed : ResumeMode::Replay;
+  const uint64_t deck = assetKey(settings_.wordbookUrl.c_str());
+  const auto& previous = resume_.mark();
+  if (deck != startupDeck_ || (previous.deck && previous.deck != deck && !everSynced_)) return;
+  resumePending_ = false;
+  // An interrupted study resumes through the saved schedule, not a card index.
+  if ((mode == ResumeMode::Study || mode == ResumeMode::ReviewOnly) &&
+      previous.matches(deck, day) && previous.mode == mode) return;
+  const ResumeMark mark(deck, assetKey(cardWord_.c_str()), day, mode);
+  if (mark == resume_.mark() || (resumeRetryAt_ && static_cast<int32_t>(millis() - resumeRetryAt_) < 0)) return;
+  resumeRetryAt_ = resume_.save(mark) ? 0 : millis() + 10000;
+}
+
 void Wordbook::updateHome(bool enabled, bool advance, bool hold) {
   if (!enabled || todayMode_ || !wordCount_ || settings_.wordbookUrl.isEmpty()) {
     if (homeMode_) { homeMode_ = false; homeDirty_ = true; assetsDirty_ = true; }
@@ -452,16 +485,20 @@ void Wordbook::updateHome(bool enabled, bool advance, bool hold) {
   }
   const uint32_t now = static_cast<uint32_t>(time(nullptr));
   const int32_t day = studyDay(now);
-  if (day < 0 || quizPreview_ || !readyForToday()) return;
+  if (day < 0 || quizPreview_ || !readyForToday() || (!homeMode_ && hold)) return;
   if (!homeMode_ || homeDirty_ || homeDay_ != day || homeStudyRevision_ != study_.revision()) {
     File file = LittleFS.open(kWordbookManifestPath, "r");
     if (!file) return;
     homeDeck_.reset();
+    const auto& saved = resume_.mark();
+    const bool restore = saved.mode == ResumeMode::Home && saved.matches(assetKey(settings_.wordbookUrl.c_str()), day);
+    uint16_t savedIndex = UINT16_MAX;
     String line;
     for (uint16_t i = 0; i < wordCount_ && readEntry(file, line) == 1; ++i) {
       JsonDocument doc;
       if (!deserializeJson(doc, line)) {
         const char* word = doc["w"] | "";
+        if (restore && assetKey(word) == saved.wordHash) savedIndex = i;
         homeDeck_.consider(i, study_.find(word), now, validArtName(doc["a"] | ""));
       }
       if ((i & 31) == 0) delay(1);
@@ -470,6 +507,10 @@ void Wordbook::updateHome(bool enabled, bool advance, bool hold) {
     homeMode_ = true; homeDirty_ = false; homeDay_ = day;
     homeStudyRevision_ = study_.revision(); homePosition_ = 0;
     assetsDirty_ = true;
+    if (savedIndex != UINT16_MAX) {
+      for (uint16_t i = 0; i < homeDeck_.count(); ++i)
+        if (homeDeck_.index(i) == savedIndex) { homePosition_ = i; break; }
+    }
     if (hold) {
       // A refreshed manifest can reorder indices while the answer is open.
       // Re-anchor the prefetch window without replacing the held card.

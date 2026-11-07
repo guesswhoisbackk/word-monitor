@@ -4,6 +4,7 @@
 #include "Preferences.h"
 #include "LittleFS.h"
 #include "study_store.hpp"
+#include "resume_store.hpp"
 std::vector<unsigned char> Preferences::bytes;
 bool Preferences::failWrite = false;
 bool File::failWrite = false;
@@ -118,5 +119,27 @@ int main() {
   assert(midnight.grade("after-midnight", boundary, true, 1));
   assert(midnight.find("before-midnight")->due == boundary + 599);
   assert(midnight.newToday(boundary) == 1);
+  ResumeStore resume;
+  resume.begin();
+  const ResumeMark first{11, 22, studyDay(now), ResumeMode::Home};
+  const ResumeMark next{11, 33, studyDay(now), ResumeMode::Replay};
+  assert(resume.save(first));
+  LittleFS.failRename = true;
+  assert(!resume.save(next));
+  LittleFS.failRename = false;
+  ResumeStore restored;
+  restored.begin();
+  assert(restored.mark().matches(11, studyDay(now)));
+  assert(restored.mark().wordHash == 22);
+  assert(!restored.mark().matches(12, studyDay(now)));
+  assert(!restored.mark().matches(11, studyDay(now) + 1));
+  assert(restored.save(next));
+  ResumeStore replay;
+  replay.begin();
+  assert(replay.mark().wordHash == 33 && replay.mark().mode == ResumeMode::Replay);
+  (*LittleFS.files["/resume-v1.bin"])[0] ^= 1;
+  ResumeStore corruptResume;
+  corruptResume.begin();
+  assert(!corruptResume.mark().matches(11, studyDay(now)));
   puts("study persistence, quota, migration and 1000 records: all tests passed");
 }

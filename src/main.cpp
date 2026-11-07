@@ -193,6 +193,14 @@ void loop() {
   weather.loop(false);
   wordUi.setWeather(weather.reading(), weather.busy());
   if (audio.busy()) { delay(5); return; }
+  wordmon::ResumeMark resume;
+  if (wordUi.canResume() && wordbook.takeResume(resume)) {
+    using wordmon::ResumeMode;
+    if (resume.mode == ResumeMode::Replay || resume.mode == ResumeMode::Missed)
+      wordbook.beginToday(resume.mode == ResumeMode::Missed, resume.wordHash);
+    else if (resume.mode == ResumeMode::Study || resume.mode == ResumeMode::ReviewOnly)
+      wordUi.resumeStudy(resume.mode == ResumeMode::ReviewOnly);
+  }
   const uint8_t todayRequest=wordUi.takeTodayRequest(wordbook.readyForToday());
   if(todayRequest) {
     audio.cancel();
@@ -214,6 +222,10 @@ void loop() {
     pushedWordbookRevision = wordbook.revision();
     wordUi.setWordbookCard(wordbook.card(), wordbook.state(), wordbook.wordCount());
   }
+  if (wordbook.todayMode() || wordUi.studyActive() || (wordUi.homeVisible() && !wordUi.homeHeld()))
+    wordbook.rememberPosition(wordUi.studyActive() ?
+        (wordUi.reviewOnly() ? wordmon::ResumeMode::ReviewOnly : wordmon::ResumeMode::Study) :
+        wordmon::ResumeMode::Home);
   wordUi.serviceAudio(!wordbook.busy() && !weather.busy());
   if (!audio.busy()) {
     if (!wordbook.busy()) weather.loop(true);

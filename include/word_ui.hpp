@@ -45,6 +45,9 @@ class WordUi {
   void reviewFinished(bool found);
   bool reviewOnly() const { return reviewOnly_; }
   bool homeSelected() const { return !sessionActive_ && !todayMode_; }
+  bool studyActive() const { return sessionActive_; }
+  bool canResume() const { return homeVisible() && !screenOff_ && !todayRequest_ && !reviewRequested_; }
+  void resumeStudy(bool reviewOnly) { beginStudy(reviewOnly); }
   bool homeVisible() const { return homeSelected() && !quizOverlay_ && !settingsOverlay_; }
   bool homeHeld() const { return screenOff_ || !homeVisible() || meaningVisible_; }
   bool takeHomeStep() { return homePlayback_.tick(millis(), homeHeld()); }

@@ -7,6 +7,7 @@
 #include "study_store.hpp"
 #include "study_plan.hpp"
 #include "today_review.hpp"
+#include "resume_store.hpp"
 #include "cache_policy.hpp"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -64,7 +65,9 @@ class Wordbook {
   bool nextReview(const StudyStore& study, bool reviewOnly = false);
   void updateHome(bool enabled, bool advance, bool hold);
   void setQuizPreview(const char* word);
-  bool beginToday(bool missedOnly = false);
+  bool beginToday(bool missedOnly = false, uint64_t resumeWord = 0);
+  bool takeResume(ResumeMark& mark);
+  void rememberPosition(ResumeMode mode);
   void endToday(bool dayChanged = false);
   void stepToday(int direction);
   uint32_t todayMoves() const { return todayMoves_; }
@@ -111,6 +114,10 @@ class Wordbook {
   uint32_t todayMoves_ = 0, todayTransitions_ = 0, todayExitMs_ = 0;
   const char* todayExitReason_ = "none";
   bool todayMode_ = false;
+  bool missedReplay_ = false, resumePending_ = true;
+  uint32_t resumeRetryAt_ = 0;
+  ResumeStore resume_;
+  uint64_t startupDeck_ = 0;
   // Home rotation and explicit replay never own the index list together.
   uint16_t todayIndices_[kMaxStudyWords]{};
   HomeDeck homeDeck_{todayIndices_};
