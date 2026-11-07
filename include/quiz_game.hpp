@@ -22,9 +22,14 @@ class QuizGame {
  public:
   explicit QuizGame(StudyStore& study) : study_(study) {}
   void begin() { store_.begin(); }
-  bool start(bool learnedOnly, uint32_t seed, bool practice = false);
+  bool start(bool learnedOnly, uint32_t seed, bool practice = false, bool pictureMode = false);
   bool answer(uint8_t choice);
   bool next();
+  bool retryWrong();
+  bool pictureMode() const { return pictureMode_; }
+  bool retryRound() const { return retryRound_; }
+  uint8_t wrongCount() const { return wrongCount_; }
+  const char* meaning() const;
   void stop() { active_ = false; }
   bool active() const { return active_; }
   bool finished() const { return active_ && position_ >= count_; }
@@ -47,7 +52,9 @@ class QuizGame {
   StudyStore& study_;
   QuizStore store_;
   uint32_t rng_ = 1;
-  uint16_t targets_[10]{}, choices_[6]{};
+  uint16_t targets_[10]{}, choices_[6]{}, wrong_[10]{};
+  uint8_t wrongCount_ = 0;
+  bool pictureMode_ = false, retryRound_ = false;
   uint8_t count_ = 0, position_ = 0, correctChoice_ = 0, roundCorrect_ = 0;
   int8_t selected_ = -1;
   bool active_ = false, answered_ = false, practice_ = false, learnedOnly_ = true;

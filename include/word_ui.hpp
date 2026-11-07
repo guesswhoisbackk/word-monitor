@@ -49,7 +49,9 @@ class WordUi {
   lv_obj_t* quizOverlay_ = nullptr;
   uint32_t quizAnsweredAt_ = 0;
   void showLearningMenu();
-  void startQuiz(bool learnedOnly, bool practice = false);
+  void startQuiz(bool learnedOnly, bool practice = false, bool pictureMode = false);
+  bool quizSpeakRequested_ = false;
+  void quizSpeak();
   void renderQuiz();
   void closeQuiz();
   void quizAnswer(uint8_t choice);

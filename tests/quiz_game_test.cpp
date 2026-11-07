@@ -73,6 +73,22 @@ int main() {
   for(auto n:slots) assert(n>300);
   assert(*LittleFS.files["/quiz-v1.bin"]==pointsFile);
   assert(*LittleFS.files["/study-v2.bin"]==history && study.revision()==revision);
+  assert(game.start(true,77,true,true));
+  std::set<uint16_t> missed;
+  while(!game.finished()) {
+    assert(!strcmp(game.choice(game.correctChoice()),game.word()));
+    assert(*game.meaning()); missed.insert(game.targetIndex());
+    assert(game.answer((game.correctChoice()+1)%6)); assert(game.next());
+  }
+  assert(game.wrongCount()==3 && game.retryWrong() && game.retryRound() && game.pictureMode());
+  assert(game.count()==3 && game.roundCorrect()==0);
+  while(!game.finished()) {
+    assert(missed.erase(game.targetIndex())==1);
+    assert(game.answer(game.correctChoice())); assert(game.next());
+  }
+  assert(missed.empty() && game.roundCorrect()==3 && !game.wrongCount() && !game.retryWrong());
+  assert(*LittleFS.files["/quiz-v1.bin"]==pointsFile);
+  assert(*LittleFS.files["/study-v2.bin"]==history);
   // An incomplete temporary transaction never replaces committed points.
   LittleFS.files["/quiz-v1.tmp"]=std::make_shared<std::vector<unsigned char>>(size_t(3),static_cast<unsigned char>(0));
   QuizStore interrupted; interrupted.begin();

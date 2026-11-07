@@ -58,8 +58,9 @@ uint32_t QuizGame::randomBelow(uint32_t bound) {
   rng_^=rng_<<13; rng_^=rng_>>17; rng_^=rng_<<5;
   return bound ? rng_%bound : 0;
 }
-bool QuizGame::start(bool learnedOnly,uint32_t seed,bool practice) {
+bool QuizGame::start(bool learnedOnly,uint32_t seed,bool practice,bool pictureMode) {
   active_=false; count_=position_=roundCorrect_=0; selected_=-1; answered_=false;
+  pictureMode_=pictureMode; retryRound_=false; wrongCount_=0;
   practice_=practice; learnedOnly_=learnedOnly; rng_=seed?seed:1;
   uint32_t seen=0;
   // Reservoir sampling: no 893-word heap allocation and no duplicate questions.
@@ -101,6 +102,7 @@ bool QuizGame::answer(uint8_t choice) {
   const bool correct=choice==correctChoice_;
   if(!practice_ && !store_.record(correct)) return false;
   answered_=true; if(correct) ++roundCorrect_;
+  else if(wrongCount_<10) wrong_[wrongCount_++]=targetIndex();
   return true;
 }
 bool QuizGame::next() {
@@ -109,6 +111,14 @@ bool QuizGame::next() {
   if(!finished() && !prepare()) { active_=false; return false; }
   return true;
 }
+bool QuizGame::retryWrong() {
+  if(!finished() || !wrongCount_) return false;
+  count_=wrongCount_;
+  for(uint8_t i=0;i<count_;++i) targets_[i]=wrong_[i];
+  wrongCount_=0; position_=0; roundCorrect_=0; retryRound_=true;
+  active_=prepare(); return active_;
+}
+const char* QuizGame::meaning() const { return active_ && !finished()?kQuizWords[targetIndex()].meaning:""; }
 const char* QuizGame::word() const { return active_ && !finished()?kQuizWords[targetIndex()].word:""; }
-const char* QuizGame::choice(uint8_t index) const { return active_ && !finished() && index<6?kQuizWords[choices_[index]].meaning:""; }
+const char* QuizGame::choice(uint8_t index) const { return active_ && !finished() && index<6?(pictureMode_?kQuizWords[choices_[index]].word:kQuizWords[choices_[index]].meaning):""; }
 }

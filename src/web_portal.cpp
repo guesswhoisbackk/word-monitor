@@ -150,6 +150,7 @@ void WebPortal::begin(bool accessPointMode) {
   server_.on("/api/quiz", HTTP_GET, [this]() {
     JsonDocument doc;
     doc["active"]=quiz_.active(); doc["finished"]=quiz_.finished();
+    doc["pictureMode"]=quiz_.pictureMode(); doc["retryRound"]=quiz_.retryRound(); doc["wrongCount"]=quiz_.wrongCount();
     doc["practice"]=quiz_.practice(); doc["learnedOnly"]=quiz_.learnedOnly();
     doc["word"]=quiz_.word(); doc["position"]=quiz_.position(); doc["count"]=quiz_.count();
     doc["answered"]=quiz_.answered(); doc["selected"]=quiz_.selected();

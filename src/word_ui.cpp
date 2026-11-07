@@ -171,6 +171,9 @@ void WordUi::loop() {
     if (command == 'u') { reviewLoading_ = false; refresh(); }
     if ((command == 'n' || command == 't') && !quizOverlay_) todayRequest_=todayMode_?2:1;
     if (command == 'q') startQuiz(true);
+    if (command == 'I') startQuiz(false,true,true);
+    if (command == 'o' && quizOverlay_ && quiz_.retryWrong()) renderQuiz();
+    if (command == 'a' && quizOverlay_) quizSpeak();
     if (command == 'Q') startQuiz(false,true); // USB practice: never writes points/history.
     if (command == 'm') showLearningMenu();
     if (command == 'c') closeQuiz();
@@ -373,7 +376,7 @@ void WordUi::setWordbookCard(const WordbookCard* card, WordbookState state,
   wordbookState_ = state;
   wordbookCount_ = wordCount;
   refresh();
-  if(quizOverlay_ && quiz_.active() && quiz_.answered() && !quiz_.finished()) renderQuiz();
+  if(quizOverlay_ && quiz_.active() && (quiz_.answered() || quiz_.pictureMode()) && !quiz_.finished()) renderQuiz();
 }
 
 void WordUi::refresh() {
@@ -794,7 +797,14 @@ void WordUi::closeSettings() {
   if(settingsOverlay_) {lv_obj_delete(settingsOverlay_);settingsOverlay_=nullptr;}
 }
 void WordUi::serviceAudio(bool canStart) {
-  if(quizOverlay_ || !canStart || !speakRequested_ || audio_.busy()) return;
+  if(quizOverlay_) {
+    if(quizSpeakRequested_ && canStart && !audio_.busy() && quiz_.answered() && externalCard_ && !strcmp(externalCard_->word,quiz_.word())) {
+      quizSpeakRequested_=false;
+      audio_.start(quiz_.word(),externalCard_->audio,settings_.wordbookUrl,settings_.audioVolume);
+    }
+    return;
+  }
+  if(!canStart || !speakRequested_ || audio_.busy()) return;
   speakRequested_=false;
   audio_.start(shownWord_,externalCard_?externalCard_->audio:"",settings_.wordbookUrl,settings_.audioVolume);
 }
@@ -815,6 +825,7 @@ void WordUi::reviewFinished(bool found) {
 
 
 void WordUi::closeQuiz() {
+  audio_.cancel(); quizSpeakRequested_=false;
   quiz_.stop();
   if(quizOverlay_) { lv_obj_delete(quizOverlay_); quizOverlay_=nullptr; }
   playback_.reset(millis());
@@ -829,9 +840,9 @@ void WordUi::showLearningMenu() {
   char points[40]; snprintf(points,sizeof(points),"%lu P",static_cast<unsigned long>(quiz_.totals().points));
   makeLabel(quizOverlay_,points,12,43,216,&font_ui_24,kGreen);
   makeLabel(quizOverlay_,"정답 +10점 · 틀려도 괜찮아요",12,77,216,&font_kr_13,kMuted);
-  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","오늘 단어 다시 보기","돌아가기"};
-  for(int i=0;i<4;++i) {
-    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,108+i*49);lv_obj_set_size(button,216,42);
+  const char* labels[]={"배운 단어 퀴즈","전체 단어 퀴즈","그림 보고 맞히기","오늘 단어 다시 보기","돌아가기"};
+  for(int i=0;i<5;++i) {
+    auto* button=lv_button_create(quizOverlay_);lv_obj_set_pos(button,12,103+i*42);lv_obj_set_size(button,216,37);
     lv_obj_set_style_bg_color(button,lv_color_hex(i==0?kGreen:kBorder),0);
     auto* label=lv_label_create(button);lv_label_set_text(label,labels[i]);
     lv_obj_set_style_text_font(label,&font_kr_16,0);lv_obj_set_style_text_color(label,lv_color_hex(i==0?kBackground:kText),0);lv_obj_center(label);
@@ -840,31 +851,40 @@ void WordUi::showLearningMenu() {
       auto* self=static_cast<WordUi*>(lv_event_get_user_data(e));
       const uint32_t index=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(lv_obj_get_user_data(static_cast<lv_obj_t*>(lv_event_get_current_target(e)))))-1;
       if(index==0 || index==1) self->startQuiz(index==0);
-      else if(index==2) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=1;}
+      else if(index==2) self->startQuiz(false,false,true);
+      else if(index==3) {self->closeQuiz();if(!self->todayMode_)self->todayRequest_=1;}
       else self->closeQuiz();
     },LV_EVENT_CLICKED,this);
   }
 }
 
-void WordUi::startQuiz(bool learnedOnly,bool practice) {
+void WordUi::startQuiz(bool learnedOnly,bool practice,bool pictureMode) {
   closeSettings();
-  audio_.cancel();speakRequested_=false;todayRequest_=0;
+  audio_.cancel();speakRequested_=false;quizSpeakRequested_=false;todayRequest_=0;
   if(!quizOverlay_) quizOverlay_=makeCard(lv_screen_active(),0,0,240,320);
   lv_obj_set_style_radius(quizOverlay_,0,0);
-  quiz_.start(learnedOnly,esp_random(),practice);
+  quiz_.start(learnedOnly,esp_random(),practice,pictureMode);
   renderQuiz();
 }
 
 void WordUi::quizAnswer(uint8_t choice) {
   if(!quizOverlay_ || !quiz_.active() || quiz_.finished() || quiz_.answered()) return;
+  if(quiz_.pictureMode() && (!externalCard_ || !externalCard_->art || strcmp(externalCard_->word,quiz_.word()))) return;
   quiz_.answer(choice);quizAnsweredAt_=millis();renderQuiz();
 }
 
 void WordUi::quizNext() {
   if(!quizOverlay_ || !quiz_.active() || uint32_t(millis()-quizAnsweredAt_)<500) return;
-  if(quiz_.finished()) {startQuiz(quiz_.learnedOnly(),quiz_.practice());return;}
+  if(quiz_.finished()) {startQuiz(quiz_.learnedOnly(),quiz_.practice(),quiz_.pictureMode());return;}
   if(!quiz_.answered() && quiz_.selected()>=0) {quizAnswer(static_cast<uint8_t>(quiz_.selected()));return;}
+  audio_.cancel(); quizSpeakRequested_=false;
   if(quiz_.next()) renderQuiz();
+}
+
+void WordUi::quizSpeak() {
+  if(!quiz_.active() || !quiz_.answered() || quiz_.finished()) return;
+  if(audio_.busy() || quizSpeakRequested_) {audio_.cancel();quizSpeakRequested_=false;}
+  else quizSpeakRequested_=true;
 }
 
 void WordUi::renderQuiz() {
@@ -900,7 +920,11 @@ void WordUi::renderQuiz() {
     label(text,12,138,216,25,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
     snprintf(text,sizeof(text),"누적 %lu점",static_cast<unsigned long>(quiz_.totals().points));
     label(quiz_.practice()?"체험 모드 · 포인트 저장 안 함":text,12,178,216,36,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
-    auto* again=button("한 번 더",12,232,216,42,kBorder);
+    if(quiz_.wrongCount()) {
+      auto* retry=button("틀린 단어 다시 풀기",12,222,216,38,kBorder);
+      lv_obj_add_event_cb(retry,[](lv_event_t* e){auto* self=static_cast<WordUi*>(lv_event_get_user_data(e));if(self->quiz_.retryWrong())self->renderQuiz();},LV_EVENT_CLICKED,this);
+    }
+    auto* again=button("한 번 더",12,270,216,38,kBorder);
     lv_obj_add_event_cb(again,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
     return;
   }
@@ -916,14 +940,23 @@ void WordUi::renderQuiz() {
       auto* picture=lv_image_create(quizOverlay_);lv_image_set_src(picture,externalCard_->art);
       lv_obj_set_pos(picture,(240-externalCard_->art->header.w)/2,137);
     } else label("그림을 불러오는 중",12,162,216,38,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
-    label(quiz_.choice(quiz_.correctChoice()),12,236,216,34,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
+    label(quiz_.meaning(),12,227,216,27,&font_kr_16,kGreen,LV_TEXT_ALIGN_CENTER);
+    auto* speak=button("발음 듣기",58,251,124,24,kBorder);
+    lv_obj_add_event_cb(speak,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizSpeak();},LV_EVENT_CLICKED,this);
     auto* next=button(quiz_.position()+1==quiz_.count()?"결과 보기":"다음 문제",8,277,224,35,kBorder);
     lv_obj_add_event_cb(next,[](lv_event_t* e){static_cast<WordUi*>(lv_event_get_user_data(e))->quizNext();},LV_EVENT_CLICKED,this);
     return;
   }
-  auto* word=label(quiz_.word(),12,49,216,65,&font_ui_24,kText,LV_TEXT_ALIGN_CENTER);
-  if(strlen(quiz_.word())>20) lv_obj_set_style_text_font(word,&font_ui_18,0);
-  const char* prompt="알맞은 뜻을 고르세요";
+  if(quiz_.pictureMode()) {
+    if(externalCard_ && externalCard_->art && !strcmp(externalCard_->word,quiz_.word())) {
+      auto* picture=lv_image_create(quizOverlay_);lv_image_set_src(picture,externalCard_->art);
+      lv_image_set_scale(picture,200);lv_obj_set_pos(picture,(240-externalCard_->art->header.w)/2,33);
+    } else label("그림을 불러오는 중",12,65,216,30,&font_kr_13,kMuted,LV_TEXT_ALIGN_CENTER);
+  } else {
+    auto* word=label(quiz_.word(),12,49,216,65,&font_ui_24,kText,LV_TEXT_ALIGN_CENTER);
+    if(strlen(quiz_.word())>20) lv_obj_set_style_text_font(word,&font_ui_18,0);
+  }
+  const char* prompt=quiz_.pictureMode()?"그림에 맞는 단어를 고르세요":"알맞은 뜻을 고르세요";
   if(quiz_.selected()>=0) {
     if(!quiz_.answered()) prompt="저장 실패 · 다시 저장해 주세요";
     else prompt=quiz_.selected()==quiz_.correctChoice()?"정답이에요! +10점":"괜찮아요! 초록색이 정답이에요";
