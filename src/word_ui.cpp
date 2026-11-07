@@ -173,7 +173,7 @@ void WordUi::loop() {
     if (command == 'q') startQuiz(true);
     if (command == 'Q') startQuiz(false,true); // USB practice: never writes points/history.
     if (command == 'm') showLearningMenu();
-    if (command == 'x') closeQuiz();
+    if (command == 'c') closeQuiz();
     if (command >= '1' && command <= '6' && quizOverlay_) quizAnswer(command-'1');
     if (command == 'v' && quizOverlay_) quizNext();
     if (command == 'j' && todayMode_) lv_obj_send_event(goodButton_, LV_EVENT_CLICKED, nullptr);
