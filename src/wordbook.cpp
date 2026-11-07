@@ -462,10 +462,10 @@ bool Wordbook::takeResume(ResumeMark& mark) {
 }
 
 void Wordbook::rememberPosition(ResumeMode mode) {
+  if (todayMode_) mode = missedReplay_ ? ResumeMode::Missed : ResumeMode::Replay;
   if (!wordCount_ || !cardValid_ || quizPreview_ || (mode == ResumeMode::Home && !homeMode_)) return;
   const int32_t day = todayDay();
   if (day < 0 || day != cardDay_) return;
-  if (todayMode_) mode = missedReplay_ ? ResumeMode::Missed : ResumeMode::Replay;
   const uint64_t deck = assetKey(settings_.wordbookUrl.c_str());
   const auto& previous = resume_.mark();
   if (deck != startupDeck_ || (previous.deck && previous.deck != deck && !everSynced_)) return;
